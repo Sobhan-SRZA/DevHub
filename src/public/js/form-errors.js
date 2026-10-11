@@ -17,27 +17,53 @@
        -------------------------------------------------------- */
     function safeToast(message, type = "info") {
         if (typeof global.toast === "function") {
-            try { global.toast(message, type); return; }
-            catch (e) { warn("toast threw:", e); }
+            try {
+                global.toast(message, type);
+
+                return;
+            }
+
+            catch (e) {
+                warn("toast threw:", e);
+            }
         }
+
         // fallback
-        if (type === "error") console.error("[toast]", message);
-        else console.log("[toast]", message);
+        if (type === "error")
+            console.error("[toast]", message);
+
+        else
+            console.log("[toast]", message);
     }
 
     function safeDialog(title, message) {
         if (typeof global.openDialogError === "function") {
-            try { global.openDialogError(title, message); return; }
-            catch (e) { warn("openDialogError threw:", e); }
+            try {
+                global.openDialogError(title, message);
+
+                return;
+            }
+
+            catch (e) {
+                warn("openDialogError threw:", e);
+            }
         }
-        if (typeof global.alert === "function") global.alert(`${title}\n${message}`);
+
+        if (typeof global.alert === "function")
+            global.alert(`${title}\n${message}`);
     }
 
     function safeConfirm(opts) {
         if (typeof global.confirmDialog === "function") {
-            try { return global.confirmDialog(opts); }
-            catch (e) { warn("confirmDialog threw:", e); }
+            try {
+                return global.confirmDialog(opts);
+            }
+
+            catch (e) {
+                warn("confirmDialog threw:", e);
+            }
         }
+
         // fallback به confirm مرورگر
         return Promise.resolve(global.confirm(opts.message || "مطمئنید؟"));
     }
@@ -62,7 +88,7 @@
         INVALID_TOKEN: "INVALID_TOKEN",
         UNAUTHENTICATED: "UNAUTHENTICATED",
         NETWORK_ERROR: "NETWORK_ERROR",
-        INTERNAL_ERROR: "INTERNAL_ERROR",
+        INTERNAL_ERROR: "INTERNAL_ERROR"
     };
 
     const CODE_TO_FIELD = {
@@ -74,7 +100,7 @@
         [ERROR_CODES.PASSWORD_TOO_WEAK]: "password",
         [ERROR_CODES.PASSWORDS_DONT_MATCH]: "confirmPassword",
         [ERROR_CODES.TERMS_NOT_ACCEPTED]: "terms",
-        [ERROR_CODES.INVALID_CREDENTIALS]: "identifier",
+        [ERROR_CODES.INVALID_CREDENTIALS]: "identifier"
     };
 
     /* --------------------------------------------------------
@@ -90,18 +116,22 @@
      * - اگه input داخل .password-wrap بود، باید بالاتر بره
      */
     function findFieldWrapper(input) {
-        if (!input) return null;
+        if (!input)
+            return null;
 
         // 1. .field مستقیم
         let wrapper = input.closest(".field");
-        if (wrapper) return wrapper;
+        if (wrapper)
+            return wrapper;
 
         // 2. .password-wrap (input کنار دکمه toggle)
         const pwdWrap = input.closest(".password-wrap");
         if (pwdWrap && pwdWrap.parentElement) {
             // ببین والد والدش .field هست؟
             const above = pwdWrap.parentElement;
-            if (above.classList.contains("field")) return above;
+            if (above.classList.contains("field"))
+                return above;
+
             return above;
         }
 
@@ -116,10 +146,12 @@
     }
 
     function ensureErrorSlot(field) {
-        if (!field) return null;
+        if (!field)
+            return null;
 
         let slot = field.querySelector(":scope > .field-error");
-        if (!slot) slot = field.querySelector(".field-error");
+        if (!slot)
+            slot = field.querySelector(".field-error");
 
         if (!slot) {
             slot = document.createElement("div");
@@ -127,6 +159,7 @@
             slot.setAttribute("role", "alert");
             field.appendChild(slot);
         }
+
         return slot;
     }
 
@@ -134,11 +167,13 @@
        Field error display
        -------------------------------------------------------- */
     function showFieldError(input, message) {
-        if (!input) return;
+        if (!input)
+            return;
 
         const field = findFieldWrapper(input);
         if (!field) {
             warn("no wrapper for input", input);
+
             return;
         }
 
@@ -159,6 +194,7 @@
         // حذف انیمیشن بعد از اتمام
         const onEnd = () => field.classList.remove("shake");
         field.addEventListener("animationend", onEnd, { once: true });
+
         // اگه animationend نرسید (CSS نبود)، بعد 500ms حذف کن
         setTimeout(() => {
             field.classList.remove("shake");
@@ -168,21 +204,28 @@
         // scroll
         if (!field.dataset.scrolled) {
             field.dataset.scrolled = "1";
-            try { field.scrollIntoView({ behavior: "smooth", block: "center" }); }
-            catch { field.scrollIntoView(); }
+            try {
+                field.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+
+            catch {
+                field.scrollIntoView();
+            }
         }
     }
 
     function clearFieldError(input) {
         const field = findFieldWrapper(input);
-        if (!field) return;
+        if (!field)
+            return;
 
         field.classList.remove("has-error", "shake");
         input.removeAttribute("aria-invalid");
         delete field.dataset.scrolled;
 
         const slot = field.querySelector(".field-error");
-        if (slot) slot.textContent = "";
+        if (slot)
+            slot.textContent = "";
     }
 
     function clearAllErrors(form) {
@@ -195,7 +238,8 @@
         if (banner) {
             banner.classList.remove("visible");
             const t = banner.querySelector(".form-error-banner__text");
-            if (t) t.textContent = "";
+            if (t)
+                t.textContent = "";
         }
     }
 
@@ -210,8 +254,11 @@
             banner.innerHTML = `<span class="form-error-banner__icon">!</span><span class="form-error-banner__text"></span>`;
             form.insertBefore(banner, form.firstChild);
         }
+
         const text = banner.querySelector(".form-error-banner__text");
-        if (text) text.textContent = message;
+        if (text)
+            text.textContent = message;
+
         banner.classList.add("visible");
     }
 
@@ -219,39 +266,54 @@
        Extract field errors
        -------------------------------------------------------- */
     function extractFieldErrors(payload) {
-        if (!payload || typeof payload !== "object") return {};
+        if (!payload || typeof payload !== "object")
+            return {};
 
         const map = {};
 
         const push = (key, msg) => {
-            if (!key) return;
+            if (!key)
+                return;
+
             const k = Array.isArray(key) ? key.join(".") : String(key);
             map[k] = map[k] || [];
-            if (msg) map[k].push(String(msg));
+            if (msg)
+                map[k].push(String(msg));
         };
 
         // 1. details
         if (payload.details && typeof payload.details === "object") {
             for (const [key, val] of Object.entries(payload.details)) {
-                if (Array.isArray(val)) val.forEach((m) => push(key, m));
-                else if (val && typeof val === "object" && val.message) push(key, val.message);
-                else push(key, val);
+                if (Array.isArray(val))
+                    val.forEach((m) => push(key, m));
+
+                else if (val && typeof val === "object" && val.message)
+                    push(key, val.message);
+
+                else
+                    push(key, val);
             }
         }
 
         // 2. fields
         if (payload.fields && typeof payload.fields === "object") {
             for (const [key, val] of Object.entries(payload.fields)) {
-                if (Array.isArray(val)) val.forEach((m) => push(key, m));
-                else if (val && typeof val === "object" && val.message) push(key, val.message);
-                else push(key, val);
+                if (Array.isArray(val))
+                    val.forEach((m) => push(key, m));
+
+                else if (val && typeof val === "object" && val.message)
+                    push(key, val.message);
+
+                else
+                    push(key, val);
             }
         }
 
         // 3. errors array
         if (Array.isArray(payload.errors)) {
             payload.errors.forEach((e) => {
-                if (e && e.path) push(e.path, e.msg || e.message);
+                if (e && e.path)
+                    push(e.path, e.msg || e.message);
             });
         }
 
@@ -259,10 +321,12 @@
         if (payload.field && payload.message && Object.keys(map).length === 0) {
             push(payload.field, payload.message);
         }
+
         // 5. code mapping
         else if (payload.code && payload.message && Object.keys(map).length === 0) {
             const fieldFromCode = CODE_TO_FIELD[payload.code];
-            if (fieldFromCode) push(fieldFromCode, payload.message);
+            if (fieldFromCode)
+                push(fieldFromCode, payload.message);
         }
 
         // 6. _form → form-level
@@ -273,6 +337,7 @@
         }
 
         log("extracted errors:", map);
+
         return map;
     }
 
@@ -287,10 +352,13 @@
             const input = form.querySelector(`[name="${CSS.escape(name)}"]`);
             if (!input) {
                 warn(`input not found for field: ${name}`);
+
                 continue;
             }
+
             showFieldError(input, map[name][0]);
-            if (!firstInvalid) firstInvalid = input;
+            if (!firstInvalid)
+                firstInvalid = input;
         }
 
         // اگه فیلد مشخصی نبود ولی خطای فرم داشت
@@ -299,8 +367,13 @@
         }
 
         if (firstInvalid) {
-            try { firstInvalid.focus({ preventScroll: true }); }
-            catch { firstInvalid.focus(); }
+            try {
+                firstInvalid.focus({ preventScroll: true });
+            }
+
+            catch {
+                firstInvalid.focus();
+            }
         }
 
         return fieldKeys.length > 0;
@@ -319,41 +392,69 @@
         let hasFieldErrors = false;
         try {
             hasFieldErrors = applyServerErrors(form, payload);
-        } catch (e) {
+        }
+
+        catch (e) {
             warn("applyServerErrors threw:", e);
         }
 
         if (hasFieldErrors) {
             safeToast(message, "error");
-            return { handled: "field", code };
+
+            return {
+                handled: "field",
+                code
+            };
         }
 
         switch (code) {
             case ERROR_CODES.INVALID_CREDENTIALS:
                 showFormBanner(form, message);
                 safeToast(message, "error");
-                return { handled: "credentials", code };
+
+                return {
+                    handled: "credentials",
+                    code
+                };
 
             case ERROR_CODES.TOO_MANY_ATTEMPTS:
             case ERROR_CODES.ACCOUNT_DISABLED:
             case ERROR_CODES.SESSION_EXPIRED:
                 safeDialog("خطا", message);
-                return { handled: "dialog", code };
+
+                return {
+                    handled: "dialog",
+                    code
+                };
 
             case ERROR_CODES.NETWORK_ERROR:
                 showFormBanner(form, message);
                 safeToast(message, "error");
-                return { handled: "network", code };
+
+                return {
+                    handled: "network",
+                    code
+                };
 
             case ERROR_CODES.INTERNAL_ERROR:
                 safeDialog("خطای سرور", message);
-                return { handled: "server", code };
+                return {
+                    handled: "server",
+                    code
+                };
 
             default:
                 showFormBanner(form, message);
-                if (showDialogOnError) safeDialog("خطا", message);
-                else safeToast(message, "error");
-                return { handled: "general", code };
+                if (showDialogOnError)
+                    safeDialog("خطا", message);
+
+                else
+                    safeToast(message, "error");
+
+                return {
+                    handled: "general",
+                    code
+                };
         }
     }
 
@@ -362,21 +463,26 @@
        -------------------------------------------------------- */
     function setFormLoading(form, loading) {
         const btn = form.querySelector("button[type='submit'], .auth-btn");
-        if (!btn) return;
+        if (!btn)
+            return;
 
         if (loading) {
             btn.dataset.originalText = btn.textContent;
             btn.classList.add("loading");
             btn.disabled = true;
             form.querySelectorAll("input, textarea, select, button").forEach((el) => {
-                if (el !== btn) el.disabled = true;
+                if (el !== btn)
+                    el.disabled = true;
             });
-        } else {
+        }
+
+        else {
             btn.classList.remove("loading");
             if (btn.dataset.originalText) {
                 btn.textContent = btn.dataset.originalText;
                 delete btn.dataset.originalText;
             }
+
             btn.disabled = false;
             form.querySelectorAll("input, textarea, select, button").forEach((el) => {
                 el.disabled = false;
@@ -390,9 +496,16 @@
     function readValues(form) {
         const out = {};
         getInputs(form).forEach((el) => {
-            if (el.type === "checkbox") out[el.name] = el.checked;
-            else if (el.type === "radio") { if (el.checked) out[el.name] = el.value; }
-            else out[el.name] = el.value.trim();
+            if (el.type === "checkbox")
+                out[el.name] = el.checked;
+
+            else if (el.type === "radio") {
+                if (el.checked)
+                    out[el.name] = el.value;
+            }
+
+            else
+                out[el.name] = el.value.trim();
         });
         return out;
     }
@@ -405,17 +518,28 @@
         let firstInvalid = null;
 
         getInputs(form).forEach((el) => {
-            if (!el.willValidate) return;
-            if (el.checkValidity()) return;
+            if (!el.willValidate)
+                return;
+
+            if (el.checkValidity())
+                return;
 
             valid = false;
             showFieldError(el, el.validationMessage || "این فیلد نامعتبر است");
-            if (!firstInvalid) firstInvalid = el;
+            if (!firstInvalid)
+                firstInvalid = el;
         });
 
         if (firstInvalid) {
-            try { firstInvalid.focus({ preventScroll: true }); } catch { firstInvalid.focus(); }
+            try {
+                firstInvalid.focus({ preventScroll: true });
+            }
+
+            catch {
+                firstInvalid.focus();
+            }
         }
+
         return valid;
     }
 
@@ -424,7 +548,8 @@
        -------------------------------------------------------- */
     function attach(target, options = {}) {
         const form = typeof target === "string" ? q(target) : target;
-        if (!form) throw new Error("FormKit: form not found — " + target);
+        if (!form)
+            throw new Error("FormKit: form not found — " + target);
 
         const {
             validate = null,
@@ -444,8 +569,10 @@
                     if (field && field.classList.contains("has-error")) {
                         clearFieldError(input);
                     }
+
                     const banner = form.querySelector(".form-error-banner.visible");
-                    if (banner) banner.classList.remove("visible");
+                    if (banner)
+                        banner.classList.remove("visible");
                 });
             });
         }
@@ -461,14 +588,20 @@
             // 1. native
             if (!runNativeValidation(form)) {
                 log("native validation failed");
+
                 return;
             }
 
             // 2. custom validation
             if (typeof validate === "function") {
                 let errors;
-                try { errors = validate(values) || {}; }
-                catch (err) { errors = { __form__: [err.message || "خطا در اعتبارسنجی"] }; }
+                try {
+                    errors = validate(values) || {};
+                }
+
+                catch (err) {
+                    errors = { __form__: [err.message || "خطا در اعتبارسنجی"] };
+                }
 
                 const keys = Object.keys(errors);
                 if (keys.length) {
@@ -478,17 +611,33 @@
                         if (key === "__form__") {
                             const msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
                             showFormBanner(form, msg);
+
                             continue;
                         }
+
                         const input = form.querySelector(`[name="${CSS.escape(key)}"]`);
-                        if (!input) { warn(`no input for ${key}`); continue; }
+                        if (!input) {
+                            warn(`no input for ${key}`);
+
+                            continue;
+                        }
+
                         const msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
                         showFieldError(input, msg);
-                        if (!firstInvalid) firstInvalid = input;
+                        if (!firstInvalid)
+                            firstInvalid = input;
                     }
+
                     if (firstInvalid) {
-                        try { firstInvalid.focus({ preventScroll: true }); } catch { firstInvalid.focus(); }
+                        try {
+                            firstInvalid.focus({ preventScroll: true });
+                        }
+
+                        catch {
+                            firstInvalid.focus();
+                        }
                     }
+
                     return;
                 }
             }
@@ -500,21 +649,37 @@
             try {
                 const data = await submit(values);
                 log("submit success:", data);
-                if (successMessage) safeToast(successMessage, "success");
-                if (typeof onSuccess === "function") onSuccess(data);
-            } catch (err) {
+                if (successMessage)
+                    safeToast(successMessage, "success");
+
+                if (typeof onSuccess === "function")
+                    onSuccess(data);
+            }
+
+            catch (err) {
                 log("submit threw:", err);
                 const payload = err || {};
+
                 try {
                     presentError(form, payload, { showDialogOnError });
-                } catch (presentErr) {
+                }
+
+                catch (presentErr) {
                     console.error("❌ presentError itself threw:", presentErr);
                 }
+
                 if (typeof onError === "function") {
-                    try { onError(payload); }
-                    catch (cbErr) { console.error("❌ onError callback threw:", cbErr); }
+                    try {
+                        onError(payload);
+                    }
+
+                    catch (cbErr) {
+                        console.error("❌ onError callback threw:", cbErr);
+                    }
                 }
-            } finally {
+            }
+
+            finally {
                 setFormLoading(form, false);
             }
         });
@@ -527,7 +692,7 @@
                 if (input) showFieldError(input, msg);
             },
             setLoading: (b) => setFormLoading(form, b),
-            values: () => readValues(form),
+            values: () => readValues(form)
         };
     }
 
@@ -542,15 +707,18 @@
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body || {}),
-                ...extra,
+                ...extra
             });
-        } catch (networkErr) {
+        }
+
+        catch (networkErr) {
             console.error("❌ network error:", networkErr);
             const err = {
                 code: ERROR_CODES.NETWORK_ERROR,
                 message: "اتصال به سرور برقرار نشد",
-                status: 0,
+                status: 0
             };
+
             throw err;
         }
 
