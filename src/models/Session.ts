@@ -5,64 +5,45 @@ import {
     Types
 } from "mongoose";
 
-/* ------------------------------------------------------------------
-   Sub-document: Device info
-   ------------------------------------------------------------------ */
+/* ---------------- sub-documents ---------------- */
 export interface IDeviceInfo {
-    userAgent: string;        // raw User-Agent string
+    userAgent: string;
     deviceType: "desktop" | "mobile" | "tablet" | "bot" | "unknown";
-    deviceVendor?: string;    // e.g. "Apple", "Samsung"
-    deviceModel?: string;     // e.g. "iPhone 14 Pro"
-
-    os?: string;              // e.g. "iOS"
-    osVersion?: string;       // e.g. "17.2"
-
-    browser?: string;         // e.g. "Chrome"
-    browserVersion?: string;  // e.g. "120.0"
-
-    engine?: string;          // e.g. "Blink", "WebKit"
+    deviceVendor?: string;
+    deviceModel?: string;
+    os?: string;
+    osVersion?: string;
+    browser?: string;
+    browserVersion?: string;
+    engine?: string;
     isBot?: boolean;
 }
 
-/* ------------------------------------------------------------------
-   Sub-document: Location info
-   ------------------------------------------------------------------ */
 export interface ILocationInfo {
-    ip: string;               // e.g. "192.168.1.1"
+    ip: string;
     ipVersion?: 4 | 6;
-
     country?: string;
-    countryCode?: string;     // e.g. "IR"
-    region?: string;          // e.g. "Tehran"
+    countryCode?: string;
+    region?: string;
     city?: string;
-
     latitude?: number;
     longitude?: number;
-    timezone?: string;        // e.g. "Asia/Tehran"
+    timezone?: string;
     isp?: string;
 }
 
-/* ------------------------------------------------------------------
-   Sub-document: Hardware / network identifiers
-   ------------------------------------------------------------------ */
 export interface IClientIdentifiers {
-    // MAC address is NEVER available from the browser.
-    // Only servers on the same LAN or a native app can read it.
-    // We keep the field for when the client is a native app / desktop agent.
     macAddress?: string | null;
-
-    // Stable per-browser identifiers (best effort)
-    fingerprint?: string;     // hash generated on the client
-    deviceId?: string;        // your own persisted device UUID
+    fingerprint?: string;
+    deviceId?: string;
 }
 
-/* ------------------------------------------------------------------
-   Main: Session
-   ------------------------------------------------------------------ */
+/* ---------------- main ---------------- */
 export interface ISession {
-    sessionId: string;            // stable random id
-    user: Types.ObjectId;         // ref → User
-    token: string;                // JWT (or a random session id)
+    user: Types.ObjectId;
+    sessionId: string;       // random id, in JWT as `sid`
+    deviceHash: string;      // sha256(userAgent + fingerprint) — for dedup
+    token: string;           // access token
     refreshToken?: string;
 
     device: IDeviceInfo;
@@ -73,23 +54,12 @@ export interface ISession {
     lastActiveAt: Date;
     expiresAt: Date;
 
-    revoked: boolean;
-    revokedAt?: Date | null;
-    revokedReason?: string;
-
     createdAt: Date;
     updatedAt: Date;
 }
 
 export interface ISessionMethods {
-    /** marks the session as revoked */
-    revoke(reason?: string): Promise<void>;
-
-    /** is the session still valid right now? */
-    isActive(): boolean;
-
-    /** updates lastActiveAt */
-    touch(): Promise<void>;
+    isExpired(): boolean;
 }
 
 type SessionModel = Model<ISession, {}, ISessionMethods>;
@@ -143,9 +113,22 @@ const clientSchema = new Schema<IClientIdentifiers>(
 /* ---------------- session schema ---------------- */
 const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
     {
-        sessionId: { type: String, required: true, unique: true },
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-        token: { type: String, required: true, unique: true },
+        user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+
+        sessionId: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
+
+        deviceHash: {
+            type: String,
+            required: true,
+            index: true,
+        },
+
+        token: { type: String, required: true, unique: true, index: true },
         refreshToken: { type: String, select: false },
 
         device: { type: deviceSchema, required: true },
@@ -155,38 +138,20 @@ const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
         loginAt: { type: Date, default: () => new Date() },
         lastActiveAt: { type: Date, default: () => new Date() },
         expiresAt: { type: Date, required: true },
-
-        revoked: { type: Boolean, default: false },
-        revokedAt: { type: Date, default: null },
-        revokedReason: String,
     },
     { timestamps: true }
 );
 
 /* ---------------- indexes ---------------- */
-// fast lookup of "all active sessions for a user"
-sessionSchema.index({ user: 1, revoked: 1, expiresAt: 1 });
+// برای پیدا کردن سریع سشن فعلی کاربر روی یه دستگاه
+sessionSchema.index({ user: 1, deviceHash: 1, expiresAt: 1 });
 
-// auto-delete expired sessions (Mongo TTL index)
+// TTL: پاک‌سازی خودکار سشن‌های منقضی
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 /* ---------------- methods ---------------- */
-sessionSchema.method("revoke", async function (reason?: string) {
-    this.revoked = true;
-    this.revokedAt = new Date();
-    this.revokedReason = reason;
-
-    await this.save();
-});
-
-sessionSchema.method("isActive", function () {
-    return !this.revoked && this.expiresAt > new Date();
-});
-
-sessionSchema.method("touch", async function () {
-    this.lastActiveAt = new Date();
-
-    await this.save();
+sessionSchema.method("isExpired", function () {
+    return this.expiresAt <= new Date();
 });
 
 export const Session = model<ISession, SessionModel>("Session", sessionSchema);
