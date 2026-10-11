@@ -23,8 +23,8 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
         let payload;
         try {
             payload = verifyToken(token);
-        } 
-        
+        }
+
         catch (jwtErr: any) {
             return next(jwtErr);
         }
@@ -59,8 +59,8 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
         });
 
         return next();
-    } 
-    
+    }
+
     catch (err) {
         return next(err);
     }
@@ -95,6 +95,45 @@ export async function optionalAuth(req: any, _res: Response, next: NextFunction)
     }
 
     return next();
+}
+
+export async function redirectProfile(req: any, res: Response, next: NextFunction) {
+    try {
+        const token = req.cookies?.access_token as string | undefined;
+        if (!token) return next();
+
+        /* -------- verify token -------- */
+        let payload;
+        try {
+            payload = verifyToken(token);
+        }
+
+        catch {
+            return next();
+        }
+
+        if (payload.typ !== "access") return next();
+
+        /* -------- session check -------- */
+        const session = await Session.findOne({
+            sessionId: payload.sid,
+            expiresAt: { $gt: new Date() }
+        });
+        if (!session)
+            return next();
+
+        /* -------- user check -------- */
+        const user = await User.findById(payload.sub).lean();
+        if (!user)
+            return next();
+
+        return res.redirect("/profile");
+    }
+
+    catch (err) {
+        console.debug("[redirectProfile] ignored:", (err as Error)?.message);
+        return next();
+    }
 }
 
 /**
