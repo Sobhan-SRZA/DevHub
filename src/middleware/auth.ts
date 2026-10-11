@@ -1,18 +1,18 @@
 import type {
     Response,
     NextFunction
-} from 'express';
-import { verifyToken } from '../utils/token';
-import { ErrorCodes } from '../utils/errorCodes';
-import { AppError } from '../utils/AppError';
-import { Session } from '../models/Session';
-import { User } from '../models/User';
+} from "express";
+import { verifyToken } from "../utils/token";
+import { ErrorCodes } from "../utils/errorCodes";
+import { AppError } from "../utils/AppError";
+import { Session } from "../models/Session";
+import { User } from "../models/User";
 
 export async function requireAuth(req: any, res: Response, next: NextFunction) {
     try {
         let token = req.cookies?.access_token as string | undefined;
 
-        if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+        if (!token && req.headers.authorization?.startsWith("Bearer ")) {
             token = req.headers.authorization.slice(7);
         }
 
@@ -23,48 +23,45 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
         let payload;
         try {
             payload = verifyToken(token);
-        }
-
+        } 
+        
         catch (jwtErr: any) {
-            // JWT error رو مستقیم رد کن — errorHandler خودش می‌شناسه
             return next(jwtErr);
         }
 
-        if (payload.typ !== 'access') {
+        if (payload.typ !== "access") {
             return next(new AppError(401, ErrorCodes.WRONG_TOKEN_TYPE));
         }
 
         const session = await Session.findOne({
             sessionId: payload.sid,
-            revoked: false,
+            expiresAt: { $gt: new Date() },
         });
 
-        if (!session)
+        if (!session) {
             return next(new AppError(401, ErrorCodes.SESSION_NOT_FOUND));
-
-        if (session.expiresAt < new Date())
-            return next(new AppError(401, ErrorCodes.SESSION_EXPIRED));
+        }
 
         const user = await User.findById(payload.sub).lean();
-        if (!user)
+        if (!user) {
             return next(new AppError(401, ErrorCodes.UNAUTHENTICATED));
+        }
 
         req.user = user;
         req.session = session;
 
-        // fire-and-forget — هرگز خطا پرتاب نکن
+        // fire-and-forget
         Session.updateOne(
             { _id: session._id },
             { lastActiveAt: new Date() }
         ).catch((err) => {
-            console.warn('[requireAuth] touch failed:', err?.message);
+            console.warn("[requireAuth] touch failed:", err?.message);
         });
 
         return next();
-    }
-
+    } 
+    
     catch (err) {
-        // اگه واقعاً یه خطای غیرمنتظره رخ داد
         return next(err);
     }
 }
@@ -76,14 +73,14 @@ export async function optionalAuth(req: any, _res: Response, next: NextFunction)
             return next();
 
         const payload = verifyToken(token);
-        if (payload.typ !== 'access')
+        if (payload.typ !== "access")
             return next();
 
         const session = await Session.findOne({
             sessionId: payload.sid,
-            revoked: false,
+            expiresAt: { $gt: new Date() },
         });
-        if (!session || session.expiresAt < new Date())
+        if (!session)
             return next();
 
         const user = await User.findById(payload.sub).lean();
@@ -94,8 +91,7 @@ export async function optionalAuth(req: any, _res: Response, next: NextFunction)
     }
 
     catch (err) {
-        // guest باقی می‌مونه — خطا مهم نیست
-        console.debug('[optionalAuth] ignored:', (err as Error)?.message);
+        console.debug("[optionalAuth] ignored:", (err as Error)?.message);
     }
 
     return next();
