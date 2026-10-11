@@ -1,4 +1,9 @@
-import { Schema, model, Model, Types } from 'mongoose';
+import {
+    Schema,
+    model,
+    Model,
+    Types
+} from "mongoose";
 
 /* ---------------- GitHub cached data ---------------- */
 export interface IGitHubData {
@@ -47,7 +52,7 @@ export interface IProject {
     tags: Types.ObjectId[];          // ref → Tag
 
     /* ---------- متادیتا ---------- */
-    status: 'draft' | 'published' | 'archived';
+    status: "draft" | "published" | "archived";
     isPublic: boolean;
     views: number;
 
@@ -76,7 +81,7 @@ const githubDataSchema = new Schema<IGitHubData>(
         isFork: { type: Boolean, default: false },
         createdAtGh: { type: Date, default: null },
         updatedAtGh: { type: Date, default: null },
-        pushedAtGh: { type: Date, default: null },
+        pushedAtGh: { type: Date, default: null }
     },
     { _id: false }
 );
@@ -85,7 +90,7 @@ const projectSchema = new Schema<IProject, ProjectModel>(
     {
         owner: {
             type: Schema.Types.ObjectId,
-            ref: 'User',
+            ref: "User",
             required: true,
             index: true,
         },
@@ -120,16 +125,16 @@ const projectSchema = new Schema<IProject, ProjectModel>(
 
         /* ---------- تگ‌ها ---------- */
         tags: {
-            type: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
+            type: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
             default: [],
-            validate: [(v: unknown[]) => v.length <= 20, 'حداکثر ۲۰ تگ'],
+            validate: [(v: unknown[]) => v.length <= 20, "حداکثر ۲۰ تگ"],
         },
 
         /* ---------- متادیتا ---------- */
         status: {
             type: String,
-            enum: ['draft', 'published', 'archived'],
-            default: 'draft',
+            enum: ["draft", "published", "archived"],
+            default: "draft",
             index: true,
         },
         isPublic: { type: Boolean, default: true, index: true },
@@ -143,7 +148,7 @@ projectSchema.index({ owner: 1, status: 1, updatedAt: -1 });
 projectSchema.index({ tags: 1, status: 1 });
 projectSchema.index({ rating: -1, downloads: -1 }); // برای sort محبوبیت
 
-export const Project = model<IProject, ProjectModel>('Project', projectSchema);
+export const Project = model<IProject, ProjectModel>("Project", projectSchema);
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
