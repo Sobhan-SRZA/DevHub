@@ -1,4 +1,3 @@
-// src/middleware/pageAuth.ts
 import type {
     Response,
     NextFunction
