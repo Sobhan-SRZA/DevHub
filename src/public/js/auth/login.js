@@ -3,6 +3,41 @@
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+    /* fingerprint.js — یه fingerprint ساده و سبک (بدون کتابخانه) */
+    function getClientFingerprint() {
+        const parts = [
+            navigator.userAgent,
+            navigator.language,
+            navigator.languages?.join(',') || '',
+            screen.colorDepth,
+            screen.width + 'x' + screen.height,
+            new Date().getTimezoneOffset(),
+            navigator.hardwareConcurrency || '',
+            navigator.platform || '',
+        ];
+
+        // hash ساده (FNV-1a)
+        let hash = 0x811c9dc5;
+        const str = parts.join('|');
+        for (let i = 0; i < str.length; i++) {
+            hash ^= str.charCodeAt(i);
+            hash = (hash * 0x01000193) >>> 0;
+        }
+        return hash.toString(16);
+    }
+
+    // ذخیره در localStorage برای پایداری بین سشن‌ها
+    function getOrCreateDeviceId() {
+        let id = localStorage.getItem('deviceId');
+        if (!id) {
+            id = crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem('deviceId', id);
+        }
+        return id;
+    }
+    
     const form = document.getElementById("loginForm");
     if (!form) return;
 
@@ -36,7 +71,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return FormKit.postJSON("/api/auth/login", {
                 identifier: v.identifier,
                 password: v.password,
-                remember: !!v.remember
+                remember: !!v.remember,
+                fingerprint: getClientFingerprint(),
+                deviceId: getOrCreateDeviceId()
             });
         },
 
