@@ -127,7 +127,7 @@ export async function redirectProfile(req: any, res: Response, next: NextFunctio
         if (!user)
             return next();
 
-        return res.redirect("/profile");
+        return res.redirect("/dashboard/profile");
     }
 
     catch (err) {
