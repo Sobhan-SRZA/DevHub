@@ -2,8 +2,8 @@
    Login page
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('loginForm');
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("loginForm");
     if (!form) return;
 
     FormKit.attach(form, {
@@ -12,23 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const errors = {};
 
             if (!v.identifier) {
-                errors.identifier = 'ایمیل یا نام کاربری الزامی است';
-            } 
-            
+                errors.identifier = "ایمیل یا نام کاربری الزامی است";
+            }
             else if (v.identifier.length < 3) {
-                errors.identifier = 'حداقل ۳ کاراکتر وارد کنید';
-            } 
-            
+                errors.identifier = "حداقل ۳ کاراکتر وارد کنید";
+            }
             else if (v.identifier.length > 254) {
-                errors.identifier = 'مقدار وارد شده خیلی طولانی است';
+                errors.identifier = "مقدار وارد شده خیلی طولانی است";
             }
 
             if (!v.password) {
-                errors.password = 'رمز عبور الزامی است';
-            } 
-            
+                errors.password = "رمز عبور الزامی است";
+            }
             else if (v.password.length < 6) {
-                errors.password = 'رمز عبور باید حداقل ۶ کاراکتر باشد';
+                errors.password = "رمز عبور باید حداقل ۶ کاراکتر باشد";
             }
 
             return errors;
@@ -36,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* ---------------- ارسال ---------------- */
         submit(v) {
-            return FormKit.postJSON('/api/auth/login', {
+            return FormKit.postJSON("/api/auth/login", {
                 identifier: v.identifier,
                 password: v.password,
                 remember: !!v.remember
@@ -45,18 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* ---------------- success ---------------- */
         onSuccess() {
-            toast('خوش آمدید', 'success');
-            setTimeout(() => (location.href = '/'), 500);
+            toast("خوش آمدید", "success");
+            setTimeout(() => (location.href = "/"), 500);
         },
 
         onError(payload) {
-            if (location.hostname === 'localhost') {
-                console.debug('[login error]', payload);
+            if (location.hostname === "localhost") {
+                console.debug("[login error]", payload);
             }
 
             // اگه خطای invalid credentials بود → روی فیلد password تمرکز کن
             if (payload?.code === FormKit.ERROR_CODES.INVALID_CREDENTIALS) {
-                const pw = form.querySelector('[name="password"]');
+                const pw = form.querySelector(`[name="password"]`);
                 if (pw) pw.select?.();
             }
         }
