@@ -9,26 +9,29 @@ import { User } from "../models/User";
 export async function pageAuth(req: any, res: Response, next: NextFunction) {
     try {
         const token = req.cookies?.access_token;
-        if (!token)
-            return res.redirect("/login");
+        if (!token) {
+            return res.redirect("/auth/login");
+        }
 
         const payload = verifyToken(token);
-        const session = await Session.findOne({ sessionId: payload.sid, revoked: false });
-        if (!session || session.expiresAt < new Date())
-            return res.redirect("/login");
+        const session = await Session.findOne({ sessionId: payload.sid });
+        if (!session || session.expiresAt < new Date()) {
+            return res.redirect("/auth/login");
+        }
 
         const user = await User.findById(payload.sub).lean();
-        if (!user)
-            return res.redirect("/login");
+        if (!user) {
+            return res.redirect("/auth/login");
+        }
 
         req.user = user;
         req.session = session;
 
-        next();
+        return next();
     }
 
     catch {
-        return res.redirect("/login");
+        return res.redirect("/auth/login");
     }
 }
 
