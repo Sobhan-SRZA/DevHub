@@ -64,7 +64,26 @@ export const ErrorCodes = {
     GITHUB_REPO_NOT_FOUND: "GITHUB_REPO_NOT_FOUND",
     GITHUB_API_ERROR: "GITHUB_API_ERROR",
     GITHUB_RATE_LIMIT: "GITHUB_RATE_LIMIT",
-    GITHUB_ALREADY_LINKED: "GITHUB_ALREADY_LINKED"
+    GITHUB_ALREADY_LINKED: "GITHUB_ALREADY_LINKED",
+
+    // ---------- Review ----------
+    REVIEW_NOT_FOUND: "REVIEW_NOT_FOUND",
+    REVIEW_ALREADY_EXISTS: "REVIEW_ALREADY_EXISTS",
+    REVIEW_NOT_OWNED: "REVIEW_NOT_OWNED",
+    CANNOT_REVIEW_OWN: "CANNOT_REVIEW_OWN",
+
+    // ---------- Comment ----------
+    COMMENT_NOT_FOUND: "COMMENT_NOT_FOUND",
+    COMMENT_NOT_OWNED: "COMMENT_NOT_OWNED",
+    COMMENT_PARENT_INVALID: "COMMENT_PARENT_INVALID",
+    COMMENT_DEPTH_EXCEEDED: "COMMENT_DEPTH_EXCEEDED",
+
+    // ---------- Upload ----------
+    FILE_TOO_LARGE: "FILE_TOO_LARGE",
+    FILE_TYPE_INVALID: "FILE_TYPE_INVALID",
+    FILE_UPLOAD_FAILED: "FILE_UPLOAD_FAILED",
+    MEDIA_LIMIT_REACHED: "MEDIA_LIMIT_REACHED",
+    NO_FILE_PROVIDED: "NO_FILE_PROVIDED",
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
@@ -117,15 +136,33 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.TAG_TYPE_TAKEN]: "این نوع تگ قبلاً وجود دارد",
     [ErrorCodes.TAG_TYPE_HAS_TAGS]: "این نوع تگ دارای تگ است و قابل حذف نیست",
     [ErrorCodes.TAG_TYPE_IS_SYSTEM]: "تگ‌های سیستمی قابل حذف نیستند",
+
     [ErrorCodes.PROJECT_NOT_FOUND]: "پروژه یافت نشد",
     [ErrorCodes.PROJECT_SLUG_TAKEN]: "این slug قبلاً استفاده شده است",
     [ErrorCodes.PROJECT_NOT_OWNED]: "این پروژه متعلق به شما نیست",
     [ErrorCodes.PROJECT_LIMIT_REACHED]: "به حداکثر تعداد پروژه رسیده‌اید",
+
     [ErrorCodes.GITHUB_URL_INVALID]: "لینک GitHub نامعتبر است",
     [ErrorCodes.GITHUB_REPO_NOT_FOUND]: "مخزن GitHub یافت نشد",
     [ErrorCodes.GITHUB_API_ERROR]: "خطا در ارتباط با GitHub",
     [ErrorCodes.GITHUB_RATE_LIMIT]: "محدودیت درخواست GitHub، بعداً امتحان کنید",
     [ErrorCodes.GITHUB_ALREADY_LINKED]: "این مخزن قبلاً به پروژه دیگری لینک شده است",
+
+    [ErrorCodes.REVIEW_NOT_FOUND]: 'ریویو یافت نشد',
+    [ErrorCodes.REVIEW_ALREADY_EXISTS]: 'شما قبلاً برای این پروژه ریویو ثبت کرده‌اید',
+    [ErrorCodes.REVIEW_NOT_OWNED]: 'این ریویو متعلق به شما نیست',
+    [ErrorCodes.CANNOT_REVIEW_OWN]: 'نمی‌توانید به پروژه خودتان امتیاز دهید',
+    
+    [ErrorCodes.COMMENT_NOT_FOUND]: 'نظر یافت نشد',
+    [ErrorCodes.COMMENT_NOT_OWNED]: 'این نظر متعلق به شما نیست',
+    [ErrorCodes.COMMENT_PARENT_INVALID]: 'نظر والد نامعتبر است',
+    [ErrorCodes.COMMENT_DEPTH_EXCEEDED]: 'حداکثر عمق پاسخ‌ها رعایت نشده',
+
+    [ErrorCodes.FILE_TOO_LARGE]: 'حجم فایل بیش از حد مجاز است',
+    [ErrorCodes.FILE_TYPE_INVALID]: 'فرمت فایل مجاز نیست',
+    [ErrorCodes.FILE_UPLOAD_FAILED]: 'آپلود فایل ناموفق بود',
+    [ErrorCodes.MEDIA_LIMIT_REACHED]: 'به حداکثر تعداد رسیده‌اید',
+    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است',
 };
 
 /**
