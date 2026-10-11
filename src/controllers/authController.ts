@@ -1,3 +1,11 @@
+import type { Request, Response } from "express";
+import { User } from "../models/User";
+import { Session } from "../models/Session";
+import { AppError, Conflict, Unauthorized } from "../utils/AppError";
+import { ErrorCodes } from "../utils/errorCodes";
+import { asyncHandler } from "../utils/asyncHandler";
+import { validate } from "../utils/validate";
+import { registerSchema, loginSchema } from "../validators/authValidator";
 import {
     signAccessToken,
     signRefreshToken,
@@ -5,27 +13,10 @@ import {
     randomToken,
 } from "../utils/token";
 import {
-    AppError,
-    Conflict,
-    Unauthorized
-} from "../utils/AppError";
-import type {
-    Request,
-    Response
-} from "express";
-import {
-    ErrorCodes,
-    ErrorMessages
-} from "../utils/errorCodes";
-import {
-    registerSchema,
-    loginSchema
-} from "../validators/authValidator";
-import { createSession } from "../services/sessionService";
-import { asyncHandler } from "../utils/asyncHandler";
-import { validate } from "../utils/validate";
-import { Session } from "../models/Session";
-import { User } from "../models/User";
+    startSession,
+    endSession,
+    endAllSessions,
+} from "../services/sessionService";
 
 /* ==================================================================
    Helpers
@@ -59,6 +50,17 @@ function publicUser(u: any) {
     };
 }
 
+/**
+ * استخراج اطلاعات دستگاه از req.body (اختیاری — کلاینت می‌تونه بفرسته)
+ */
+function getDeviceHints(req: Request) {
+    const body = (req.body || {}) as Record<string, unknown>;
+    return {
+        fingerprint: typeof body.fingerprint === "string" ? body.fingerprint : undefined,
+        deviceId: typeof body.deviceId === "string" ? body.deviceId : undefined,
+    };
+}
+
 /* ==================================================================
    REGISTER
    ================================================================== */
@@ -68,26 +70,17 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     const usernameLower = data.username.toLowerCase();
     const emailLower = data.email.toLowerCase();
 
-    /* -------- چک تکراری بودن به صورت case-insensitive -------- */
+    /* -------- چک تکراری بودن -------- */
     const [existingUsername, existingEmail] = await Promise.all([
         User.findOne({ usernameLower }).lean(),
         User.findOne({ email: emailLower }).lean(),
     ]);
 
     if (existingUsername) {
-        throw Conflict(
-            ErrorCodes.USERNAME_TAKEN,
-            ErrorMessages[ErrorCodes.USERNAME_TAKEN],
-            { field: "username" }
-        );
+        throw Conflict(ErrorCodes.USERNAME_TAKEN, undefined, { field: "username" });
     }
-
     if (existingEmail) {
-        throw Conflict(
-            ErrorCodes.EMAIL_TAKEN,
-            ErrorMessages[ErrorCodes.EMAIL_TAKEN],
-            { field: "email" }
-        );
+        throw Conflict(ErrorCodes.EMAIL_TAKEN, undefined, { field: "email" });
     }
 
     /* -------- ساخت کاربر -------- */
@@ -100,10 +93,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
             email: emailLower,
             password: data.password,
         });
-    }
-
-    catch (err: any) {
-        // race condition: دو تا request همزمان
+    } catch (err: any) {
         if (err?.code === 11000) {
             const dupField = Object.keys(err.keyPattern || {})[0] || "";
             if (dupField === "usernameLower" || dupField === "username") {
@@ -116,29 +106,21 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         throw err;
     }
 
-    /* -------- توکن‌ها + سشن -------- */
-    const sessionId = randomToken(16);
-    const access = signAccessToken({ sub: user._id.toString(), sid: sessionId });
-    const refresh = signRefreshToken({ sub: user._id.toString(), sid: sessionId });
-
+    /* -------- ساخت/آپدیت سشن -------- */
+    const hints = getDeviceHints(req);
+    let sessionResult;
     try {
-        await createSession({
-            userId: user._id,
-            sessionId,
-            token: access,
-            refreshToken: refresh,
-            req,
+        sessionResult = await startSession(user._id, req, {
+            ...hints,
             ttlDays: 7,
         });
-    }
-
-    catch (err) {
-        // اگه سشن ساخته نشد، کاربر رو پاک کن که دیتابیس تمیز بمونه
+    } catch (err) {
+        // rollback — کاربر رو پاک کن که دیتابیس تمیز بمونه
         await User.deleteOne({ _id: user._id }).catch(() => { });
         throw err;
     }
 
-    setAuthCookies(res, access, refresh, true);
+    setAuthCookies(res, sessionResult.access, sessionResult.refresh, true);
 
     res.status(201).json({
         ok: true,
@@ -148,51 +130,34 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ==================================================================
-   LOGIN  (email OR username, case-insensitive)
+   LOGIN — email OR username, case-insensitive
    ================================================================== */
 export const login = asyncHandler(async (req: Request, res: Response) => {
     const data = validate(loginSchema, req.body);
 
     const raw = data.identifier.trim();
-    const emailLower = raw.toLowerCase();
-    const usernameLower = raw.toLowerCase();
+    const identifierLower = raw.toLowerCase();
 
     const user = await User.findOne({
         $or: [
-            { email: emailLower },
-            { usernameLower },
+            { email: identifierLower },
+            { usernameLower: identifierLower },
         ],
     }).select("+password");
 
-    /* -------- کاربر پیدا نشد -------- */
     if (!user) {
-        // پیام یکسان برای جلوگیری از user-enumeration
-        throw Unauthorized(
-            ErrorCodes.INVALID_CREDENTIALS,
-            ErrorMessages[ErrorCodes.INVALID_CREDENTIALS]
-        );
+        throw Unauthorized(ErrorCodes.INVALID_CREDENTIALS);
     }
 
-    /* -------- پسورد چک -------- */
     const ok = await user.comparePassword(data.password);
     if (!ok) {
-        throw Unauthorized(
-            ErrorCodes.INVALID_CREDENTIALS,
-            ErrorMessages[ErrorCodes.INVALID_CREDENTIALS]
-        );
+        throw Unauthorized(ErrorCodes.INVALID_CREDENTIALS);
     }
 
-    /* -------- توکن‌ها + سشن -------- */
-    const sessionId = randomToken(16);
-    const access = signAccessToken({ sub: user._id.toString(), sid: sessionId });
-    const refresh = signRefreshToken({ sub: user._id.toString(), sid: sessionId });
-
-    await createSession({
-        userId: user._id,
-        sessionId,
-        token: access,
-        refreshToken: refresh,
-        req,
+    /* -------- ساخت یا استفاده مجدد از سشن -------- */
+    const hints = getDeviceHints(req);
+    const { access, refresh, reused } = await startSession(user._id, req, {
+        ...hints,
         ttlDays: data.remember ? 30 : 7,
     });
 
@@ -200,13 +165,14 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
     res.json({
         ok: true,
-        message: "ورود موفق",
+        message: reused ? "ورود موفق (سشن قبلی تمدید شد)" : "ورود موفق",
         user: publicUser(user),
+        reused,
     });
 });
 
 /* ==================================================================
-   LOGOUT
+   LOGOUT — delete current session
    ================================================================== */
 export const logout = asyncHandler(async (req: Request, res: Response) => {
     const refresh = req.cookies?.refresh_token as string | undefined;
@@ -214,12 +180,10 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     if (refresh) {
         try {
             const payload = verifyToken(refresh);
-            await Session.findOneAndUpdate(
-                { sessionId: payload.sid, revoked: false },
-                { revoked: true, revokedAt: new Date(), revokedReason: "user_logout" }
-            );
+            // پاک کردن کامل — نه mark کردن
+            await endSession(payload.sid, payload.sub);
         } catch {
-            /* ignore */
+            /* ignore invalid/expired token */
         }
     }
 
@@ -228,18 +192,19 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ==================================================================
-   LOGOUT ALL
+   LOGOUT ALL — delete all sessions of the user
    ================================================================== */
 export const logoutAll = asyncHandler(async (req: any, res: Response) => {
     if (!req.user) throw Unauthorized(ErrorCodes.UNAUTHENTICATED);
 
-    await Session.updateMany(
-        { user: req.user._id, revoked: false },
-        { revoked: true, revokedAt: new Date(), revokedReason: "user_logout_all" }
-    );
+    const count = await endAllSessions(req.user._id);
 
     clearAuthCookies(res);
-    res.json({ ok: true, message: "از همه دستگاه‌ها خارج شدید" });
+    res.json({
+        ok: true,
+        message: `از ${count} دستگاه خارج شدید`,
+        count,
+    });
 });
 
 /* ==================================================================
@@ -281,13 +246,15 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
         throw Unauthorized(ErrorCodes.INVALID_REFRESH_TOKEN);
     }
 
-    if (payload.typ !== "refresh") throw Unauthorized(ErrorCodes.WRONG_TOKEN_TYPE);
+    if (payload.typ !== "refresh") {
+        throw Unauthorized(ErrorCodes.WRONG_TOKEN_TYPE);
+    }
 
     const session = await Session.findOne({
         sessionId: payload.sid,
         refreshToken,
-        revoked: false,
-    });
+        expiresAt: { $gt: new Date() },
+    }).select("+refreshToken");
 
     if (!session) throw Unauthorized(ErrorCodes.SESSION_NOT_FOUND);
     if (session.expiresAt < new Date()) throw Unauthorized(ErrorCodes.SESSION_EXPIRED);
@@ -309,7 +276,6 @@ export const listSessions = asyncHandler(async (req: any, res: Response) => {
 
     const sessions = await Session.find({
         user: req.user._id,
-        revoked: false,
         expiresAt: { $gt: new Date() },
     })
         .sort({ lastActiveAt: -1 })
@@ -335,7 +301,7 @@ export const listSessions = asyncHandler(async (req: any, res: Response) => {
 });
 
 /* ==================================================================
-   REVOKE SESSION
+   REVOKE SESSION — delete a specific session
    ================================================================== */
 export const revokeSession = asyncHandler(async (req: any, res: Response) => {
     if (!req.user) throw Unauthorized(ErrorCodes.UNAUTHENTICATED);
@@ -343,19 +309,19 @@ export const revokeSession = asyncHandler(async (req: any, res: Response) => {
     const session = await Session.findOne({
         _id: req.params.id,
         user: req.user._id,
-        revoked: false,
     });
 
     if (!session) {
         throw new AppError(404, ErrorCodes.SESSION_NOT_FOUND);
     }
 
-    session.revoked = true;
-    session.revokedAt = new Date();
-    session.revokedReason = "user_revoked";
-    await session.save();
+    const isCurrent =
+        req.session && String(req.session._id) === String(session._id);
 
-    if (req.session && String(req.session._id) === String(session._id)) {
+    // پاک کردن کامل
+    await Session.deleteOne({ _id: session._id });
+
+    if (isCurrent) {
         clearAuthCookies(res);
     }
 
