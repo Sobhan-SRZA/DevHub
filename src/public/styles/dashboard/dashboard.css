@@ -1032,6 +1032,46 @@
     }
 }
 
+/* ---------- Project Card — Cover ---------- */
+.p-card {
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+}
+
+.p-card__cover {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background-size: cover;
+    background-position: center;
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #1f1f1f;
+}
+
+.p-card__head,
+.p-card__desc,
+.p-card__tags,
+.p-card__stats,
+.p-card__actions {
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.p-card__head {
+    padding-top: 16px;
+}
+
+.p-card__actions {
+    padding-bottom: 16px;
+}
+
+/* ---------- Card Modal on mobile ---------- */
+@media (max-width: 640px) {
+    .modal--lg .modal__body {
+        padding: 16px;
+    }
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
