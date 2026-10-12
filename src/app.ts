@@ -10,9 +10,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));           // برای JSON
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
 
 
 // Set EJS as the view engine
@@ -25,6 +25,21 @@ app.use(
     express.static(
         path.join(__dirname, "../src/public")
     )
+);
+
+/* ==================================================================
+   Static — uploads
+   ================================================================== */
+const UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
+app.use(
+    "/uploads",
+    express.static(UPLOAD_DIR, {
+        maxAge: "7d",
+        index: false,
+        setHeaders: (res) => {
+            res.setHeader("X-Content-Type-Options", "nosniff");
+        }
+    })
 );
 
 // --- Routes ---
@@ -54,7 +69,7 @@ setTimeout(() => {
     app.use((req, res) => {
         res.redirect("/api/404");
     });
-    
+
     // error handler — MUST be last
     app.use(errorHandler);
 }, 1000);
