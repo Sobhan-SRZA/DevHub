@@ -10,7 +10,7 @@ export const createReviewSchema = z.object({
         .min(0)
         .max(100),
     title: z.string().trim().max(100).optional(),
-    body: z.string().trim().max(3000).optional(),
+    body: z.string().trim().max(3000).optional()
 });
 
 export const updateReviewSchema = createReviewSchema.partial();
@@ -18,7 +18,7 @@ export const updateReviewSchema = createReviewSchema.partial();
 export const reviewListQuerySchema = z.object({
     sort: z.enum(["recent", "oldest", "highest", "lowest", "helpful"]).optional().default("recent"),
     page: z.coerce.number().int().min(1).optional().default(1),
-    limit: z.coerce.number().int().min(1).max(50).optional().default(10),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(10)
 });
 
 /**
