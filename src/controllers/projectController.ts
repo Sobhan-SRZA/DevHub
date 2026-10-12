@@ -392,20 +392,20 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
 /* ==================================================================
    DELETE — req.project از middleware
    ================================================================== */
-export const deleteProject = asyncHandler(async (req: any, res: Response) => {
-    const project = req.project;
+// export const deleteProject = asyncHandler(async (req: any, res: Response) => {
+//     const project = req.project;
 
-    // کاهش usageCount تگ‌ها
-    if (project.tags?.length) {
-        await Tag.updateMany(
-            { _id: { $in: project.tags } },
-            { $inc: { usageCount: -1 } }
-        );
-    }
+//     // کاهش usageCount تگ‌ها
+//     if (project.tags?.length) {
+//         await Tag.updateMany(
+//             { _id: { $in: project.tags } },
+//             { $inc: { usageCount: -1 } }
+//         );
+//     }
 
-    await project.deleteOne();
-    res.json({ ok: true, message: "پروژه حذف شد" });
-});
+//     await project.deleteOne();
+//     res.json({ ok: true, message: "پروژه حذف شد" });
+// });
 
 /* ==================================================================
    SYNC GITHUB — آپدیت دستی
@@ -447,6 +447,223 @@ export const toggleStatus = asyncHandler(async (req: any, res: Response) => {
     await project.save();
 
     res.json({ ok: true, status: project.status });
+});
+
+import {
+    toPublicUrl,
+    deleteFile,
+    deleteProjectFiles,
+} from '../services/fileService';
+import { Review } from "../models/Review";
+import { Comment } from "../models/Comment";
+
+/* ==================================================================
+   UPLOAD IMAGES — چند تا با هم
+   ================================================================== */
+export const uploadProjectImages = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    const files = (req.files as Express.Multer.File[]) || [];
+
+    if (!files.length) {
+        throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+    }
+
+    const currentCount = project.images?.length || 0;
+    if (currentCount + files.length > 10) {
+        // پاک کردن فایل‌های آپلود شده
+        await Promise.all(files.map((f) => deleteFile(toPublicUrl(f.path))));
+        throw new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED, 'حداکثر ۱۰ تصویر');
+    }
+
+    const newImages = files.map((f, i) => ({
+        url: toPublicUrl(f.path),
+        filename: f.originalname,
+        mimeType: f.mimetype,
+        size: f.size,
+        order: currentCount + i,
+        uploadedAt: new Date(),
+    }));
+
+    project.images.push(...newImages);
+    await project.save();
+
+    res.json({ ok: true, images: project.images });
+});
+
+/* ==================================================================
+   DELETE IMAGE
+   ================================================================== */
+export const deleteProjectImage = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    const { imageId } = req.params;
+
+    const img = project.images.id(imageId);
+    if (!img) throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'تصویر یافت نشد');
+
+    await deleteFile(img.url);
+    img.deleteOne();
+    await project.save();
+
+    res.json({ ok: true, message: 'تصویر حذف شد' });
+});
+
+/* ==================================================================
+   REORDER IMAGES
+   ================================================================== */
+export const reorderImages = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    const { order } = req.body as { order?: string[] };
+
+    if (!Array.isArray(order)) {
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, 'order باید آرایه باشد');
+    }
+
+    order.forEach((id, idx) => {
+        const img = project.images.id(id);
+        if (img) img.order = idx;
+    });
+
+    await project.save();
+    res.json({ ok: true, images: project.images });
+});
+
+/* ==================================================================
+   UPLOAD VIDEO
+   ================================================================== */
+export const uploadProjectVideo = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    const file = req.file as Express.Multer.File | undefined;
+
+    if (!file) throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+
+    // پاک کردن ویدیوی قبلی
+    if (project.demoVideo?.url) {
+        await deleteFile(project.demoVideo.url);
+    }
+
+    project.demoVideo = {
+        url: toPublicUrl(file.path),
+        filename: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date(),
+    };
+
+    await project.save();
+    res.json({ ok: true, video: project.demoVideo });
+});
+
+/* ==================================================================
+   DELETE VIDEO
+   ================================================================== */
+export const deleteProjectVideo = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    if (!project.demoVideo) {
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'ویدیویی وجود ندارد');
+    }
+
+    await deleteFile(project.demoVideo.url);
+    project.demoVideo = null;
+    await project.save();
+
+    res.json({ ok: true, message: 'ویدیو حذف شد' });
+});
+
+/* ==================================================================
+   UPLOAD ZIP
+   ================================================================== */
+export const uploadProjectZip = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    const file = req.file as Express.Multer.File | undefined;
+    const version = (req.body?.version as string) || undefined;
+
+    if (!file) throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+
+    // پاک کردن فایل قبلی
+    if (project.downloadFile?.url) {
+        await deleteFile(project.downloadFile.url);
+    }
+
+    project.downloadFile = {
+        url: toPublicUrl(file.path),
+        filename: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        version,
+        downloads: 0,
+        uploadedAt: new Date(),
+    };
+
+    await project.save();
+    res.json({ ok: true, file: project.downloadFile });
+});
+
+/* ==================================================================
+   DELETE ZIP
+   ================================================================== */
+export const deleteProjectZip = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+    if (!project.downloadFile) {
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'فایلی وجود ندارد');
+    }
+
+    await deleteFile(project.downloadFile.url);
+    project.downloadFile = null;
+    await project.save();
+
+    res.json({ ok: true, message: 'فایل حذف شد' });
+});
+
+/* ==================================================================
+   DOWNLOAD — شمارش + ریدایرکت به فایل
+   ================================================================== */
+export const downloadProject = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+
+    if (!project.downloadFile?.url) {
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'فایلی برای دانلود موجود نیست');
+    }
+
+    // افزایش شمارنده‌ها
+    project.downloads = (project.downloads || 0) + 1;
+    if (project.downloadFile) {
+        project.downloadFile.downloads = (project.downloadFile.downloads || 0) + 1;
+    }
+    await project.save();
+
+    // هدر دانلود با نام اصلی
+    const safeName = encodeURIComponent(project.downloadFile.filename);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeName}`);
+
+    // ریدایرکت به فایل استاتیک
+    return res.redirect(project.downloadFile.url);
+});
+
+/* ==================================================================
+   DELETE PROJECT (آپدیت قبلی — پاک کردن فایل‌ها هم)
+   ================================================================== */
+export const deleteProject = asyncHandler(async (req: any, res: Response) => {
+    const project = req.project;
+
+    // کاهش usageCount تگ‌ها
+    if (project.tags?.length) {
+        await Tag.updateMany(
+            { _id: { $in: project.tags } },
+            { $inc: { usageCount: -1 } }
+        );
+    }
+
+    // پاک کردن همه فایل‌ها از دیسک
+    await deleteProjectFiles(String(project._id));
+
+    // پاک کردن reviewها و کامنت‌ها
+    await Promise.all([
+        Review.deleteMany({ project: project._id }),
+        Comment.deleteMany({ project: project._id }),
+    ]);
+
+    await project.deleteOne();
+    res.json({ ok: true, message: 'پروژه حذف شد' });
 });
 
 /**
