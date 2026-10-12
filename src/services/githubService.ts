@@ -179,7 +179,6 @@ export function shouldResync(lastSyncedAt: Date | null | undefined, maxAgeHours 
     return ageMs > maxAgeHours * 60 * 60 * 1000;
 }
 
-
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
