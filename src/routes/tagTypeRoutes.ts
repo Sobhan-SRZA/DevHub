@@ -1,15 +1,20 @@
-import { requireAuth } from "../middleware/auth";
+import {
+    requireAuth,
+    optionalAuth
+} from "../middleware/auth";
 import { Router } from "express";
-import * as ctrl from "../controllers/tagTypeController";
+import * as ctrl from "../controllers/tagController";
 
 const router = Router();
 
-router.get("/", ctrl.listTagTypes);
+router.get("/", optionalAuth, ctrl.listTagTypes);
 router.get("/:id", ctrl.getTagType);
 
 router.post("/", requireAuth, ctrl.createTagType);
 router.put("/:id", requireAuth, ctrl.updateTagType);
 router.delete("/:id", requireAuth, ctrl.deleteTagType);
+
+router.post("/:id/approve", requireAuth, ctrl.approveTagType);
 
 export default router;
 
