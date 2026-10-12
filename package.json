@@ -30,6 +30,7 @@
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.1",
+    "multer": "^2.4.0",
     "ua-parser-js": "^2.0.10",
     "zod": "^4.6.5"
   },
@@ -38,6 +39,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.3.0",
     "@types/node": "^26.6.4",
     "@types/ua-parser-js": "^0.7.39",
     "dotenv": "^18.0.6",
