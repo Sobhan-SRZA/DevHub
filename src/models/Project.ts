@@ -5,7 +5,41 @@ import {
     Types
 } from "mongoose";
 
-/* ---------------- GitHub cached data ---------------- */
+/* ---------------- media ---------------- */
+export interface IProjectImage {
+    _id?: Types.ObjectId;
+    url: string;              // "/uploads/projects/images/{projectId}/xxx.jpg"
+    filename: string;         // نام اصلی هنگام آپلود
+    mimeType: string;
+    size: number;             // bytes
+    width?: number;
+    height?: number;
+    alt?: string;
+    order: number;
+    uploadedAt: Date;
+}
+
+export interface IProjectVideo {
+    url: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    duration?: number;        // seconds (از metadata)
+    thumbnail?: string;       // اختیاری
+    uploadedAt: Date;
+}
+
+export interface IProjectFile {
+    url: string;
+    filename: string;         // اسم فایل اصلی
+    mimeType: string;
+    size: number;
+    version?: string;         // "1.2.0"
+    downloads: number;        // تعداد دانلود از این سایت
+    uploadedAt: Date;
+}
+
+/* ---------------- GitHub ---------------- */
 export interface IGitHubData {
     fullName?: string;
     description?: string | null;
@@ -27,34 +61,41 @@ export interface IGitHubData {
     pushedAtGh?: Date | null;
 }
 
+/* ---------------- main ---------------- */
 export interface IProject {
-    owner: Types.ObjectId;           // ref → User
+    owner: Types.ObjectId;
     title: string;
-    slug: string;                    // یکتا در کل
+    slug: string;
 
     /* ---------- GitHub ---------- */
-    githubUrl?: string | null;       // لینک کامل
-    githubRepo?: string | null;      // "owner/repo"
-    githubData?: IGitHubData;        // کش داده‌های GitHub
+    githubUrl?: string | null;
+    githubRepo?: string | null;
+    githubData?: IGitHubData;
     githubSyncedAt?: Date | null;
-    autoSync: boolean;               // خودکار آپدیت کنه؟
+    autoSync: boolean;
 
     /* ---------- محتوا ---------- */
     shortDescription: string;
     fullDescription: string;
 
-    /* ---------- اعداد ---------- */
-    rating: number;                  // 0..5
-    satisfaction: number;            // 0..100
-    downloads: number;               // 0..∞ (شمارش خودمون)
+    /* ---------- Media ---------- */
+    images: IProjectImage[];
+    demoVideo?: IProjectVideo | null;
+    downloadFile?: IProjectFile | null;
+
+    /* ---------- آمار (auto-computed از Review) ---------- */
+    rating: number;              // میانگین امتیاز (0..5)
+    satisfaction: number;        // میانگین رضایت (0..100)
+    reviewCount: number;         // تعداد ریویو
+    downloads: number;           // تعداد کل دانلودها
+    views: number;
 
     /* ---------- تگ‌ها ---------- */
-    tags: Types.ObjectId[];          // ref → Tag
+    tags: Types.ObjectId[];
 
-    /* ---------- متادیتا ---------- */
+    /* ---------- وضعیت ---------- */
     status: "draft" | "published" | "archived";
     isPublic: boolean;
-    views: number;
 
     createdAt: Date;
     updatedAt: Date;
@@ -62,6 +103,7 @@ export interface IProject {
 
 type ProjectModel = Model<IProject>;
 
+/* ---------------- sub-schemas ---------------- */
 const githubDataSchema = new Schema<IGitHubData>(
     {
         fullName: String,
@@ -81,56 +123,98 @@ const githubDataSchema = new Schema<IGitHubData>(
         isFork: { type: Boolean, default: false },
         createdAtGh: { type: Date, default: null },
         updatedAtGh: { type: Date, default: null },
-        pushedAtGh: { type: Date, default: null }
+        pushedAtGh: { type: Date, default: null },
     },
     { _id: false }
 );
 
+const imageSchema = new Schema<IProjectImage>(
+    {
+        url: { type: String, required: true },
+        filename: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        size: { type: Number, required: true },
+        width: Number,
+        height: Number,
+        alt: String,
+        order: { type: Number, default: 0 },
+        uploadedAt: { type: Date, default: () => new Date() },
+    },
+    { _id: true }
+);
+
+const videoSchema = new Schema<IProjectVideo>(
+    {
+        url: { type: String, required: true },
+        filename: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        size: { type: Number, required: true },
+        duration: Number,
+        thumbnail: String,
+        uploadedAt: { type: Date, default: () => new Date() },
+    },
+    { _id: false }
+);
+
+const fileSchema = new Schema<IProjectFile>(
+    {
+        url: { type: String, required: true },
+        filename: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        size: { type: Number, required: true },
+        version: String,
+        downloads: { type: Number, default: 0, min: 0 },
+        uploadedAt: { type: Date, default: () => new Date() },
+    },
+    { _id: false }
+);
+
+/* ---------------- main schema ---------------- */
 const projectSchema = new Schema<IProject, ProjectModel>(
     {
-        owner: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: true,
-            index: true,
-        },
+        owner: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
 
         title: { type: String, required: true, trim: true, maxlength: 120 },
-
         slug: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true,
-            lowercase: true,
-            trim: true,
-            match: /^[a-z0-9-]+$/,
+            type: String, required: true, unique: true, index: true,
+            lowercase: true, trim: true, match: /^[a-z0-9-]+$/,
         },
 
-        /* ---------- GitHub ---------- */
+        /* GitHub */
         githubUrl: { type: String, default: null },
         githubRepo: { type: String, default: null, index: true },
         githubData: { type: githubDataSchema, default: () => ({}) },
         githubSyncedAt: { type: Date, default: null },
         autoSync: { type: Boolean, default: true },
 
-        /* ---------- محتوا ---------- */
+        /* محتوا */
         shortDescription: { type: String, required: true, trim: true, maxlength: 300 },
         fullDescription: { type: String, required: true, trim: true, maxlength: 20000 },
 
-        /* ---------- اعداد ---------- */
-        rating: { type: Number, default: 0, min: 0, max: 5 },
-        satisfaction: { type: Number, default: 0, min: 0, max: 100 },
-        downloads: { type: Number, default: 0, min: 0 },
+        /* media */
+        images: {
+            type: [imageSchema],
+            default: [],
+            validate: [(v: unknown[]) => v.length <= 10, "حداکثر ۱۰ تصویر"],
+        },
+        demoVideo: { type: videoSchema, default: null },
+        downloadFile: { type: fileSchema, default: null },
 
-        /* ---------- تگ‌ها ---------- */
+        /* stats — این‌ها با reviewController آپدیت می‌شن */
+        rating: { type: Number, default: 0, min: 0, max: 5, index: true },
+        satisfaction: { type: Number, default: 0, min: 0, max: 100 },
+        reviewCount: { type: Number, default: 0, min: 0 },
+        downloads: { type: Number, default: 0, min: 0, index: true },
+        views: { type: Number, default: 0, min: 0 },
+
+        /* tags */
         tags: {
             type: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
             default: [],
             validate: [(v: unknown[]) => v.length <= 20, "حداکثر ۲۰ تگ"],
         },
 
-        /* ---------- متادیتا ---------- */
+        /* status */
         status: {
             type: String,
             enum: ["draft", "published", "archived"],
@@ -138,7 +222,6 @@ const projectSchema = new Schema<IProject, ProjectModel>(
             index: true,
         },
         isPublic: { type: Boolean, default: true, index: true },
-        views: { type: Number, default: 0, min: 0 },
     },
     { timestamps: true }
 );
@@ -146,7 +229,8 @@ const projectSchema = new Schema<IProject, ProjectModel>(
 /* ---------------- indexes ---------------- */
 projectSchema.index({ owner: 1, status: 1, updatedAt: -1 });
 projectSchema.index({ tags: 1, status: 1 });
-projectSchema.index({ rating: -1, downloads: -1 }); // برای sort محبوبیت
+projectSchema.index({ rating: -1, reviewCount: -1 });
+projectSchema.index({ downloads: -1, rating: -1 });
 
 export const Project = model<IProject, ProjectModel>("Project", projectSchema);
 
