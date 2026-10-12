@@ -6,14 +6,19 @@ import {
 } from "mongoose";
 
 export interface ITagType {
-    name: string;          // مثلاً "سئو", "زبان برنامه‌نویسی"
-    slug: string;          // "seo", "programming-language"
+    name: string;
+    slug: string;
     description?: string;
-    color?: string;        // hex for UI
-    icon?: string;         // emoji or icon name
-    isSystem: boolean;     // تگ‌های سیستمی (کسی نمی‌تونه حذف کنه)
-    order: number;         // برای مرتب‌سازی در UI
-    createdBy?: Types.ObjectId | null;   // admin
+    color: string;
+    icon?: string;
+
+    isSystem: boolean;          // پیش‌فرض‌های سیستم
+    isApproved: boolean;         // اگه کاربر ساخته، admin تایید کنه
+    allowUserTags: boolean;      // کاربر می‌تونه تگ جدید زیر این کتگوری بسازه؟
+    maxTags?: number;            // حداکثر تگ زیر این کتگوری (null = نامحدود)
+
+    order: number;
+    createdBy: Types.ObjectId | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -30,17 +35,24 @@ const tagTypeSchema = new Schema<ITagType, TagTypeModel>(
             index: true,
             lowercase: true,
             trim: true,
-            match: /^[a-z0-9-]+$/
+            match: /^[a-z0-9-]+$/,
         },
         description: { type: String, maxlength: 300 },
         color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
         icon: { type: String, maxlength: 8 },
-        isSystem: { type: Boolean, default: false },
+
+        isSystem: { type: Boolean, default: false, index: true },
+        isApproved: { type: Boolean, default: true },
+        allowUserTags: { type: Boolean, default: true },
+        maxTags: { type: Number, default: null, min: 1 },
+
         order: { type: Number, default: 0, index: true },
-        createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null }
+        createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     },
     { timestamps: true }
 );
+
+tagTypeSchema.index({ isApproved: 1, isSystem: -1, order: 1 });
 
 export const TagType = model<ITagType, TagTypeModel>("TagType", tagTypeSchema);
 
