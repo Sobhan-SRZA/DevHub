@@ -6,13 +6,17 @@ import {
 } from "mongoose";
 
 export interface ITag {
-    name: string;                    // "React", "Node.js", "SEO"
-    slug: string;                    // "react", "nodejs", "seo"
-    type: Types.ObjectId;            // ref → TagType
-    color?: string;
+    name: string;
+    slug: string;
+    type: Types.ObjectId;            // کتگوری
+    color: string;
     description?: string;
-    createdBy?: Types.ObjectId | null;
-    usageCount: number;              // تعداد پروژه‌هایی که از این تگ استفاده می‌کنن
+
+    isSystem: boolean;                // تگ‌های پیش‌فرض
+    isApproved: boolean;
+    createdBy: Types.ObjectId | null; // null برای system tags
+
+    usageCount: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -37,16 +41,20 @@ const tagSchema = new Schema<ITag, TagModel>(
         },
         color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
         description: { type: String, maxlength: 200 },
+
+        isSystem: { type: Boolean, default: false, index: true },
+        isApproved: { type: Boolean, default: true },
         createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+
         usageCount: { type: Number, default: 0, min: 0 },
     },
     { timestamps: true }
 );
 
-// هر تگ داخل هر نوع باید یکتا باشه
+// یکتایی slug در هر کتگوری
 tagSchema.index({ slug: 1, type: 1 }, { unique: true });
-// برای فیلتر سریع
-tagSchema.index({ type: 1, usageCount: -1 });
+tagSchema.index({ type: 1, isApproved: 1, usageCount: -1 });
+tagSchema.index({ isApproved: 1, createdAt: -1 });
 
 export const Tag = model<ITag, TagModel>("Tag", tagSchema);
 
