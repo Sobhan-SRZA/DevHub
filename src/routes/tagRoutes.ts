@@ -1,17 +1,28 @@
+import {
+    requireAuth,
+    optionalAuth
+} from "../middleware/auth";
 import { requireTagOwnership } from "../middleware/ownership";
-import { requireAuth } from "../middleware/auth";
 import { Router } from "express";
 import * as ctrl from "../controllers/tagController";
 
 const router = Router();
 
-router.get("/", ctrl.listTags);
-router.get("/:id", ctrl.getTag);
+/* ---------- عمومی ---------- */
+router.get("/", optionalAuth, ctrl.listTags);
+router.get("/suggest", optionalAuth, ctrl.suggestTags);
 
+/* ---------- کاربر لاگین‌شده ---------- */
+router.post("/find-or-create", requireAuth, ctrl.findOrCreateTag);
 router.post("/", requireAuth, ctrl.createTag);
 router.put("/:id", requireAuth, requireTagOwnership, ctrl.updateTag);
 router.delete("/:id", requireAuth, requireTagOwnership, ctrl.deleteTag);
-router.post("/merge", requireAuth, ctrl.mergeTags);
+
+/* ---------- admin ---------- */
+router.get("/pending", requireAuth, ctrl.listPending);
+router.post("/:id/approve", requireAuth, ctrl.approveTag);
+
+router.get("/:id", ctrl.getTag);
 
 export default router;
 
