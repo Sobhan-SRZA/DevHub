@@ -167,10 +167,10 @@
 .st-form input[type="email"],
 .st-form input[type="password"] {
     width: 100%;
+    padding: 12px 14px;
     background: #161616;
     border: 1px solid #262626;
     border-radius: 9px;
-    padding: 11px 14px;
     color: #fff;
     font-size: 0.92rem;
     font-family: inherit;
@@ -429,6 +429,157 @@
 .pw-rules li.ok::before {
     content: '✓';
     color: #4ade80;
+}
+
+/* ============================================================
+   PASSWORD WRAPPER WITH TOGGLE BUTTON
+   ============================================================ */
+.password-wrap {
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+.password-wrap input {
+    /* فاصله از سمت چپ برای دکمه (10px left + 34px width + 6px فاصله) = 50px */
+    padding-left: 50px !important;
+    padding-right: 14px !important;
+    direction: ltr;
+    text-align: left;
+    width: 100%;
+}
+
+/* اگه می‌خوای input‌های password داخل password-wrap، پدینگ ۱۲px بالا/پایین داشته باشن */
+.password-wrap input[type="password"] {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+/* ============================================================
+   PASSWORD TOGGLE
+   ============================================================ */
+
+.toggle-pass {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #777;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    overflow: hidden;
+    transition:
+        color 0.25s ease,
+        background-color 0.25s ease,
+        transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* hover */
+.toggle-pass:hover {
+    color: #6ebbff;
+    background-color: rgba(110, 187, 255, 0.08);
+}
+
+/* active (کلیک) */
+.toggle-pass:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+/* وقتی پسورد نمایش داده می‌شه */
+.toggle-pass.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* focus برای دسترس‌پذیری */
+.toggle-pass:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* ---------- آیکون‌ها ---------- */
+.toggle-pass .icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+        filter 0.3s ease;
+    will-change: transform, opacity;
+}
+
+/* پیش‌فرض: چشم باز دیده می‌شه، چشم خط‌خورده پنهان */
+.toggle-pass .icon-eye {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+}
+
+.toggle-pass .icon-eye-off {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-90deg) scale(0.5);
+}
+
+/* وقتی active: چشم باز می‌ره، چشم خط‌خورده میاد */
+.toggle-pass.active .icon-eye {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+}
+
+.toggle-pass.active .icon-eye-off {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+}
+
+/* ---------- انیمیشن pop کوچیک هنگام کلیک ---------- */
+@keyframes toggle-pop {
+    0% {
+        transform: translateY(-50%) scale(1);
+    }
+
+    40% {
+        transform: translateY(-50%) scale(0.85);
+    }
+
+    100% {
+        transform: translateY(-50%) scale(1);
+    }
+}
+
+.toggle-pass.pop {
+    animation: toggle-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* ---------- پشتیبانی از prefers-reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+    .toggle-pass,
+    .toggle-pass .icon {
+        transition: opacity 0.15s ease;
+    }
+
+    .toggle-pass .icon-eye,
+    .toggle-pass .icon-eye-off {
+        transform: translate(-50%, -50%);
+    }
+
+    .toggle-pass.pop {
+        animation: none;
+    }
 }
 
 /* ============================================================
