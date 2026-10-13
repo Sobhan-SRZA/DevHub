@@ -134,6 +134,9 @@
     justify-content: center;
     font-size: 0.9rem;
     flex-shrink: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
 }
 
 .profile-name {
