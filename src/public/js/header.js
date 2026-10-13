@@ -34,13 +34,26 @@ nav_list.forEach(list => {
         if (currentUser) {
             authGuests.style.display = 'none';
             authProfile.style.display = 'flex';
+
             const displayName = currentUser.name || currentUser.username || 'کاربر';
             profileName.textContent = displayName;
-            profileAvatar.textContent = displayName.trim().charAt(0).toUpperCase();
-        } else {
-            authGuests.style.display = 'flex';
-            authProfile.style.display = 'none';
-            profileMenu?.classList.remove('open');
+
+            const avatarEl = document.getElementById('profileAvatar');
+            const initialEl = document.getElementById('profileInitial');
+
+            if (currentUser.avatar?.url) {
+                // ✅ آواتار داره
+                avatarEl.style.backgroundImage = `url('${currentUser.avatar.url}')`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+                initialEl.style.display = 'none';
+            } else {
+                // حرف اول
+                avatarEl.style.backgroundImage = '';
+                avatarEl.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
+                initialEl.style.display = '';
+                initialEl.textContent = displayName.trim().charAt(0).toUpperCase();
+            }
         }
     }
 
