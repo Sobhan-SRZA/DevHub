@@ -1,0 +1,486 @@
+/* ============================================================
+   SETTINGS PAGE
+   ============================================================ */
+
+.settings-main {
+    max-width: 900px;
+}
+
+/* ---------- Tabs ---------- */
+.settings-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    width: fit-content;
+    margin-bottom: 4px;
+}
+
+.st-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: #888;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.st-tab:hover {
+    background: #171717;
+    color: #ccc;
+}
+
+.st-tab.active {
+    background: #1e1e1e;
+    color: #fff;
+}
+
+.st-tab.active svg {
+    color: #6ebbff;
+}
+
+/* ---------- Panels ---------- */
+.st-panel {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.st-panel.active {
+    display: flex;
+}
+
+/* ---------- Card ---------- */
+.st-card {
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    padding: 22px;
+}
+
+.st-card--danger {
+    border-color: rgba(255, 77, 77, 0.25);
+    background: rgba(255, 77, 77, 0.02);
+}
+
+.st-card__head {
+    margin-bottom: 18px;
+    text-align: right;
+}
+
+.st-card__title {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+    text-align: right;
+}
+
+.st-card__sub {
+    color: #777;
+    font-size: 0.85rem;
+    margin: 0;
+    text-align: right;
+    line-height: 1.6;
+}
+
+/* ============================================================
+   AVATAR EDITOR
+   ============================================================ */
+.avatar-editor {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.avatar-editor__preview {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    color: #fff;
+    font-size: 2.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(0, 123, 255, 0.3);
+    border: 3px solid #1a1a1a;
+}
+
+.avatar-editor__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.avatar-editor__upload {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+.st-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.st-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: right;
+}
+
+.st-form label {
+    color: #bbb;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.st-form label .req {
+    color: #ff6b6b;
+}
+
+.st-form input[type="text"],
+.st-form input[type="email"],
+.st-form input[type="password"] {
+    width: 100%;
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 9px;
+    padding: 11px 14px;
+    color: #fff;
+    font-size: 0.92rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.st-form input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.st-form input::placeholder {
+    color: #555;
+}
+
+.st-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* ---------- Username with prefix ---------- */
+.st-username {
+    display: flex;
+    align-items: stretch;
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 9px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.st-username:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.st-username__prefix {
+    padding: 11px 8px 11px 12px;
+    color: #666;
+    font-weight: 700;
+    background: #131313;
+    border-left: 1px solid #262626;
+    display: flex;
+    align-items: center;
+}
+
+.st-username input {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 11px 12px !important;
+}
+
+/* ============================================================
+   EMAIL
+   ============================================================ */
+.email-current {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: #141414;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    text-align: right;
+}
+
+.email-current__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(110, 187, 255, 0.1);
+    color: #6ebbff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.email-current__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.email-current__info strong {
+    color: #fff;
+    font-size: 0.95rem;
+    direction: ltr;
+    text-align: right;
+    word-break: break-all;
+}
+
+.email-current__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    padding: 2px 8px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.email-current__badge--unverified {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+
+/* ---------- Pending email ---------- */
+.email-pending {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    background: #141414;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.email-pending__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.88rem;
+}
+
+.email-pending__label {
+    color: #888;
+}
+
+.email-pending__value {
+    color: #fbbf24;
+    font-weight: 600;
+    direction: ltr;
+}
+
+/* ---------- OTP input ---------- */
+.otp-input {
+    text-align: center !important;
+    letter-spacing: 14px;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    font-family: ui-monospace, monospace !important;
+    padding: 14px !important;
+    direction: ltr !important;
+}
+
+/* ============================================================
+   PASSWORD STRENGTH
+   ============================================================ */
+.pw-strength {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.pw-strength__bars {
+    display: flex;
+    gap: 3px;
+    flex: 1;
+}
+
+.pw-strength__bars span {
+    flex: 1;
+    height: 5px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    transition: background-color 0.25s ease;
+}
+
+.pw-strength.weak .pw-strength__bars span:nth-child(1) {
+    background: #ff4d4d;
+}
+
+.pw-strength.fair .pw-strength__bars span:nth-child(-n+2) {
+    background: #fbbf24;
+}
+
+.pw-strength.good .pw-strength__bars span:nth-child(-n+3) {
+    background: #22c55e;
+}
+
+.pw-strength.strong .pw-strength__bars span {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.pw-strength__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 50px;
+    text-align: left;
+}
+
+.pw-strength.weak .pw-strength__label {
+    color: #ff6b6b;
+}
+
+.pw-strength.fair .pw-strength__label {
+    color: #fbbf24;
+}
+
+.pw-strength.good .pw-strength__label {
+    color: #4ade80;
+}
+
+.pw-strength.strong .pw-strength__label {
+    color: #4ade80;
+}
+
+/* ---------- Password rules ---------- */
+.pw-rules {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+}
+
+.pw-rules li {
+    font-size: 0.78rem;
+    color: #777;
+    padding-right: 22px;
+    position: relative;
+    transition: color 0.2s ease;
+    direction: rtl;
+    text-align: right;
+}
+
+.pw-rules li::before {
+    content: '○';
+    position: absolute;
+    right: 0;
+    top: 0;
+    color: #444;
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.pw-rules li.ok {
+    color: #4ade80;
+}
+
+.pw-rules li.ok::before {
+    content: '✓';
+    color: #4ade80;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .settings-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .st-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .st-tab span:not(.req) {
+        display: none;
+    }
+
+    .avatar-editor {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .avatar-editor__controls {
+        width: 100%;
+    }
+
+    .avatar-editor__controls .btn-primary,
+    .avatar-editor__controls .btn-ghost {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .pw-rules {
+        grid-template-columns: 1fr;
+    }
+
+    .otp-input {
+        letter-spacing: 8px;
+        font-size: 1.2rem !important;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
