@@ -142,7 +142,22 @@ document.addEventListener('DOMContentLoaded', () => {
         els.heroUser.textContent = '@' + (user.username || '—');
         els.heroEmail.textContent = user.email || '—';
 
-        els.avatarBig.textContent = name.trim().charAt(0).toUpperCase();
+
+        const avatarBig = document.getElementById('profileAvatarBig');
+        const initialEl = document.getElementById('profileAvatarInitial');
+        if (user.avatar?.url) {
+            avatarBig.style.backgroundImage = `url('${user.avatar.url}')`;
+            avatarBig.style.backgroundSize = 'cover';
+            avatarBig.style.backgroundPosition = 'center';
+            if (initialEl) initialEl.style.display = 'none';
+        } else {
+            avatarBig.style.backgroundImage = '';
+            avatarBig.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
+            if (initialEl) {
+                initialEl.style.display = '';
+                initialEl.textContent = name.trim().charAt(0).toUpperCase();
+            }
+        }
 
         els.infoUser.textContent = user.username || '—';
         els.infoEmail.textContent = user.email || '—';
