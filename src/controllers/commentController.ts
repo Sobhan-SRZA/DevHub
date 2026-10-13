@@ -50,7 +50,7 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
             parent: q.parentId,
             isDeleted: false,
         })
-            .populate("user", "name username")
+            .populate("user", "name username avatar")
             .sort({ createdAt: 1 })
             .lean();
 
