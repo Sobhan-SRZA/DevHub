@@ -1,374 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
+  <!DOCTYPE html>
+  <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <link rel="stylesheet" href="/styles/dialog.css">
-  <link rel="stylesheet" href="/styles/form-errors.css">
-  <link rel="stylesheet" href="/styles/markdown-editor.css">
-  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
-  <link rel="stylesheet" href="/styles/dashboard/settings.css">
-  <title>تنظیمات پروفایل</title>
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/index.css">
+    <link rel="stylesheet" href="/styles/dialog.css">
+    <link rel="stylesheet" href="/styles/form-errors.css">
+    <link rel="stylesheet" href="/styles/markdown-editor.css">
+    <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+    <link rel="stylesheet" href="/styles/dashboard/settings.css">
+    <title>تنظیمات پروفایل</title>
+  </head>
 
-<body>
-  <%- include("../components/header") %>
-  <%- include("../components/dialogError") %>
+  <body>
+    <%- include("../components/header") %>
+    <%- include("../components/dialogError") %>
 
-  <div class="dash-layout">
-    <%- include("../components/dashboard-nav") %>
+    <div class="dash-layout">
+      <%- include("../components/dashboard-nav") %>
 
-    <main class="dash-main settings-main">
-      <div class="dash-topbar">
-        <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <h1 class="dash-topbar__title">تنظیمات پروفایل</h1>
-      </div>
-
-      <div class="dash-head">
-        <div>
-          <h2 class="dash-title">تنظیمات پروفایل</h2>
-          <p class="dash-sub">اطلاعات حساب، امنیت و پروفایل عمومی خود را مدیریت کنید</p>
+      <main class="dash-main settings-main">
+        <div class="dash-topbar">
+          <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <h1 class="dash-topbar__title">تنظیمات پروفایل</h1>
         </div>
-      </div>
 
-      <!-- TABS -->
-      <div class="settings-tabs">
-        <button type="button" class="st-tab active" data-tab="general">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          عمومی
-        </button>
-        <button type="button" class="st-tab" data-tab="email">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-          </svg>
-          ایمیل
-        </button>
-        <button type="button" class="st-tab" data-tab="password">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          امنیت
-        </button>
-      </div>
-
-      <!-- ============================================ -->
-      <!-- TAB: GENERAL                                 -->
-      <!-- ============================================ -->
-      <section class="st-panel active" data-panel="general">
-
-        <!-- Avatar -->
-        <div class="st-card">
-          <div class="st-card__head">
-            <h3 class="st-card__title">عکس پروفایل</h3>
-            <p class="st-card__sub">JPG, PNG, WebP یا GIF — حداکثر 5MB</p>
-          </div>
-
-          <div class="avatar-editor">
-            <div class="avatar-editor__preview" id="avatarPreview">
-              <span id="avatarInitial">?</span>
-            </div>
-
-            <div class="avatar-editor__controls">
-              <label class="btn-primary avatar-editor__upload">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                آپلود عکس
-                <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
-              </label>
-
-              <button type="button" class="btn-ghost" id="avatarRemove" style="display:none;">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                </svg>
-                حذف عکس
-              </button>
-            </div>
+        <div class="dash-head">
+          <div>
+            <h2 class="dash-title">تنظیمات پروفایل</h2>
+            <p class="dash-sub">اطلاعات حساب، امنیت و پروفایل عمومی خود را مدیریت کنید</p>
           </div>
         </div>
 
-        <!-- Name + bio -->
-        <div class="st-card">
-          <div class="st-card__head">
-            <h3 class="st-card__title">اطلاعات پایه</h3>
-            <p class="st-card__sub">نام نمایشی و نام کاربری شما</p>
-          </div>
+        <!-- TABS -->
+        <div class="settings-tabs">
+          <button type="button" class="st-tab active" data-tab="general">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            عمومی
+          </button>
+          <button type="button" class="st-tab" data-tab="email">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            ایمیل
+          </button>
+          <button type="button" class="st-tab" data-tab="password">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            امنیت
+          </button>
+        </div>
 
-          <form id="profileForm" class="st-form" novalidate>
-            <div class="field">
-              <label for="stName">نام نمایشی <span class="req">*</span></label>
-              <input id="stName" type="text" name="name" required maxlength="60" placeholder="مثلاً: علی رضایی">
+        <!-- ============================================ -->
+        <!-- TAB: GENERAL                                 -->
+        <!-- ============================================ -->
+        <section class="st-panel active" data-panel="general">
+
+          <!-- Avatar -->
+          <div class="st-card">
+            <div class="st-card__head">
+              <h3 class="st-card__title">عکس پروفایل</h3>
+              <p class="st-card__sub">JPG, PNG, WebP یا GIF — حداکثر 5MB</p>
             </div>
 
-            <div class="field">
-              <label for="stUsername">نام کاربری <span class="req">*</span></label>
-              <div class="st-username">
-                <span class="st-username__prefix">@</span>
-                <input id="stUsername" type="text" name="username" required minlength="3" maxlength="20" placeholder="ali_reza" dir="ltr">
+            <div class="avatar-editor">
+              <div class="avatar-editor__preview" id="avatarPreview">
+                <span id="avatarInitial">?</span>
               </div>
-              <div class="field-hint">فقط حروف انگلیسی، عدد، _ ، . یا -</div>
-            </div>
 
-            <div class="st-form__actions">
-              <button type="submit" class="btn-primary" id="saveProfileBtn">ذخیره تغییرات</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Bio -->
-        <div class="st-card">
-          <div class="st-card__head">
-            <h3 class="st-card__title">درباره من</h3>
-            <p class="st-card__sub">توضیح کوتاهی درباره خودتان بنویسید — Markdown پشتیبانی می‌شود</p>
-          </div>
-
-          <div id="bioEditorRoot"></div>
-
-          <div class="st-form__actions">
-            <button type="button" class="btn-primary" id="saveBioBtn">ذخیره توضیحات</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================================ -->
-      <!-- TAB: EMAIL                                   -->
-      <!-- ============================================ -->
-      <section class="st-panel" data-panel="email">
-        <div class="st-card">
-          <div class="st-card__head">
-            <h3 class="st-card__title">آدرس ایمیل</h3>
-            <p class="st-card__sub">ایمیل فعلی حساب شما</p>
-          </div>
-
-          <div class="email-current">
-            <div class="email-current__icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
-              </svg>
-            </div>
-            <div class="email-current__info">
-              <strong id="currentEmail">—</strong>
-              <span class="email-current__badge" id="emailVerifiedBadge">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                تایید شده
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- pending email state -->
-        <div class="st-card" id="pendingEmailCard" style="display:none;">
-          <div class="st-card__head">
-            <h3 class="st-card__title">⏳ در انتظار تایید</h3>
-            <p class="st-card__sub">کد تایید به ایمیل جدید ارسال شد</p>
-          </div>
-
-          <div class="email-pending">
-            <div class="email-pending__row">
-              <span class="email-pending__label">ایمیل جدید:</span>
-              <span class="email-pending__value" id="pendingEmailValue">—</span>
-            </div>
-            <div class="email-pending__row">
-              <span class="email-pending__label">زمان باقی‌مانده:</span>
-              <span class="email-pending__value" id="pendingEmailTimer">—</span>
-            </div>
-          </div>
-
-          <form id="verifyEmailForm" class="st-form" novalidate>
-            <div class="field">
-              <label for="emailCode">کد ۶ رقمی</label>
-              <input id="emailCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
-            </div>
-
-            <div class="st-form__actions">
-              <button type="button" class="btn-ghost" id="cancelEmailChange">لغو درخواست</button>
-              <button type="submit" class="btn-primary" id="verifyEmailBtn">تایید و تغییر</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- request email change -->
-        <div class="st-card" id="changeEmailCard">
-          <div class="st-card__head">
-            <h3 class="st-card__title">تغییر ایمیل</h3>
-            <p class="st-card__sub">برای تغییر ایمیل، ابتدا رمز عبور خود را وارد کنید</p>
-          </div>
-
-          <form id="changeEmailForm" class="st-form" novalidate>
-            <div class="field">
-              <label for="newEmail">ایمیل جدید <span class="req">*</span></label>
-              <input id="newEmail" type="email" name="newEmail" required placeholder="new@example.com" dir="ltr">
-            </div>
-
-            <div class="field">
-              <label for="confirmPasswordForEmail">رمز عبور فعلی <span class="req">*</span></label>
-              <div class="password-wrap">
-                <input id="confirmPasswordForEmail" type="password" name="password" required autocomplete="current-password" dir="ltr">
-                <button type="button" class="toggle-pass" data-target="confirmPasswordForEmail" aria-label="نمایش رمز">
-                  <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
+              <div class="avatar-editor__controls">
+                <label class="btn-primary avatar-editor__upload">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
-                  <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  آپلود عکس
+                  <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+                </label>
+
+                <button type="button" class="btn-ghost" id="avatarRemove" style="display:none;">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
                   </svg>
+                  حذف عکس
                 </button>
               </div>
             </div>
-
-            <div class="st-form__actions">
-              <button type="submit" class="btn-primary" id="requestEmailBtn">ارسال کد تایید</button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- ============================================ -->
-      <!-- TAB: PASSWORD                                -->
-      <!-- ============================================ -->
-      <section class="st-panel" data-panel="password">
-        <div class="st-card">
-          <div class="st-card__head">
-            <h3 class="st-card__title">تغییر رمز عبور</h3>
-            <p class="st-card__sub">
-              برای امنیت، پس از تغییر رمز، از همه دستگاه‌های دیگر خارج می‌شوید
-            </p>
           </div>
 
-          <!-- Step 1: request -->
-          <form id="passwordRequestForm" class="st-form" novalidate>
-            <div class="field">
-              <label for="currentPassword">رمز عبور فعلی <span class="req">*</span></label>
-              <div class="password-wrap">
-                <input id="currentPassword" type="password" name="currentPassword" required autocomplete="current-password" dir="ltr">
-                <button type="button" class="toggle-pass" data-target="currentPassword" aria-label="نمایش رمز">
-                  <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
+          <!-- Name + bio -->
+          <div class="st-card">
+            <div class="st-card__head">
+              <h3 class="st-card__title">اطلاعات پایه</h3>
+              <p class="st-card__sub">نام نمایشی و نام کاربری شما</p>
             </div>
 
-            <div class="field">
-              <label for="newPassword">رمز عبور جدید <span class="req">*</span></label>
-              <div class="password-wrap">
-                <input id="newPassword" type="password" name="newPassword" required autocomplete="new-password" dir="ltr">
-                <button type="button" class="toggle-pass" data-target="newPassword" aria-label="نمایش رمز">
-                  <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
+            <form id="profileForm" class="st-form" novalidate>
+              <div class="field">
+                <label for="stName">نام نمایشی <span class="req">*</span></label>
+                <input id="stName" type="text" name="name" required maxlength="60" placeholder="مثلاً: علی رضایی">
               </div>
 
-              <!-- password strength -->
-              <div class="pw-strength">
-                <div class="pw-strength__bars">
-                  <span></span><span></span><span></span><span></span>
+              <div class="field">
+                <label for="stUsername">نام کاربری <span class="req">*</span></label>
+                <div class="st-username">
+                  <span class="st-username__prefix">@</span>
+                  <input id="stUsername" type="text" name="username" required minlength="3" maxlength="20" placeholder="ali_reza" dir="ltr">
                 </div>
-                <span class="pw-strength__label" id="pwStrengthLabel"></span>
+                <div class="field-hint">فقط حروف انگلیسی، عدد، _ ، . یا -</div>
               </div>
 
-              <ul class="pw-rules" id="pwRules">
-                <li data-rule="length">حداقل ۸ کاراکتر</li>
-                <li data-rule="lower">حرف کوچک (a-z)</li>
-                <li data-rule="upper">حرف بزرگ (A-Z)</li>
-                <li data-rule="digit">عدد (0-9)</li>
-              </ul>
-            </div>
-
-            <div class="field">
-              <label for="confirmNewPassword">تکرار رمز جدید <span class="req">*</span></label>
-              <div class="password-wrap">
-                <input id="confirmNewPassword" type="password" name="confirmPassword" required autocomplete="new-password" dir="ltr">
-                <button type="button" class="toggle-pass" data-target="confirmNewPassword" aria-label="نمایش رمز">
-                  <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
+              <div class="st-form__actions">
+                <button type="submit" class="btn-primary" id="saveProfileBtn">ذخیره تغییرات</button>
               </div>
-              <small class="field-error" id="matchError"></small>
-            </div>
-
-            <div class="st-form__actions">
-              <button type="submit" class="btn-primary" id="requestPwBtn">ارسال کد تایید</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Step 2: confirm -->
-        <div class="st-card" id="confirmPasswordCard" style="display:none;">
-          <div class="st-card__head">
-            <h3 class="st-card__title">تایید تغییر رمز</h3>
-            <p class="st-card__sub" id="pwEmailHint">کد ۶ رقمی به ایمیل شما ارسال شد</p>
+            </form>
           </div>
 
-          <form id="passwordConfirmForm" class="st-form" novalidate>
-            <input type="hidden" name="newPassword">
-            <input type="hidden" name="confirmPassword">
-
-            <div class="field">
-              <label for="passwordCode">کد ۶ رقمی</label>
-              <input id="passwordCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
+          <!-- Bio -->
+          <div class="st-card">
+            <div class="st-card__head">
+              <h3 class="st-card__title">درباره من</h3>
+              <p class="st-card__sub">توضیح کوتاهی درباره خودتان بنویسید — Markdown پشتیبانی می‌شود</p>
             </div>
+
+            <div id="bioEditorRoot"></div>
 
             <div class="st-form__actions">
-              <button type="button" class="btn-ghost" id="cancelPasswordChange">انصراف</button>
-              <button type="submit" class="btn-primary" id="confirmPwBtn">تایید و تغییر رمز</button>
+              <button type="button" class="btn-primary" id="saveBioBtn">ذخیره توضیحات</button>
             </div>
-          </form>
-        </div>
-
-        <!-- danger zone -->
-        <div class="st-card st-card--danger">
-          <div class="st-card__head">
-            <h3 class="st-card__title">خروج از همه دستگاه‌ها</h3>
-            <p class="st-card__sub">تمام سشن‌های فعال شما بسته می‌شوند</p>
           </div>
-          <button type="button" class="btn-danger" id="logoutAllBtn">خروج از همه دستگاه‌ها</button>
-        </div>
-      </section>
+        </section>
 
-    </main>
-  </div>
+        <!-- ============================================ -->
+        <!-- TAB: EMAIL                                   -->
+        <!-- ============================================ -->
+        <section class="st-panel" data-panel="email">
+          <div class="st-card">
+            <div class="st-card__head">
+              <h3 class="st-card__title">آدرس ایمیل</h3>
+              <p class="st-card__sub">ایمیل فعلی حساب شما</p>
+            </div>
 
-  <script src="/js/form-errors.js"></script>
-  <script src="/js/components/markdown-editor.js"></script>
-  <script src="/js/dashboard/settings.js"></script>
-</body>
+            <div class="email-current">
+              <div class="email-current__icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <div class="email-current__info">
+                <strong id="currentEmail">—</strong>
+                <span class="email-current__badge" id="emailVerifiedBadge">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  تایید شده
+                </span>
+              </div>
+            </div>
+          </div>
 
-</html>
+          <!-- pending email state -->
+          <div class="st-card" id="pendingEmailCard" style="display:none;">
+            <div class="st-card__head">
+              <h3 class="st-card__title">⏳ در انتظار تایید</h3>
+              <p class="st-card__sub">کد تایید به ایمیل جدید ارسال شد</p>
+            </div>
+
+            <div class="email-pending">
+              <div class="email-pending__row">
+                <span class="email-pending__label">ایمیل جدید:</span>
+                <span class="email-pending__value" id="pendingEmailValue">—</span>
+              </div>
+              <div class="email-pending__row">
+                <span class="email-pending__label">زمان باقی‌مانده:</span>
+                <span class="email-pending__value" id="pendingEmailTimer">—</span>
+              </div>
+            </div>
+
+            <form id="verifyEmailForm" class="st-form" novalidate>
+              <div class="field">
+                <label for="emailCode">کد ۶ رقمی</label>
+                <input id="emailCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
+              </div>
+
+              <div class="st-form__actions">
+                <button type="button" class="btn-ghost" id="cancelEmailChange">لغو درخواست</button>
+                <button type="submit" class="btn-primary" id="verifyEmailBtn">تایید و تغییر</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- request email change -->
+          <div class="st-card" id="changeEmailCard">
+            <div class="st-card__head">
+              <h3 class="st-card__title">تغییر ایمیل</h3>
+              <p class="st-card__sub">برای تغییر ایمیل، ابتدا رمز عبور خود را وارد کنید</p>
+            </div>
+
+            <form id="changeEmailForm" class="st-form" novalidate>
+              <div class="field">
+                <label for="newEmail">ایمیل جدید <span class="req">*</span></label>
+                <input id="newEmail" type="email" name="newEmail" required placeholder="new@example.com" dir="ltr">
+              </div>
+
+              <div class="field">
+                <label for="confirmPasswordForEmail">رمز عبور فعلی <span class="req">*</span></label>
+                <div class="password-wrap">
+                  <input id="confirmPasswordForEmail" type="password" name="password" required autocomplete="current-password" dir="ltr">
+                  <button type="button" class="toggle-pass" data-target="confirmPasswordForEmail" aria-label="نمایش رمز">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="st-form__actions">
+                <button type="submit" class="btn-primary" id="requestEmailBtn">ارسال کد تایید</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- TAB: PASSWORD                                -->
+        <!-- ============================================ -->
+        <section class="st-panel" data-panel="password">
+          <div class="st-card">
+            <div class="st-card__head">
+              <h3 class="st-card__title">تغییر رمز عبور</h3>
+              <p class="st-card__sub">
+                برای امنیت، پس از تغییر رمز، از همه دستگاه‌های دیگر خارج می‌شوید
+              </p>
+            </div>
+
+            <!-- Step 1: request -->
+            <form id="passwordRequestForm" class="st-form" novalidate>
+              <div class="field">
+                <label for="currentPassword">رمز عبور فعلی <span class="req">*</span></label>
+                <div class="password-wrap">
+                  <input id="currentPassword" type="password" name="currentPassword" required autocomplete="current-password" dir="ltr">
+                  <button type="button" class="toggle-pass" data-target="currentPassword" aria-label="نمایش رمز">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="newPassword">رمز عبور جدید <span class="req">*</span></label>
+                <div class="password-wrap">
+                  <input id="newPassword" type="password" name="newPassword" required autocomplete="new-password" dir="ltr">
+                  <button type="button" class="toggle-pass" data-target="newPassword" aria-label="نمایش رمز">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- password strength -->
+                <div class="pw-strength">
+                  <div class="pw-strength__bars">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <span class="pw-strength__label" id="pwStrengthLabel"></span>
+                </div>
+
+                <ul class="pw-rules" id="pwRules">
+                  <li data-rule="length">حداقل ۸ کاراکتر</li>
+                  <li data-rule="lower">حرف کوچک (a-z)</li>
+                  <li data-rule="upper">حرف بزرگ (A-Z)</li>
+                  <li data-rule="digit">عدد (0-9)</li>
+                </ul>
+              </div>
+
+              <div class="field">
+                <label for="confirmNewPassword">تکرار رمز جدید <span class="req">*</span></label>
+                <div class="password-wrap">
+                  <input id="confirmNewPassword" type="password" name="confirmPassword" required autocomplete="new-password" dir="ltr">
+                  <button type="button" class="toggle-pass" data-target="confirmNewPassword" aria-label="نمایش رمز">
+                    <svg class="icon icon-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg class="icon icon-eye-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+                <small class="field-error" id="matchError"></small>
+              </div>
+
+              <div class="st-form__actions">
+                <button type="submit" class="btn-primary" id="requestPwBtn">ارسال کد تایید</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Step 2: confirm -->
+          <div class="st-card" id="confirmPasswordCard" style="display:none;">
+            <div class="st-card__head">
+              <h3 class="st-card__title">تایید تغییر رمز</h3>
+              <p class="st-card__sub" id="pwEmailHint">کد ۶ رقمی به ایمیل شما ارسال شد</p>
+            </div>
+
+            <form id="passwordConfirmForm" class="st-form" novalidate>
+              <input type="hidden" name="newPassword">
+              <input type="hidden" name="confirmPassword">
+
+              <div class="field">
+                <label for="passwordCode">کد ۶ رقمی</label>
+                <input id="passwordCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
+              </div>
+
+              <div class="st-form__actions">
+                <button type="button" class="btn-ghost" id="cancelPasswordChange">انصراف</button>
+                <button type="submit" class="btn-primary" id="confirmPwBtn">تایید و تغییر رمز</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- danger zone -->
+          <div class="st-card st-card--danger">
+            <div class="st-card__head">
+              <h3 class="st-card__title">خروج از همه دستگاه‌ها</h3>
+              <p class="st-card__sub">تمام سشن‌های فعال شما بسته می‌شوند</p>
+            </div>
+            <button type="button" class="btn-danger" id="logoutAllBtn">خروج از همه دستگاه‌ها</button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="/js/form-errors.js"></script>
+    <script src="/js/components/markdown-editor.js"></script>
+    <script src="/js/dashboard/settings.js"></script>
+  </body>
+
+  </html>
