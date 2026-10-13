@@ -1,22 +1,30 @@
-import type { Request, Response } from "express";
-import { User } from "../models/User";
-import { Session } from "../models/Session";
-import { AppError, Conflict, Unauthorized } from "../utils/AppError";
-import { ErrorCodes } from "../utils/errorCodes";
-import { asyncHandler } from "../utils/asyncHandler";
-import { validate } from "../utils/validate";
-import { registerSchema, loginSchema } from "../validators/authValidator";
-import {
-    signAccessToken,
-    signRefreshToken,
-    verifyToken,
-    randomToken,
-} from "../utils/token";
 import {
     startSession,
     endSession,
-    endAllSessions,
+    endAllSessions
 } from "../services/sessionService";
+import {
+    AppError,
+    Conflict,
+    Unauthorized
+} from "../utils/AppError";
+import {
+    registerSchema,
+    loginSchema
+} from "../validators/authValidator";
+import {
+    signAccessToken,
+    verifyToken
+} from "../utils/token";
+import type {
+    Request,
+    Response
+} from "express";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ErrorCodes } from "../utils/errorCodes";
+import { validate } from "../utils/validate";
+import { Session } from "../models/Session";
+import { User } from "../models/User";
 
 /* ==================================================================
    Helpers
@@ -46,6 +54,10 @@ export function publicUser(u: any) {
         name: u.name,
         username: u.username,
         email: u.email,
+        emailVerified: !!u.emailVerified,
+        bio: u.bio || '',
+        avatar: u.avatar || null,     // ✅ اضافه شد
+        role: u.role || 'user',
         createdAt: u.createdAt,
     };
 }
