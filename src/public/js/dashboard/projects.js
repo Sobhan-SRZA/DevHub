@@ -433,7 +433,13 @@ document.addEventListener('DOMContentLoaded', () => {
             validateGithubUrl();
             mdEditor.setValue(p.fullDescription || '');
         } catch (err) {
-            toast(err.message || 'خطا در بارگذاری پروژه', 'error');
+            // ✅ لاگ خطای کامل برای دیباگ
+            console.error('[openEditModal] failed:', err);
+
+            toast(
+                err.message || 'خطا در بارگذاری پروژه',
+                'error'
+            );
         }
     }
 
@@ -878,8 +884,15 @@ document.addEventListener('DOMContentLoaded', () => {
        Counters & badges
        ============================================================ */
     function updateCounters() {
-        $('#shortCount').textContent = form.elements.shortDescription.value.length;
-        $('#fullCount').textContent = form.elements.fullDescription.value.length;
+        const shortEl = $('#shortCount');
+        if (shortEl) {
+            shortEl.textContent = form.elements.shortDescription.value.length;
+        }
+
+        const fullEl = $('#fullCount');
+        if (fullEl) {
+            fullEl.textContent = form.elements.fullDescription.value.length;
+        }
     }
 
     form.elements.shortDescription?.addEventListener('input', updateCounters);
