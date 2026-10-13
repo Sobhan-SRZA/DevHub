@@ -30,9 +30,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!u) return;
 
             const name = u.name || u.username || 'کاربر';
-            $('#welcomeName').textContent = name.split(' ')[0];
-            $('#welcomeAvatar').textContent = name.trim().charAt(0).toUpperCase();
 
+            $('#welcomeName').textContent = name.split(' ')[0];
+            const avatarBig = document.getElementById('welcomeAvatar');
+            const initialEl = document.getElementById('welcomeAvatarContent');
+            if (u.avatar?.url) {
+                avatarBig.style.backgroundImage = `url('${u.avatar.url}')`;
+                avatarBig.style.backgroundSize = 'cover';
+                avatarBig.style.backgroundPosition = 'center';
+                if (initialEl) initialEl.style.display = 'none';
+            } else {
+                avatarBig.style.backgroundImage = '';
+                avatarBig.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
+                if (initialEl) {
+                    initialEl.style.display = '';
+                    initialEl.textContent = name.trim().charAt(0).toUpperCase();
+                }
+            }
             // پیام خوش‌آمد بر اساس ساعت
             const hour = new Date().getHours();
             let greeting = 'به داشبورد خودت خوش آمدی';
