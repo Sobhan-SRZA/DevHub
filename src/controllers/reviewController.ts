@@ -45,7 +45,7 @@ export const listReviews = asyncHandler(async (req: any, res: Response) => {
 
     const [reviews, total, distribution] = await Promise.all([
         Review.find({ project: project._id })
-            .populate("user", "name username")
+            .populate("user", "name username avatar")
             .sort(sort)
             .skip(skip)
             .limit(q.limit)
