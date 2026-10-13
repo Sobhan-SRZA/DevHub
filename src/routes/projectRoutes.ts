@@ -23,6 +23,8 @@ const router = Router();
    Public
    ================================================================== */
 router.get('/', optionalAuth, ctrl.listProjects);
+router.get('/explore', ctrl.explore);
+router.get('/home-feed', ctrl.homeFeeds);
 router.get('/:idOrSlug', optionalAuth, ctrl.getProject);
 
 /* ==================================================================
