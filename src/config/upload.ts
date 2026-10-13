@@ -91,6 +91,37 @@ export const uploadZip = multer({
     fileFilter: makeFilter(ALLOWED.FILE),
 }).single("file");
 
+/* ==================================================================
+   AVATAR — 5MB, image + gif
+   ================================================================== */
+const AVATAR_ALLOWED = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif"
+];
+
+function makeAvatarStorage() {
+    return multer.diskStorage({
+        destination: (_req, _file, cb) => {
+            const dir = path.join(UPLOAD_ROOT, "avatars");
+            ensureDir(dir);
+            cb(null, dir);
+        },
+        filename: (_req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase() || ".png";
+            const id = crypto.randomBytes(12).toString("hex");
+            cb(null, `${Date.now()}-${id}${ext}`);
+        },
+    });
+}
+
+export const uploadAvatar = multer({
+    storage: makeAvatarStorage(),
+    limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+    fileFilter: makeFilter(AVATAR_ALLOWED)
+}).single("avatar");
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
