@@ -5,14 +5,45 @@ import {
 } from "mongoose";
 import bcrypt from "bcrypt";
 
+/* ---------------- avatar ---------------- */
+export interface IUserAvatar {
+    url: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    uploadedAt: Date;
+}
+
+/* ---------------- pending email change ---------------- */
+export interface IPendingEmail {
+    newEmail: string;
+    codeHash: string;       // کد ۶ رقمی، hash شده
+    expiresAt: Date;
+    attempts: number;       // تعداد تلاش‌های ناموفق
+    requestedAt: Date;
+}
+
+/* ---------------- main ---------------- */
 export interface IUser {
     name: string;
-    username: string;         // نمایشی (case اصلی که کاربر انتخاب کرده)
-    usernameLower: string;    // برای چک یکتایی (lowercase)
-    email: string;            // همیشه lowercase
+    username: string;
+    usernameLower: string;
+    email: string;
+    emailVerified: boolean;
     password: string;
+
+    bio: string;                 // توضیحات پروفایل (Markdown)
+    avatar: IUserAvatar | null;
+
+    pendingEmail: IPendingEmail | null;
+
+    role: "user" | "admin";
+    isBanned: boolean;
+
     createdAt: Date;
     updatedAt: Date;
+    pendingPassword?: string | null;
+    pendingPasswordExpiresAt?: Date | null;
 }
 
 export interface IUserMethods {
@@ -21,6 +52,30 @@ export interface IUserMethods {
 
 type UserModel = Model<IUser, {}, IUserMethods>;
 
+/* ---------------- sub-schemas ---------------- */
+const avatarSchema = new Schema<IUserAvatar>(
+    {
+        url: { type: String, required: true },
+        filename: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        size: { type: Number, required: true },
+        uploadedAt: { type: Date, default: () => new Date() }
+    },
+    { _id: false }
+);
+
+const pendingEmailSchema = new Schema<IPendingEmail>(
+    {
+        newEmail: { type: String, required: true, lowercase: true, trim: true },
+        codeHash: { type: String, required: true },
+        expiresAt: { type: Date, required: true },
+        attempts: { type: Number, default: 0, min: 0 },
+        requestedAt: { type: Date, default: () => new Date() },
+    },
+    { _id: false }
+);
+
+/* ---------------- main schema ---------------- */
 const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     {
         name: { type: String, required: true, trim: true, minlength: 2, maxlength: 60 },
@@ -51,33 +106,66 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
             trim: true
         },
 
+        emailVerified: { type: Boolean, default: false },
+
         password: {
             type: String,
             required: true,
             minlength: 6,
             select: false
-        }
+        },
+        pendingPassword: {
+            type: String,
+            select: false,
+            default: null
+        },
+        pendingPasswordExpiresAt: {
+            type: Date,
+            select: false,
+            default: null
+        },
+
+        bio: {
+            type: String,
+            default: "",
+            maxlength: 2000
+        },
+
+        avatar: { type: avatarSchema, default: null },
+
+        pendingEmail: { type: pendingEmailSchema, default: null },
+
+        role: {
+            type: String,
+            enum: ["user", "admin"],
+            default: "user",
+            index: true
+        },
+
+        isBanned: { type: Boolean, default: false }
     },
     { timestamps: true }
 );
 
-/* ---------------- pre-validate: sync usernameLower ---------------- */
+/* ---------------- hooks ---------------- */
 userSchema.pre("validate", function () {
     if (this.isModified("username") || !this.usernameLower) {
         this.usernameLower = (this.username || "").toLowerCase().trim();
     }
 });
 
-/* ---------------- pre-save: hash password ---------------- */
 userSchema.pre("save", async function () {
-    if (!this.isModified("password"))
-        return;
+    if (this.isModified("password")) {
+        const salt = await bcrypt.genSalt(12);
+        this.password = await bcrypt.hash(this.password, salt);
+    }
 
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    if (this.isModified("pendingPassword") && this.pendingPassword) {
+        const salt = await bcrypt.genSalt(12);
+        this.pendingPassword = await bcrypt.hash(this.pendingPassword, salt);
+    }
 });
 
-/* ---------------- methods ---------------- */
 userSchema.method("comparePassword", async function (candidate: string) {
     return bcrypt.compare(candidate, this.password);
 });
