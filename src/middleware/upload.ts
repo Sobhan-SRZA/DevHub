@@ -4,6 +4,7 @@ import type {
     NextFunction
 } from "express";
 import {
+    uploadAvatar,
     uploadImages,
     uploadVideo,
     uploadZip
@@ -11,6 +12,8 @@ import {
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 import multer from "multer";
+
+export const mwUploadAvatar = wrap(uploadAvatar);
 
 /**
  * Multer رو با هندل خطا wrap می‌کنه.
