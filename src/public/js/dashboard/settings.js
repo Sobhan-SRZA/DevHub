@@ -84,15 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#stUsername').value = u.username || '';
 
         /* ---------- Avatar ---------- */
+        // Avatar
         const preview = $('#avatarPreview');
         if (u.avatar?.url) {
             preview.style.backgroundImage = `url('${u.avatar.url}')`;
-            preview.textContent = '';
-            $('#avatarRemove').style.display = '';
+            preview.style.backgroundSize = 'cover';
+            preview.style.backgroundPosition = 'center';
+            preview.textContent = '';   // ← این خط مهمه
         } else {
             preview.style.backgroundImage = '';
-            preview.innerHTML = `<span id="avatarInitial">${escapeHtml((u.name || '?').charAt(0).toUpperCase())}</span>`;
-            $('#avatarRemove').style.display = 'none';
+            preview.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
+            preview.textContent = (u.name || '?').charAt(0).toUpperCase();
         }
 
         /* ---------- Email ---------- */
