@@ -5,19 +5,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/styles/index.css">
-  <title>Document</title>
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/explore.css">
+  <title>صفحه اصلی</title>
 </head>
 
 <body>
   <%- include("components/header") %>
   <%- include("components/dialogError") %>
 
-  <!-- other section like contact -->
-  <section class="container">
-    <a class="contact" href="/contact">Contact with us</a>
-  </section>
-</body>
+  <!-- ============ HERO ============ -->
+  <section class="home-hero">
+    <div class="home-hero__glow"></div>
 
-<script src="/js/index.js"></script>
+    <div class="home-hero__inner">
+      <h1 class="home-hero__title">
+        پروژه‌های متن‌باز را کشف کنید
+      </h1>
+      <p class="home-hero__sub">
+        محبوب‌ترین، تازه‌ترین و بهترین پروژه‌های برنامه‌نویسی —
+        ساخته‌شده توسط توسعه‌دهندگان ایرانی و جهانی
+      </p>
+
+      <div class="home-hero__stats" id="heroStats">
+        <div class="hero-stat">
+          <span class="hero-stat__value" id="statProjects">—</span>
+          <span class="hero-stat__label">پروژه</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__value" id="statUsers">—</span>
+          <span class="hero-stat__label">کاربر</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__value" id="statTags">—</span>
+          <span class="hero-stat__label">تگ</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__value" id="statDownloads">—</span>
+          <span class="hero-stat__label">دانلود</span>
+        </div>
+      </div>
+
+      <div class="home-hero__cta">
+        <a href="/explore" class="btn-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          کاوش پروژه‌ها
+        </a>
+        <a href="/dashboard/projects" class="btn-outline">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          پروژه خودت را بساز
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTIONS ============ -->
+  <main class="home-main" id="homeMain">
+    <div class="home-loading">
+      <div class="home-loading__spinner"></div>
+      <p>در حال بارگذاری…</p>
+    </div>
+  </main>
+
+  <script src="/js/form-errors.js"></script>
+  <script src="/js/pages/home.js"></script>
+</body>
 
 </html>
