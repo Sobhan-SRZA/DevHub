@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/form-errors.css">
   <link rel="stylesheet" href="/styles/auth.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/profile.css">
   <title>پروفایل من</title>
 </head>
@@ -16,61 +17,66 @@
   <%- include("../components/header") %>
   <%- include("../components/dialogError") %>
 
-  <main class="profile-page container">
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+    <main class="profile-page container">
 
-    <!-- ============ HEADER CARD ============ -->
-    <section class="profile-hero">
-      <div class="profile-avatar-big" id="profileAvatarBig">?</div>
+      <!-- ============ HEADER CARD ============ -->
+      <section class="profile-hero">
+        <div class="profile-avatar-big" id="profileAvatarBig">
+          <span id="profileAvatarInitial">?</span>
+        </div>
 
-      <div class="profile-hero-info">
-        <h1 class="profile-hero-name" id="profileHeroName">در حال بارگذاری…</h1>
-        <p class="profile-hero-username" id="profileHeroUsername">@—</p>
-        <p class="profile-hero-email" id="profileHeroEmail">—</p>
-      </div>
+        <div class="profile-hero-info">
+          <h1 class="profile-hero-name" id="profileHeroName">در حال بارگذاری…</h1>
+          <p class="profile-hero-username" id="profileHeroUsername">@—</p>
+          <p class="profile-hero-email" id="profileHeroEmail">—</p>
+        </div>
 
-      <div class="profile-hero-actions">
-        <button type="button" class="btn-secondary" id="logoutAllBtn">
-          خروج از همه دستگاه‌ها
-        </button>
-        <button type="button" class="btn-danger" id="logoutSessionBtn">
-          خروج
-        </button>
-      </div>
-    </section>
+        <div class="profile-hero-actions">
+          <button type="button" class="btn-secondary" id="logoutAllBtn">
+            خروج از همه دستگاه‌ها
+          </button>
+          <button type="button" class="btn-danger" id="logoutSessionBtn">
+            خروج
+          </button>
+        </div>
+      </section>
 
-    <!-- ============ INFO GRID ============ -->
-    <section class="profile-grid">
-      <div class="info-card">
-        <span class="info-label">نام کاربری</span>
-        <span class="info-value" id="infoUsername">—</span>
-      </div>
-      <div class="info-card">
-        <span class="info-label">ایمیل</span>
-        <span class="info-value" id="infoEmail">—</span>
-      </div>
-      <div class="info-card">
-        <span class="info-label">تاریخ عضویت</span>
-        <span class="info-value" id="infoCreatedAt">—</span>
-      </div>
-      <div class="info-card">
-        <span class="info-label">وضعیت</span>
-        <span class="info-value info-value--ok">فعال</span>
-      </div>
-    </section>
+      <!-- ============ INFO GRID ============ -->
+      <section class="profile-grid">
+        <div class="info-card">
+          <span class="info-label">نام کاربری</span>
+          <span class="info-value" id="infoUsername">—</span>
+        </div>
+        <div class="info-card">
+          <span class="info-label">ایمیل</span>
+          <span class="info-value" id="infoEmail">—</span>
+        </div>
+        <div class="info-card">
+          <span class="info-label">تاریخ عضویت</span>
+          <span class="info-value" id="infoCreatedAt">—</span>
+        </div>
+        <div class="info-card">
+          <span class="info-label">وضعیت</span>
+          <span class="info-value info-value--ok">فعال</span>
+        </div>
+      </section>
 
-    <!-- ============ CURRENT SESSION ============ -->
-    <section class="sessions-section">
-      <div class="sessions-header">
-        <h2 class="sessions-title">دستگاه‌های فعال</h2>
-        <p class="sessions-sub">سشن‌هایی که با حساب شما وارد شده‌اند</p>
-      </div>
+      <!-- ============ CURRENT SESSION ============ -->
+      <section class="sessions-section">
+        <div class="sessions-header">
+          <h2 class="sessions-title">دستگاه‌های فعال</h2>
+          <p class="sessions-sub">سشن‌هایی که با حساب شما وارد شده‌اند</p>
+        </div>
 
-      <div id="sessionsList" class="sessions-list">
-        <div class="sessions-loading">در حال بارگذاری…</div>
-      </div>
-    </section>
+        <div id="sessionsList" class="sessions-list">
+          <div class="sessions-loading">در حال بارگذاری…</div>
+        </div>
+      </section>
 
-  </main>
+    </main>
+  </div>
 </body>
 
 <script src="/js/form-errors.js"></script>
