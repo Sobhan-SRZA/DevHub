@@ -38,6 +38,23 @@ export const projectListQuerySchema = z.object({
     limit: z.coerce.number().int().min(1).max(50).optional().default(12),
 });
 
+export const exploreQuerySchema = z.object({
+    sort: z.enum([
+        'trending',
+        'hot',
+        'top',
+        'new',
+        'top-rated',
+        'top-downloaded',
+    ]).optional().default('trending'),
+    window: z.enum(['24h', '7d', '30d', 'all']).optional(),
+    tag: z.string().regex(/^[a-f\d]{24}$/i).optional(),
+    tagType: z.string().regex(/^[a-f\d]{24}$/i).optional(),
+    search: z.string().trim().max(80).optional(),
+    page: z.coerce.number().int().min(1).optional().default(1),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+});
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
