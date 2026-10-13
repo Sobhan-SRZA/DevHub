@@ -40,7 +40,7 @@ function clearAuthCookies(res: Response) {
     res.clearCookie("refresh_token", cookieOpts);
 }
 
-function publicUser(u: any) {
+export function publicUser(u: any) {
     return {
         id: u._id,
         name: u.name,
@@ -167,7 +167,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         ok: true,
         message: reused ? "ورود موفق (سشن قبلی تمدید شد)" : "ورود موفق",
         user: publicUser(user),
-        reused,
+        reused
     });
 });
 
@@ -203,7 +203,7 @@ export const logoutAll = asyncHandler(async (req: any, res: Response) => {
     res.json({
         ok: true,
         message: `از ${count} دستگاه خارج شدید`,
-        count,
+        count
     });
 });
 
@@ -225,10 +225,10 @@ export const me = asyncHandler(async (req: any, res: Response) => {
                 location: {
                     ip: req.session.location.ip,
                     city: req.session.location.city,
-                    country: req.session.location.country,
-                },
+                    country: req.session.location.country
+                }
             }
-            : null,
+            : null
     });
 });
 
