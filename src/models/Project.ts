@@ -97,6 +97,10 @@ export interface IProject {
     status: "draft" | "published" | "archived";
     isPublic: boolean;
 
+    // featured برای پروژه‌های ویژه
+    featured: boolean;
+    featuredOrder: number;
+
     createdAt: Date;
     updatedAt: Date;
 }
@@ -222,6 +226,8 @@ const projectSchema = new Schema<IProject, ProjectModel>(
             index: true,
         },
         isPublic: { type: Boolean, default: true, index: true },
+        featured: { type: Boolean, default: false, index: true },
+        featuredOrder: { type: Number, default: 0 },
     },
     { timestamps: true }
 );
