@@ -71,6 +71,46 @@ export async function requireTagOwnership(
     }
 }
 
+/* ==================================================================
+   loadProject — NEW
+   فقط پروژه رو بارگذاری می‌کنه (با id یا slug)
+   چک مالکیت نمی‌کنه، ولی دسترسی عمومی/خصوصی رو رعایت می‌کنه.
+   ================================================================== */
+export async function loadProject(
+    req: any,
+    _res: Response,
+    next: NextFunction
+) {
+    try {
+        const { idOrSlug } = req.params;
+        if (!idOrSlug) {
+            return next(new AppError(400, ErrorCodes.VALIDATION_ERROR, 'شناسه پروژه الزامی است'));
+        }
+
+        const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
+        const query = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
+
+        const project = await Project.findOne(query);
+        if (!project) {
+            return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
+        }
+
+        // اگه private/draft هست، فقط صاحبش یا ادمین می‌تونه ببینه
+        const isOwner = req.user && String(project.owner) === String(req.user._id);
+        const isAdmin = req.user?.role === 'admin';
+
+        if ((!project.isPublic || project.status !== 'published') && !isOwner && !isAdmin) {
+            return next(new AppError(403, ErrorCodes.PROJECT_NOT_OWNED));
+        }
+
+        req.project = project;
+        next();
+    } catch (err) {
+        next(err);
+    }
+}
+
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
