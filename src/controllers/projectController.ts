@@ -2,6 +2,7 @@ import {
     createProjectSchema,
     updateProjectSchema,
     projectListQuerySchema,
+    exploreQuerySchema,
 } from "../validators/projectValidator";
 import {
     parseGitHubUrl,
@@ -12,7 +13,7 @@ import {
     AppError,
     Conflict
 } from "../utils/AppError";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
@@ -456,6 +457,8 @@ import {
 } from '../services/fileService';
 import { Review } from "../models/Review";
 import { Comment } from "../models/Comment";
+import { cacheGet, cacheSet } from "../services/cache";
+import { exploreProjects, getHomeFeeds } from "../services/exploreService";
 
 /* ==================================================================
    UPLOAD IMAGES — چند تا با هم
@@ -664,6 +667,49 @@ export const deleteProject = asyncHandler(async (req: any, res: Response) => {
 
     await project.deleteOne();
     res.json({ ok: true, message: 'پروژه حذف شد' });
+});
+
+/* ==================================================================
+   EXPLORE — لیست اکسپلور
+   ================================================================== */
+export const explore = asyncHandler(async (req: Request, res: Response) => {
+    const q = validate(exploreQuerySchema, req.query);
+
+    // cache 5 min
+    const cacheKey = `explore:${JSON.stringify(q)}`;
+    const cached = cacheGet<any>(cacheKey);
+    if (cached) {
+        return res.json({ ok: true, ...cached, cached: true });
+    }
+
+    const result = await exploreProjects({
+        sort: q.sort,
+        window: q.window,
+        tag: q.tag,
+        tagType: q.tagType,
+        search: q.search,
+        page: q.page,
+        limit: q.limit,
+    });
+
+    cacheSet(cacheKey, result, 300);
+    res.json({ ok: true, ...result });
+});
+
+/* ==================================================================
+   HOME — دیتای صفحه اصلی
+   ================================================================== */
+export const homeFeeds = asyncHandler(async (_req: Request, res: Response) => {
+    const cacheKey = 'home:feeds';
+    const cached = cacheGet<any>(cacheKey);
+    if (cached) {
+        return res.json({ ok: true, ...cached, cached: true });
+    }
+
+    const data = await getHomeFeeds({ limit: 8 });
+    cacheSet(cacheKey, data, 300);
+
+    res.json({ ok: true, ...data });
 });
 
 /**
