@@ -3,12 +3,14 @@ import {
     mwUploadVideo,
     mwUploadZip,
 } from "../middleware/upload";
-
+import {
+    loadProject,
+    requireProjectOwnership
+} from "../middleware/ownership";
 import {
     requireAuth,
     optionalAuth
 } from "../middleware/auth";
-import { requireProjectOwnership } from "../middleware/ownership";
 import { Router } from "express";
 import commentRoutes from "./commentRoutes";
 import reviewRoutes from "./reviewRoutes";
@@ -92,7 +94,7 @@ router.delete(
 /* ==================================================================
    Download
    ================================================================== */
-router.get('/:idOrSlug/download', optionalAuth, ctrl.downloadProject); 
+router.get('/:idOrSlug/download', optionalAuth, loadProject, ctrl.downloadProject);
 
 export default router;
 
