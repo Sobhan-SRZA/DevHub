@@ -3,7 +3,9 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/projects/:idOrSlug", optionalAuth, (req, res) => res.render("projects/show"));
+router.get("/:idOrSlug", optionalAuth, (req, res) => {
+    res.render('projects/show', { idOrSlug: req.params.idOrSlug });
+});
 
 export default router;
 
