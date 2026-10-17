@@ -60,7 +60,7 @@ export const listTagTypes = asyncHandler(async (req: Request, res: Response) => 
     // تعداد تگ‌های approved هر کتگوری
     const counts = await Tag.aggregate([
         { $match: { isApproved: true } },
-        { $group: { _id: "$type", count: { $sum: 1 } } },
+        { $group: { _id: "$type", count: { $sum: 1 } } }
     ]);
     const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
 
@@ -68,8 +68,8 @@ export const listTagTypes = asyncHandler(async (req: Request, res: Response) => 
         ok: true,
         types: types.map((t) => ({
             ...t,
-            tagCount: countMap.get(String(t._id)) || 0,
-        })),
+            tagCount: countMap.get(String(t._id)) || 0
+        }))
     });
 });
 
@@ -78,7 +78,8 @@ export const listTagTypes = asyncHandler(async (req: Request, res: Response) => 
    ================================================================== */
 export const getTagType = asyncHandler(async (req: Request, res: Response) => {
     const type = await TagType.findById(req.params.id).lean();
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
     const tags = await Tag.find({ type: type._id, isApproved: true })
         .sort({ usageCount: -1, name: 1 })
@@ -95,7 +96,8 @@ export const createTagType = asyncHandler(async (req: any, res: Response) => {
     const slug = data.slug || slugify(data.name);
 
     const existing = await TagType.findOne({ slug }).lean();
-    if (existing) throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+    if (existing)
+        throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
 
     // کاربر عادی → isApproved: false
     const isAdmin = req.user?.role === "admin";
@@ -105,7 +107,7 @@ export const createTagType = asyncHandler(async (req: any, res: Response) => {
         slug,
         isSystem: false,
         isApproved: isAdmin,     // admin بلافاصله تایید، بقیه در انتظار
-        createdBy: req.user._id,
+        createdBy: req.user._id
     });
 
     res.status(201).json({ ok: true, type });
@@ -118,18 +120,21 @@ export const updateTagType = asyncHandler(async (req: any, res: Response) => {
     const data = validate(updateTagTypeSchema, req.body);
 
     const type = await TagType.findById(req.params.id);
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
     if (type.isSystem && req.user?.role !== "admin") {
         throw Forbidden(ErrorCodes.TAG_TYPE_IS_SYSTEM);
     }
+
     if (!type.isSystem && String(type.createdBy) !== String(req.user._id) && req.user?.role !== "admin") {
         throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
     }
 
     if (data.slug && data.slug !== type.slug) {
         const dup = await TagType.findOne({ slug: data.slug }).lean();
-        if (dup) throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+        if (dup)
+            throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
     }
 
     Object.assign(type, data);
@@ -143,14 +148,16 @@ export const updateTagType = asyncHandler(async (req: any, res: Response) => {
    ================================================================== */
 export const deleteTagType = asyncHandler(async (req: any, res: Response) => {
     const type = await TagType.findById(req.params.id);
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
     if (type.isSystem && req.user?.role !== "admin") {
         throw Forbidden(ErrorCodes.TAG_TYPE_IS_SYSTEM);
     }
 
     const tagCount = await Tag.countDocuments({ type: type._id });
-    if (tagCount > 0) throw Conflict(ErrorCodes.TAG_TYPE_HAS_TAGS);
+    if (tagCount > 0)
+        throw Conflict(ErrorCodes.TAG_TYPE_HAS_TAGS);
 
     await type.deleteOne();
     res.json({ ok: true, message: "کتگوری حذف شد" });
@@ -163,20 +170,25 @@ export const listTags = asyncHandler(async (req: Request, res: Response) => {
     const q = validate(listQuerySchema, req.query);
 
     const filter: Record<string, unknown> = {};
-    if (q.type) filter.type = q.type;
+    if (q.type)
+        filter.type = q.type;
+
     if (q.search) {
         filter.$or = [
             { name: { $regex: q.search, $options: "i" } },
             { slug: { $regex: q.search, $options: "i" } },
         ];
     }
-    if (q.approved) filter.isApproved = true;
+
+    if (q.approved)
+        filter.isApproved = true;
 
     const sortMap: Record<string, Record<string, 1 | -1>> = {
         name: { name: 1 },
         usage: { usageCount: -1, name: 1 },
-        recent: { createdAt: -1 },
+        recent: { createdAt: -1 }
     };
+
     const sort = sortMap[q.sort] || sortMap.usage;
     const skip = (q.page - 1) * q.limit;
 
@@ -187,7 +199,8 @@ export const listTags = asyncHandler(async (req: Request, res: Response) => {
             .skip(skip)
             .limit(q.limit)
             .lean(),
-        Tag.countDocuments(filter),
+
+        Tag.countDocuments(filter)
     ]);
 
     res.json({
@@ -197,8 +210,8 @@ export const listTags = asyncHandler(async (req: Request, res: Response) => {
             page: q.page,
             limit: q.limit,
             total,
-            pages: Math.ceil(total / q.limit),
-        },
+            pages: Math.ceil(total / q.limit)
+        }
     });
 });
 
@@ -209,12 +222,14 @@ export const getTag = asyncHandler(async (req: Request, res: Response) => {
     const tag = await Tag.findById(req.params.id)
         .populate("type", "name slug color icon")
         .lean();
-    if (!tag) throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
+
+    if (!tag)
+        throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
 
     const projectCount = await Project.countDocuments({
         tags: tag._id,
         status: "published",
-        isPublic: true,
+        isPublic: true
     });
 
     res.json({ ok: true, tag, projectCount });
@@ -230,12 +245,14 @@ export const suggestTags = asyncHandler(async (req: Request, res: Response) => {
     const q = validate(suggestTagsSchema, req.query);
 
     const filter: Record<string, unknown> = { isApproved: true };
-    if (q.type) filter.type = q.type;
+    if (q.type)
+        filter.type = q.type;
+
     if (q.q) {
         const safe = q.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         filter.$or = [
             { name: { $regex: "^" + safe, $options: "i" } },   // شروع با ← اولویت
-            { name: { $regex: safe, $options: "i" } },
+            { name: { $regex: safe, $options: "i" } }
         ];
     }
 
@@ -265,13 +282,17 @@ export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
 
     /* ---------- چک کتگوری ---------- */
     const type = await TagType.findById(data.type);
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
-    if (!type.isApproved) throw new AppError(400, ErrorCodes.TAG_TYPE_NOT_FOUND, "این کتگوری تایید نشده");
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+
+    if (!type.isApproved)
+        throw new AppError(400, ErrorCodes.TAG_TYPE_NOT_FOUND, "این کتگوری تایید نشده");
 
     /* ---------- چک وجود تگ ---------- */
     const existing = await Tag.findOne({ slug, type: type._id });
     if (existing) {
         const populated = await existing.populate("type", "name slug color icon");
+
         return res.json({ ok: true, tag: populated, created: false });
     }
 
@@ -304,7 +325,7 @@ export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
         color: type.color,
         isSystem: false,
         isApproved: isAdmin,       // ادمین تایید فوری، بقیه در انتظار
-        createdBy: req.user._id,
+        createdBy: req.user._id
     });
 
     const populated = await tag.populate("type", "name slug color icon");
@@ -313,7 +334,7 @@ export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
         ok: true,
         tag: populated,
         created: true,
-        pendingApproval: !isAdmin,
+        pendingApproval: !isAdmin
     });
 });
 
@@ -325,10 +346,12 @@ export const createTag = asyncHandler(async (req: any, res: Response) => {
     const slug = data.slug || slugify(data.name);
 
     const type = await TagType.findById(data.type).lean();
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
     const dup = await Tag.findOne({ slug, type: data.type }).lean();
-    if (dup) throw Conflict(ErrorCodes.TAG_TAKEN);
+    if (dup)
+        throw Conflict(ErrorCodes.TAG_TAKEN);
 
     const isAdmin = req.user?.role === "admin";
 
@@ -340,7 +363,7 @@ export const createTag = asyncHandler(async (req: any, res: Response) => {
         description: data.description,
         isSystem: false,
         isApproved: isAdmin,
-        createdBy: req.user._id,
+        createdBy: req.user._id
     });
 
     const populated = await tag.populate("type", "name slug color icon");
@@ -362,7 +385,10 @@ export const updateTag = asyncHandler(async (req: any, res: Response) => {
                 type: tag.type,
                 _id: { $ne: tag._id },
             }).lean();
-            if (dup) throw Conflict(ErrorCodes.TAG_TAKEN);
+
+            if (dup)
+                throw Conflict(ErrorCodes.TAG_TAKEN);
+
             data.slug = newSlug;
         }
     }
@@ -387,7 +413,8 @@ export const deleteTag = asyncHandler(async (req: any, res: Response) => {
     const tag = req.tag;
 
     const inUse = await Project.countDocuments({ tags: tag._id });
-    if (inUse > 0) throw Conflict(ErrorCodes.TAG_IN_USE);
+    if (inUse > 0)
+        throw Conflict(ErrorCodes.TAG_IN_USE);
 
     await tag.deleteOne();
     res.json({ ok: true, message: "تگ حذف شد" });
@@ -397,10 +424,12 @@ export const deleteTag = asyncHandler(async (req: any, res: Response) => {
    APPROVE TAG — admin
    ================================================================== */
 export const approveTag = asyncHandler(async (req: any, res: Response) => {
-    if (req.user?.role !== "admin") throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+    if (req.user?.role !== "admin")
+        throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
 
     const tag = await Tag.findById(req.params.id);
-    if (!tag) throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
+    if (!tag)
+        throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
 
     tag.isApproved = true;
     await tag.save();
@@ -413,10 +442,12 @@ export const approveTag = asyncHandler(async (req: any, res: Response) => {
    APPROVE TAG TYPE — admin
    ================================================================== */
 export const approveTagType = asyncHandler(async (req: any, res: Response) => {
-    if (req.user?.role !== "admin") throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+    if (req.user?.role !== "admin")
+        throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
 
     const type = await TagType.findById(req.params.id);
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    if (!type)
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
     type.isApproved = true;
     await type.save();
@@ -428,7 +459,8 @@ export const approveTagType = asyncHandler(async (req: any, res: Response) => {
    PENDING — لیست تگ‌ها/کتگوری‌های در انتظار تایید (admin)
    ================================================================== */
 export const listPending = asyncHandler(async (req: any, res: Response) => {
-    if (req.user?.role !== "admin") throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+    if (req.user?.role !== "admin")
+        throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
 
     const [tags, types] = await Promise.all([
         Tag.find({ isApproved: false })
@@ -436,10 +468,11 @@ export const listPending = asyncHandler(async (req: any, res: Response) => {
             .populate("createdBy", "name username")
             .sort({ createdAt: -1 })
             .lean(),
+
         TagType.find({ isApproved: false })
             .populate("createdBy", "name username")
             .sort({ createdAt: -1 })
-            .lean(),
+            .lean()
     ]);
 
     res.json({ ok: true, tags, types });
