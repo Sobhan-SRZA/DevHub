@@ -35,7 +35,7 @@ const tagTypeSchema = new Schema<ITagType, TagTypeModel>(
             index: true,
             lowercase: true,
             trim: true,
-            match: /^[a-z0-9-]+$/,
+            match: /^[a-z0-9-]+$/
         },
         description: { type: String, maxlength: 300 },
         color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
