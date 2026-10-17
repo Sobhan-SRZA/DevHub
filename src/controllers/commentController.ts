@@ -1,7 +1,7 @@
 import {
     createCommentSchema,
     updateCommentSchema,
-    commentListQuerySchema,
+    commentListQuerySchema
 } from "../validators/commentValidator";
 import {
     AppError,
@@ -22,7 +22,10 @@ const MAX_DEPTH = 5;
 async function findProject(idOrSlug: string) {
     const isId = /^[a-f\d]{24}$/i.test(idOrSlug);
     const project = await Project.findOne(isId ? { _id: idOrSlug } : { slug: idOrSlug }).lean();
-    if (!project) throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+
+    if (!project)
+        throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+
     return project;
 }
 
@@ -36,7 +39,7 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
     const sortMap: Record<string, Record<string, 1 | -1>> = {
         recent: { createdAt: -1 },
         oldest: { createdAt: 1 },
-        top: { likes: -1, createdAt: -1 },
+        top: { likes: -1, createdAt: -1 }
     };
     const sort = sortMap[q.sort] || sortMap.recent;
 
@@ -45,7 +48,7 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
         const replies = await Comment.find({
             project: project._id,
             parent: q.parentId,
-            isDeleted: false,
+            isDeleted: false
         })
             .populate("user", "name username avatar")
             .sort({ createdAt: 1 })
@@ -60,21 +63,22 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
     const [roots, total] = await Promise.all([
         Comment.find({
             project: project._id,
-            parent: null,
+            parent: null
         })
             .populate("user", "name username")
             .sort(sort)
             .skip(skip)
             .limit(q.limit)
             .lean(),
-        Comment.countDocuments({ project: project._id, parent: null }),
+
+        Comment.countDocuments({ project: project._id, parent: null })
     ]);
 
     // همه‌ی پاسخ‌های این کامنت‌های ریشه رو یک‌جا بگیر (بهینه)
     const rootIds = roots.map((r) => r._id);
     const allReplies = await Comment.find({
         project: project._id,
-        parent: { $in: rootIds },
+        parent: { $in: rootIds }
     })
         .populate("user", "name username")
         .sort({ createdAt: 1 })
@@ -84,7 +88,9 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
     const replyMap = new Map<string, any[]>();
     for (const r of allReplies) {
         const pid = String(r.parent);
-        if (!replyMap.has(pid)) replyMap.set(pid, []);
+        if (!replyMap.has(pid))
+            replyMap.set(pid, []);
+
         replyMap.get(pid)!.push(r);
     }
 
@@ -100,8 +106,8 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
             page: q.page,
             limit: q.limit,
             total,
-            pages: Math.ceil(total / q.limit),
-        },
+            pages: Math.ceil(total / q.limit)
+        }
     });
 });
 
@@ -117,7 +123,8 @@ export const createComment = asyncHandler(async (req: any, res: Response) => {
 
     if (data.parent) {
         parent = await Comment.findById(data.parent);
-        if (!parent) throw new AppError(400, ErrorCodes.COMMENT_PARENT_INVALID);
+        if (!parent)
+            throw new AppError(400, ErrorCodes.COMMENT_PARENT_INVALID);
 
         // والد باید تو همون پروژه باشه
         if (String(parent.project) !== String(project._id)) {
@@ -140,7 +147,7 @@ export const createComment = asyncHandler(async (req: any, res: Response) => {
         user: req.user._id,
         body: data.body,
         parent: parent?._id ?? null,
-        depth,
+        depth
     });
 
     // آپدیت replyCount والد
@@ -159,7 +166,8 @@ export const updateComment = asyncHandler(async (req: any, res: Response) => {
     const data = validate(updateCommentSchema, req.body);
 
     const comment = await Comment.findById(req.params.id);
-    if (!comment) throw new AppError(404, ErrorCodes.COMMENT_NOT_FOUND);
+    if (!comment)
+        throw new AppError(404, ErrorCodes.COMMENT_NOT_FOUND);
 
     if (String(comment.user) !== String(req.user._id)) {
         throw Forbidden(ErrorCodes.COMMENT_NOT_OWNED);
@@ -179,7 +187,8 @@ export const updateComment = asyncHandler(async (req: any, res: Response) => {
    ================================================================== */
 export const deleteComment = asyncHandler(async (req: any, res: Response) => {
     const comment = await Comment.findById(req.params.id);
-    if (!comment) throw new AppError(404, ErrorCodes.COMMENT_NOT_FOUND);
+    if (!comment)
+        throw new AppError(404, ErrorCodes.COMMENT_NOT_FOUND);
 
     const isOwner = String(comment.user) === String(req.user._id);
     const isProjectOwner = false; // ← می‌تونی چک کنی صاحب پروژه هم بتونه حذف کنه
@@ -196,7 +205,9 @@ export const deleteComment = asyncHandler(async (req: any, res: Response) => {
         comment.deletedAt = new Date();
         comment.body = "[این نظر حذف شده است]";
         await comment.save();
-    } else {
+    }
+
+    else {
         // اگه پاسخی نداره، کامل حذف کن
         await comment.deleteOne();
         // کاهش replyCount والد
