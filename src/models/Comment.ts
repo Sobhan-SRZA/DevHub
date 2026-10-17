@@ -1,4 +1,9 @@
-import { Schema, model, Model, Types } from "mongoose";
+import {
+    Schema,
+    model,
+    Model,
+    Types
+} from "mongoose";
 
 export interface IComment {
     project: Types.ObjectId;
@@ -29,13 +34,13 @@ const commentSchema = new Schema<IComment, CommentModel>(
             type: Schema.Types.ObjectId,
             ref: "Project",
             required: true,
-            index: true,
+            index: true
         },
         user: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
-            index: true,
+            index: true
         },
 
         body: { type: String, required: true, trim: true, maxlength: 2000 },
@@ -44,14 +49,14 @@ const commentSchema = new Schema<IComment, CommentModel>(
             type: Schema.Types.ObjectId,
             ref: "Comment",
             default: null,
-            index: true,
+            index: true
         },
 
         depth: {
             type: Number,
             default: 0,
             min: 0,
-            max: 5,     // حداکثر 5 سطح تودرتو
+            max: 5       // حداکثر 5 سطح تودرتو
         },
 
         isEdited: { type: Boolean, default: false },
@@ -64,8 +69,8 @@ const commentSchema = new Schema<IComment, CommentModel>(
 
         likes: {
             type: [{ type: Schema.Types.ObjectId, ref: "User" }],
-            default: [],
-        },
+            default: []
+        }
     },
     { timestamps: true }
 );
