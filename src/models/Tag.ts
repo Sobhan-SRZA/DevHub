@@ -31,13 +31,13 @@ const tagSchema = new Schema<ITag, TagModel>(
             required: true,
             lowercase: true,
             trim: true,
-            match: /^[a-z0-9-]+$/,
+            match: /^[a-z0-9-]+$/
         },
         type: {
             type: Schema.Types.ObjectId,
             ref: "TagType",
             required: true,
-            index: true,
+            index: true
         },
         color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
         description: { type: String, maxlength: 200 },
