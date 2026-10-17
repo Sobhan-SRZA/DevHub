@@ -3,14 +3,11 @@ import {
     updateCommentSchema,
     commentListQuerySchema,
 } from "../validators/commentValidator";
-import type {
-    Request,
-    Response
-} from "express";
 import {
     AppError,
     Forbidden
 } from "../utils/AppError";
+import type { Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
