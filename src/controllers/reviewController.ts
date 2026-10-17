@@ -1,17 +1,20 @@
-import type { Request, Response } from "express";
-import { Types } from "mongoose";
-import { Review } from "../models/Review";
-import { Project } from "../models/Project";
-import { AppError, Conflict, Forbidden } from "../utils/AppError";
-import { ErrorCodes } from "../utils/errorCodes";
-import { asyncHandler } from "../utils/asyncHandler";
-import { validate } from "../utils/validate";
 import {
     createReviewSchema,
     updateReviewSchema,
-    reviewListQuerySchema,
+    reviewListQuerySchema
 } from "../validators/reviewValidator";
+import {
+    AppError,
+    Conflict,
+    Forbidden
+} from "../utils/AppError";
 import { recalculateProjectStats } from "../services/ratingService";
+import type { Response } from "express";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ErrorCodes } from "../utils/errorCodes";
+import { validate } from "../utils/validate";
+import { Project } from "../models/Project";
+import { Review } from "../models/Review";
 
 /* ==================================================================
    Helper — پیدا کردن پروژه با idOrSlug
@@ -19,7 +22,9 @@ import { recalculateProjectStats } from "../services/ratingService";
 async function findProject(idOrSlug: string) {
     const isId = /^[a-f\d]{24}$/i.test(idOrSlug);
     const project = await Project.findOne(isId ? { _id: idOrSlug } : { slug: idOrSlug }).lean();
-    if (!project) throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+    if (!project)
+        throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+
     return project;
 }
 
@@ -37,8 +42,9 @@ export const listReviews = asyncHandler(async (req: any, res: Response) => {
         oldest: { createdAt: 1 },
         highest: { rating: -1, createdAt: -1 },
         lowest: { rating: 1, createdAt: -1 },
-        helpful: { helpfulCount: -1, createdAt: -1 },
+        helpful: { helpfulCount: -1, createdAt: -1 }
     };
+
     const sort = sortMap[q.sort] || sortMap.recent;
 
     const skip = (q.page - 1) * q.limit;
@@ -50,13 +56,14 @@ export const listReviews = asyncHandler(async (req: any, res: Response) => {
             .skip(skip)
             .limit(q.limit)
             .lean(),
+
         Review.countDocuments({ project: project._id }),
 
         // توزیع امتیازات (برای نمودار 5 ستاره‌ای)
         Review.aggregate([
             { $match: { project: project._id } },
-            { $group: { _id: { $floor: "$rating" }, count: { $sum: 1 } } },
-        ]),
+            { $group: { _id: { $floor: "$rating" }, count: { $sum: 1 } } }
+        ])
     ]);
 
     // پر کردن ستون‌های خالی
@@ -77,14 +84,14 @@ export const listReviews = asyncHandler(async (req: any, res: Response) => {
         summary: {
             rating: project.rating,
             satisfaction: project.satisfaction,
-            reviewCount: project.reviewCount,
+            reviewCount: project.reviewCount
         },
         pagination: {
             page: q.page,
             limit: q.limit,
             total,
-            pages: Math.ceil(total / q.limit),
-        },
+            pages: Math.ceil(total / q.limit)
+        }
     });
 });
 
@@ -118,7 +125,9 @@ export const createReview = asyncHandler(async (req: any, res: Response) => {
         project: project._id,
         user: req.user._id,
     }).lean();
-    if (existing) throw Conflict(ErrorCodes.REVIEW_ALREADY_EXISTS);
+
+    if (existing)
+        throw Conflict(ErrorCodes.REVIEW_ALREADY_EXISTS);
 
     const review = await Review.create({
         project: project._id,
@@ -126,7 +135,7 @@ export const createReview = asyncHandler(async (req: any, res: Response) => {
         rating: data.rating,
         satisfaction: data.satisfaction,
         title: data.title,
-        body: data.body,
+        body: data.body
     });
 
     await recalculateProjectStats(project._id);
@@ -146,12 +155,21 @@ export const updateReview = asyncHandler(async (req: any, res: Response) => {
         project: project._id,
         user: req.user._id,
     });
-    if (!review) throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
 
-    if (data.rating !== undefined) review.rating = data.rating;
-    if (data.satisfaction !== undefined) review.satisfaction = data.satisfaction;
-    if (data.title !== undefined) review.title = data.title;
-    if (data.body !== undefined) review.body = data.body;
+    if (!review)
+        throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+
+    if (data.rating !== undefined)
+        review.rating = data.rating;
+
+    if (data.satisfaction !== undefined)
+        review.satisfaction = data.satisfaction;
+
+    if (data.title !== undefined)
+        review.title = data.title;
+
+    if (data.body !== undefined)
+        review.body = data.body;
 
     review.isEdited = true;
     review.editedAt = new Date();
@@ -171,9 +189,10 @@ export const deleteReview = asyncHandler(async (req: any, res: Response) => {
 
     const review = await Review.findOne({
         project: project._id,
-        user: req.user._id,
+        user: req.user._id
     });
-    if (!review) throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+    if (!review)
+        throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
 
     await review.deleteOne();
     await recalculateProjectStats(project._id);
@@ -186,7 +205,8 @@ export const deleteReview = asyncHandler(async (req: any, res: Response) => {
    ================================================================== */
 export const markHelpful = asyncHandler(async (req: any, res: Response) => {
     const review = await Review.findById(req.params.id);
-    if (!review) throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+    if (!review)
+        throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
 
     review.helpfulCount += 1;
     await review.save();
