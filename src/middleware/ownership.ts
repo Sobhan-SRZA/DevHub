@@ -105,11 +105,12 @@ export async function loadProject(
 
         req.project = project;
         next();
-    } catch (err) {
+    } 
+    
+    catch (err) {
         next(err);
     }
 }
-
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
