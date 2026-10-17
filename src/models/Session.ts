@@ -71,7 +71,7 @@ const deviceSchema = new Schema<IDeviceInfo>(
         deviceType: {
             type: String,
             enum: ["desktop", "mobile", "tablet", "bot", "unknown"],
-            default: "unknown",
+            default: "unknown"
         },
         deviceVendor: String,
         deviceModel: String,
@@ -80,7 +80,7 @@ const deviceSchema = new Schema<IDeviceInfo>(
         browser: String,
         browserVersion: String,
         engine: String,
-        isBot: { type: Boolean, default: false },
+        isBot: { type: Boolean, default: false }
     },
     { _id: false }
 );
@@ -105,7 +105,7 @@ const clientSchema = new Schema<IClientIdentifiers>(
     {
         macAddress: { type: String, default: null },
         fingerprint: String,
-        deviceId: String,
+        deviceId: String
     },
     { _id: false }
 );
@@ -119,13 +119,13 @@ const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
             type: String,
             required: true,
             unique: true,
-            index: true,
+            index: true
         },
 
         deviceHash: {
             type: String,
             required: true,
-            index: true,
+            index: true
         },
 
         token: { type: String, required: true, unique: true, index: true },
@@ -137,7 +137,7 @@ const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
 
         loginAt: { type: Date, default: () => new Date() },
         lastActiveAt: { type: Date, default: () => new Date() },
-        expiresAt: { type: Date, required: true },
+        expiresAt: { type: Date, required: true }
     },
     { timestamps: true }
 );
