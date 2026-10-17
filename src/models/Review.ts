@@ -1,4 +1,9 @@
-import { Schema, model, Model, Types } from "mongoose";
+import {
+    Schema,
+    model,
+    Model,
+    Types
+} from "mongoose";
 
 export interface IReview {
     project: Types.ObjectId;
@@ -28,13 +33,13 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
             type: Schema.Types.ObjectId,
             ref: "Project",
             required: true,
-            index: true,
+            index: true
         },
         user: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
-            index: true,
+            index: true
         },
 
         rating: { type: Number, required: true, min: 0, max: 5 },
@@ -46,7 +51,7 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
         isEdited: { type: Boolean, default: false },
         editedAt: { type: Date, default: null },
 
-        helpfulCount: { type: Number, default: 0, min: 0 },
+        helpfulCount: { type: Number, default: 0, min: 0 }
     },
     { timestamps: true }
 );
