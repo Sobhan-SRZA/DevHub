@@ -36,7 +36,7 @@ export const getMe = asyncHandler(async (req: any, res: Response) => {
 
     res.json({
         ok: true,
-        user: publicUser(user),
+        user: publicUser(user)
     });
 });
 
@@ -49,15 +49,18 @@ export const updateProfile = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.user._id);
     if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
-    if (data.name !== undefined) user.name = data.name;
-    if (data.bio !== undefined) user.bio = data.bio;
+    if (data.name !== undefined)
+        user.name = data.name;
+
+    if (data.bio !== undefined)
+        user.bio = data.bio;
 
     await user.save();
 
     res.json({
         ok: true,
         message: "پروفایل به‌روزرسانی شد",
-        user: publicUser(user),
+        user: publicUser(user)
     });
 });
 
@@ -72,7 +75,7 @@ export const changeUsername = asyncHandler(async (req: any, res: Response) => {
     // چک تکراری (case-insensitive)
     const existing = await User.findOne({
         usernameLower,
-        _id: { $ne: req.user._id },
+        _id: { $ne: req.user._id }
     }).lean();
 
     if (existing) {
@@ -80,7 +83,8 @@ export const changeUsername = asyncHandler(async (req: any, res: Response) => {
     }
 
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     user.username = data.username;
     user.usernameLower = usernameLower;
@@ -89,7 +93,7 @@ export const changeUsername = asyncHandler(async (req: any, res: Response) => {
     res.json({
         ok: true,
         message: "نام کاربری تغییر کرد",
-        user: publicUser(user),
+        user: publicUser(user)
     });
 });
 
@@ -98,10 +102,12 @@ export const changeUsername = asyncHandler(async (req: any, res: Response) => {
    ================================================================== */
 export const uploadAvatar = asyncHandler(async (req: any, res: Response) => {
     const file = req.file as Express.Multer.File | undefined;
-    if (!file) throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+    if (!file)
+        throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
 
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     // پاک کردن آواتار قبلی
     if (user.avatar?.url) {
@@ -113,7 +119,7 @@ export const uploadAvatar = asyncHandler(async (req: any, res: Response) => {
         filename: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
     };
 
     await user.save();
@@ -121,7 +127,7 @@ export const uploadAvatar = asyncHandler(async (req: any, res: Response) => {
     res.json({
         ok: true,
         message: "عکس پروفایل به‌روزرسانی شد",
-        avatar: user.avatar,
+        avatar: user.avatar
     });
 });
 
@@ -130,7 +136,8 @@ export const uploadAvatar = asyncHandler(async (req: any, res: Response) => {
    ================================================================== */
 export const deleteAvatar = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     if (user.avatar?.url) {
         await deleteFile(user.avatar.url);
@@ -149,13 +156,14 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
     const data = validate(requestEmailChangeSchema, req.body);
 
     const user = await User.findById(req.user._id).select("+password");
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     /* ---------- تایید رمز فعلی ---------- */
     const ok = await user.comparePassword(data.password);
     if (!ok) {
         throw new AppError(401, ErrorCodes.INVALID_CREDENTIALS, "رمز عبور اشتباه است", {
-            field: "password",
+            field: "password"
         });
     }
 
@@ -178,7 +186,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
         userId: user._id,
         purpose: "change_email_new",
         targetEmail: data.newEmail,
-        req,
+        req
     });
 
     /* ---------- ذخیره pendingEmail روی کاربر ---------- */
@@ -187,7 +195,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
         codeHash: "", // hash داخل VerificationCode نگه داشته می‌شه
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
         attempts: 0,
-        requestedAt: new Date(),
+        requestedAt: new Date()
     };
     await user.save();
 
@@ -195,7 +203,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
         ok: true,
         message: `کد تایید به ${data.newEmail} ارسال شد`,
         pendingEmail: data.newEmail,
-        expiresIn: 600, // seconds
+        expiresIn: 600 // seconds
     });
 });
 
@@ -206,7 +214,8 @@ export const verifyEmailChange = asyncHandler(async (req: any, res: Response) =>
     const data = validate(verifyEmailChangeSchema, req.body);
 
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     if (!user.pendingEmail) {
         throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "درخواست تغییر ایمیل فعالی وجود ندارد");
@@ -219,13 +228,13 @@ export const verifyEmailChange = asyncHandler(async (req: any, res: Response) =>
         userId: user._id,
         purpose: "change_email_new",
         code: data.code,
-        targetEmail: newEmail,
+        targetEmail: newEmail
     });
 
     /* ---------- چک مجدد یکتایی (شاید تو این فاصله کسی دیگه گرفت) ---------- */
     const dup = await User.findOne({
         email: newEmail,
-        _id: { $ne: user._id },
+        _id: { $ne: user._id }
     }).lean();
 
     if (dup) {
@@ -256,7 +265,8 @@ export const verifyEmailChange = asyncHandler(async (req: any, res: Response) =>
    ================================================================== */
 export const cancelEmailChange = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     user.pendingEmail = null;
     await user.save();
@@ -279,7 +289,7 @@ export const requestPasswordChange = asyncHandler(async (req: any, res: Response
 
     const user = await User.findById(req.user._id).select("+password");
     if (!user)
-         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     const ok = await user.comparePassword(data.currentPassword);
     if (!ok) {
@@ -311,7 +321,7 @@ export const confirmPasswordChange = asyncHandler(async (req: any, res: Response
     const data = validate(confirmPasswordChangeSchema, req.body);
 
     const user = await User.findById(req.user._id);
-    if (!user) 
+    if (!user)
         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     // تایید کد
@@ -346,6 +356,6 @@ export const confirmPasswordChange = asyncHandler(async (req: any, res: Response
  *
  * Licensed under the BSD 3-Clause License.
  * See the LICENSE file in the project root for license information.
- *
+ *F
  * SPDX-License-Identifier: BSD-3-Clause
  */
