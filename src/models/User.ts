@@ -70,7 +70,7 @@ const pendingEmailSchema = new Schema<IPendingEmail>(
         codeHash: { type: String, required: true },
         expiresAt: { type: Date, required: true },
         attempts: { type: Number, default: 0, min: 0 },
-        requestedAt: { type: Date, default: () => new Date() },
+        requestedAt: { type: Date, default: () => new Date() }
     },
     { _id: false }
 );
