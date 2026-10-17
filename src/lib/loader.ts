@@ -1,7 +1,7 @@
+import { pathToFileURL } from "url";
 import { readdirSync } from "fs";
 import { Express } from "express";
 import path from "path";
-import { pathToFileURL } from "url";
 
 export default async function loadRoutes(
     app: Express,
