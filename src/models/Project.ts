@@ -127,7 +127,7 @@ const githubDataSchema = new Schema<IGitHubData>(
         isFork: { type: Boolean, default: false },
         createdAtGh: { type: Date, default: null },
         updatedAtGh: { type: Date, default: null },
-        pushedAtGh: { type: Date, default: null },
+        pushedAtGh: { type: Date, default: null }
     },
     { _id: false }
 );
@@ -142,7 +142,7 @@ const imageSchema = new Schema<IProjectImage>(
         height: Number,
         alt: String,
         order: { type: Number, default: 0 },
-        uploadedAt: { type: Date, default: () => new Date() },
+        uploadedAt: { type: Date, default: () => new Date() }
     },
     { _id: true }
 );
@@ -168,7 +168,7 @@ const fileSchema = new Schema<IProjectFile>(
         size: { type: Number, required: true },
         version: String,
         downloads: { type: Number, default: 0, min: 0 },
-        uploadedAt: { type: Date, default: () => new Date() },
+        uploadedAt: { type: Date, default: () => new Date() }
     },
     { _id: false }
 );
@@ -199,7 +199,7 @@ const projectSchema = new Schema<IProject, ProjectModel>(
         images: {
             type: [imageSchema],
             default: [],
-            validate: [(v: unknown[]) => v.length <= 10, "حداکثر ۱۰ تصویر"],
+            validate: [(v: unknown[]) => v.length <= 10, "حداکثر ۱۰ تصویر"]
         },
         demoVideo: { type: videoSchema, default: null },
         downloadFile: { type: fileSchema, default: null },
@@ -215,7 +215,7 @@ const projectSchema = new Schema<IProject, ProjectModel>(
         tags: {
             type: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
             default: [],
-            validate: [(v: unknown[]) => v.length <= 20, "حداکثر ۲۰ تگ"],
+            validate: [(v: unknown[]) => v.length <= 20, "حداکثر ۲۰ تگ"]
         },
 
         /* status */
@@ -223,11 +223,11 @@ const projectSchema = new Schema<IProject, ProjectModel>(
             type: String,
             enum: ["draft", "published", "archived"],
             default: "draft",
-            index: true,
+            index: true
         },
         isPublic: { type: Boolean, default: true, index: true },
         featured: { type: Boolean, default: false, index: true },
-        featuredOrder: { type: Number, default: 0 },
+        featuredOrder: { type: Number, default: 0 }
     },
     { timestamps: true }
 );
