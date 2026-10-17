@@ -1,14 +1,14 @@
-import type {
-    Request,
-    Response,
-    NextFunction
-} from "express";
 import {
     uploadAvatar,
     uploadImages,
     uploadVideo,
     uploadZip
 } from "../config/upload";
+import type {
+    Request,
+    Response,
+    NextFunction
+} from "express";
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 import multer from "multer";
@@ -22,15 +22,18 @@ export const mwUploadAvatar = wrap(uploadAvatar);
 function wrap(mw: any) {
     return (req: Request, res: Response, next: NextFunction) => {
         mw(req, res, (err: any) => {
-            if (!err) return next();
+            if (!err)
+                return next();
 
             if (err instanceof multer.MulterError) {
                 switch (err.code) {
                     case "LIMIT_FILE_SIZE":
                         return next(new AppError(413, ErrorCodes.FILE_TOO_LARGE));
+
                     case "LIMIT_FILE_COUNT":
                     case "LIMIT_UNEXPECTED_FILE":
                         return next(new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED));
+
                     default:
                         return next(new AppError(400, ErrorCodes.FILE_UPLOAD_FAILED, err.message));
                 }
