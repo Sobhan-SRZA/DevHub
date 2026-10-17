@@ -14,7 +14,7 @@ export const LIMITS = {
     IMAGE_SIZE: 5 * 1024 * 1024,          // 5 MB
     VIDEO_SIZE: 200 * 1024 * 1024,        // 200 MB
     FILE_SIZE: 500 * 1024 * 1024,         // 500 MB
-    MAX_IMAGES: 10,
+    MAX_IMAGES: 10
 };
 
 export const ALLOWED = {
@@ -26,15 +26,17 @@ export const ALLOWED = {
         "application/x-rar-compressed",
         "application/gzip",
         "application/x-7z-compressed",
-        "application/x-tar",
-    ],
+        "application/x-tar"
+    ]
 };
 
 /* ==================================================================
    Ensure directory exists
    ================================================================== */
 function ensureDir(dir: string) {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true });
+
     return dir;
 }
 
@@ -47,7 +49,9 @@ function makeStorage(subdir: string) {
             const projectId = (req as any).project?._id
                 || (req as any).params?.id
                 || "temp";
+
             const dir = path.join(UPLOAD_ROOT, "projects", subdir, String(projectId));
+
             ensureDir(dir);
             cb(null, dir);
         },
@@ -55,8 +59,9 @@ function makeStorage(subdir: string) {
             const ext = path.extname(file.originalname).toLowerCase();
             const id = crypto.randomBytes(12).toString("hex");
             const stamp = Date.now();
+
             cb(null, `${stamp}-${id}${ext}`);
-        },
+        }
     });
 }
 
@@ -65,7 +70,9 @@ function makeStorage(subdir: string) {
    ================================================================== */
 function makeFilter(allowed: string[]) {
     return (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-        if (allowed.includes(file.mimetype)) return cb(null, true);
+        if (allowed.includes(file.mimetype))
+            return cb(null, true);
+
         cb(new AppError(400, ErrorCodes.FILE_TYPE_INVALID, `فرمت ${file.mimetype} مجاز نیست`));
     };
 }
@@ -76,19 +83,19 @@ function makeFilter(allowed: string[]) {
 export const uploadImages = multer({
     storage: makeStorage("images"),
     limits: { fileSize: LIMITS.IMAGE_SIZE, files: LIMITS.MAX_IMAGES },
-    fileFilter: makeFilter(ALLOWED.IMAGE),
+    fileFilter: makeFilter(ALLOWED.IMAGE)
 }).array("images", LIMITS.MAX_IMAGES);
 
 export const uploadVideo = multer({
     storage: makeStorage("videos"),
     limits: { fileSize: LIMITS.VIDEO_SIZE, files: 1 },
-    fileFilter: makeFilter(ALLOWED.VIDEO),
+    fileFilter: makeFilter(ALLOWED.VIDEO)
 }).single("video");
 
 export const uploadZip = multer({
     storage: makeStorage("files"),
     limits: { fileSize: LIMITS.FILE_SIZE, files: 1 },
-    fileFilter: makeFilter(ALLOWED.FILE),
+    fileFilter: makeFilter(ALLOWED.FILE)
 }).single("file");
 
 /* ==================================================================
@@ -108,11 +115,12 @@ function makeAvatarStorage() {
             ensureDir(dir);
             cb(null, dir);
         },
+
         filename: (_req, file, cb) => {
             const ext = path.extname(file.originalname).toLowerCase() || ".png";
             const id = crypto.randomBytes(12).toString("hex");
             cb(null, `${Date.now()}-${id}${ext}`);
-        },
+        }
     });
 }
 
