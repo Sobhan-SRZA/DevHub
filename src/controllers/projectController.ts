@@ -2,22 +2,40 @@ import {
     createProjectSchema,
     updateProjectSchema,
     projectListQuerySchema,
-    exploreQuerySchema,
+    exploreQuerySchema
 } from "../validators/projectValidator";
+import {
+    toPublicUrl,
+    deleteFile,
+    deleteProjectFiles,
+} from "../services/fileService";
 import {
     parseGitHubUrl,
     fetchFullRepoData,
-    shouldResync,
+    shouldResync
 } from "../services/githubService";
+import {
+    exploreProjects,
+    getHomeFeeds
+} from "../services/exploreService";
+import {
+    cacheGet,
+    cacheSet
+} from "../services/cache";
 import {
     AppError,
     Conflict
 } from "../utils/AppError";
-import type { Request, Response } from "express";
+import type {
+    Request,
+    Response
+} from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Project } from "../models/Project";
+import { Comment } from "../models/Comment";
+import { Review } from "../models/Review";
 import { Tag } from "../models/Tag";
 
 /* ==================================================================
@@ -110,7 +128,7 @@ export const listProjects = asyncHandler(async (req: any, res: Response) => {
     if (q.search) {
         filter.$or = [
             { title: { $regex: q.search, $options: "i" } },
-            { shortDescription: { $regex: q.search, $options: "i" } },
+            { shortDescription: { $regex: q.search, $options: "i" } }
         ];
     }
 
@@ -140,6 +158,7 @@ export const listProjects = asyncHandler(async (req: any, res: Response) => {
             .skip(skip)
             .limit(q.limit)
             .lean(),
+
         Project.countDocuments(filter)
     ]);
 
@@ -325,6 +344,7 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
                 githubRepo: newRepo,
                 _id: { $ne: project._id },
             }).lean();
+
             if (dup)
                 throw Conflict(ErrorCodes.GITHUB_ALREADY_LINKED);
 
@@ -390,23 +410,6 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
     res.json({ ok: true, project: populated });
 });
 
-/* ==================================================================
-   DELETE — req.project از middleware
-   ================================================================== */
-// export const deleteProject = asyncHandler(async (req: any, res: Response) => {
-//     const project = req.project;
-
-//     // کاهش usageCount تگ‌ها
-//     if (project.tags?.length) {
-//         await Tag.updateMany(
-//             { _id: { $in: project.tags } },
-//             { $inc: { usageCount: -1 } }
-//         );
-//     }
-
-//     await project.deleteOne();
-//     res.json({ ok: true, message: "پروژه حذف شد" });
-// });
 
 /* ==================================================================
    SYNC GITHUB — آپدیت دستی
@@ -450,15 +453,6 @@ export const toggleStatus = asyncHandler(async (req: any, res: Response) => {
     res.json({ ok: true, status: project.status });
 });
 
-import {
-    toPublicUrl,
-    deleteFile,
-    deleteProjectFiles,
-} from '../services/fileService';
-import { Review } from "../models/Review";
-import { Comment } from "../models/Comment";
-import { cacheGet, cacheSet } from "../services/cache";
-import { exploreProjects, getHomeFeeds } from "../services/exploreService";
 
 /* ==================================================================
    UPLOAD IMAGES — چند تا با هم
@@ -475,7 +469,7 @@ export const uploadProjectImages = asyncHandler(async (req: any, res: Response) 
     if (currentCount + files.length > 10) {
         // پاک کردن فایل‌های آپلود شده
         await Promise.all(files.map((f) => deleteFile(toPublicUrl(f.path))));
-        throw new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED, 'حداکثر ۱۰ تصویر');
+        throw new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED, "حداکثر ۱۰ تصویر");
     }
 
     const newImages = files.map((f, i) => ({
@@ -484,7 +478,7 @@ export const uploadProjectImages = asyncHandler(async (req: any, res: Response) 
         mimeType: f.mimetype,
         size: f.size,
         order: currentCount + i,
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
     }));
 
     project.images.push(...newImages);
@@ -501,13 +495,15 @@ export const deleteProjectImage = asyncHandler(async (req: any, res: Response) =
     const { imageId } = req.params;
 
     const img = project.images.id(imageId);
-    if (!img) throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'تصویر یافت نشد');
+    if (!img)
+         throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "تصویر یافت نشد");
 
     await deleteFile(img.url);
+
     img.deleteOne();
     await project.save();
 
-    res.json({ ok: true, message: 'تصویر حذف شد' });
+    res.json({ ok: true, message: "تصویر حذف شد" });
 });
 
 /* ==================================================================
@@ -518,12 +514,13 @@ export const reorderImages = asyncHandler(async (req: any, res: Response) => {
     const { order } = req.body as { order?: string[] };
 
     if (!Array.isArray(order)) {
-        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, 'order باید آرایه باشد');
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "order باید آرایه باشد");
     }
 
     order.forEach((id, idx) => {
         const img = project.images.id(id);
-        if (img) img.order = idx;
+        if (img) 
+            img.order = idx;
     });
 
     await project.save();
@@ -537,7 +534,8 @@ export const uploadProjectVideo = asyncHandler(async (req: any, res: Response) =
     const project = req.project;
     const file = req.file as Express.Multer.File | undefined;
 
-    if (!file) throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+    if (!file) 
+        throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
 
     // پاک کردن ویدیوی قبلی
     if (project.demoVideo?.url) {
@@ -549,7 +547,7 @@ export const uploadProjectVideo = asyncHandler(async (req: any, res: Response) =
         filename: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
     };
 
     await project.save();
@@ -562,14 +560,14 @@ export const uploadProjectVideo = asyncHandler(async (req: any, res: Response) =
 export const deleteProjectVideo = asyncHandler(async (req: any, res: Response) => {
     const project = req.project;
     if (!project.demoVideo) {
-        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'ویدیویی وجود ندارد');
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "ویدیویی وجود ندارد");
     }
 
     await deleteFile(project.demoVideo.url);
     project.demoVideo = null;
     await project.save();
 
-    res.json({ ok: true, message: 'ویدیو حذف شد' });
+    res.json({ ok: true, message: "ویدیو حذف شد" });
 });
 
 /* ==================================================================
@@ -580,7 +578,8 @@ export const uploadProjectZip = asyncHandler(async (req: any, res: Response) => 
     const file = req.file as Express.Multer.File | undefined;
     const version = (req.body?.version as string) || undefined;
 
-    if (!file) throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
+    if (!file) 
+        throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
 
     // پاک کردن فایل قبلی
     if (project.downloadFile?.url) {
@@ -594,7 +593,7 @@ export const uploadProjectZip = asyncHandler(async (req: any, res: Response) => 
         size: file.size,
         version,
         downloads: 0,
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
     };
 
     await project.save();
@@ -607,14 +606,14 @@ export const uploadProjectZip = asyncHandler(async (req: any, res: Response) => 
 export const deleteProjectZip = asyncHandler(async (req: any, res: Response) => {
     const project = req.project;
     if (!project.downloadFile) {
-        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'فایلی وجود ندارد');
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "فایلی وجود ندارد");
     }
 
     await deleteFile(project.downloadFile.url);
     project.downloadFile = null;
     await project.save();
 
-    res.json({ ok: true, message: 'فایل حذف شد' });
+    res.json({ ok: true, message: "فایل حذف شد" });
 });
 
 /* ==================================================================
@@ -624,7 +623,7 @@ export const downloadProject = asyncHandler(async (req: any, res: Response) => {
     const project = req.project;
 
     if (!project.downloadFile?.url) {
-        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, 'فایلی برای دانلود موجود نیست');
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "فایلی برای دانلود موجود نیست");
     }
 
     // افزایش شمارنده‌ها
@@ -636,7 +635,7 @@ export const downloadProject = asyncHandler(async (req: any, res: Response) => {
 
     // هدر دانلود با نام اصلی
     const safeName = encodeURIComponent(project.downloadFile.filename);
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeName}`);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8""${safeName}`);
 
     // ریدایرکت به فایل استاتیک
     return res.redirect(project.downloadFile.url);
@@ -666,7 +665,7 @@ export const deleteProject = asyncHandler(async (req: any, res: Response) => {
     ]);
 
     await project.deleteOne();
-    res.json({ ok: true, message: 'پروژه حذف شد' });
+    res.json({ ok: true, message: "پروژه حذف شد" });
 });
 
 /* ==================================================================
@@ -689,7 +688,7 @@ export const explore = asyncHandler(async (req: Request, res: Response) => {
         tagType: q.tagType,
         search: q.search,
         page: q.page,
-        limit: q.limit,
+        limit: q.limit
     });
 
     cacheSet(cacheKey, result, 300);
@@ -700,7 +699,7 @@ export const explore = asyncHandler(async (req: Request, res: Response) => {
    HOME — دیتای صفحه اصلی
    ================================================================== */
 export const homeFeeds = asyncHandler(async (_req: Request, res: Response) => {
-    const cacheKey = 'home:feeds';
+    const cacheKey = "home:feeds";
     const cached = cacheGet<any>(cacheKey);
     if (cached) {
         return res.json({ ok: true, ...cached, cached: true });
