@@ -1,8 +1,7 @@
 import {
     AppError,
     Conflict,
-    Forbidden,
-    NotFound
+    Forbidden
 } from "../utils/AppError";
 import {
     createTagTypeSchema,
