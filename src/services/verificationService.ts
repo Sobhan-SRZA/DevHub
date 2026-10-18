@@ -126,10 +126,19 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
 
     if (incomingHash !== record.codeHash) {
         record.attempts += 1;
-        await record.save();
 
+        // اگه به حداکثر تلاش رسید، همون موقع پاک کن
+        if (record.attempts >= record.maxAttempts) {
+            await VerificationCode.deleteOne({ _id: record._id });
+            throw new AppError(
+                429,
+                ErrorCodes.TOO_MANY_ATTEMPTS,
+                "تعداد تلاش‌ها بیش از حد مجاز. کد جدید درخواست کنید"
+            );
+        }
+
+        await record.save();
         const remaining = record.maxAttempts - record.attempts;
-        
         throw new AppError(
             400,
             ErrorCodes.INVALID_TOKEN,
@@ -137,9 +146,10 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
         );
     }
 
-    /* ---------- موفق: mark as consumed ---------- */
-    record.consumedAt = new Date();
-    await record.save();
+    /* ==================================================================
+       ✅ موفق: حذف کامل رکورد (نه mark کردن)
+       ================================================================== */
+    await VerificationCode.deleteOne({ _id: record._id });
 
     return true;
 }
