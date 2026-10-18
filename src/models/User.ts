@@ -17,9 +17,7 @@ export interface IUserAvatar {
 /* ---------------- pending email change ---------------- */
 export interface IPendingEmail {
     newEmail: string;
-    codeHash: string;       // کد ۶ رقمی، hash شده
     expiresAt: Date;
-    attempts: number;       // تعداد تلاش‌های ناموفق
     requestedAt: Date;
 }
 
@@ -67,9 +65,7 @@ const avatarSchema = new Schema<IUserAvatar>(
 const pendingEmailSchema = new Schema<IPendingEmail>(
     {
         newEmail: { type: String, required: true, lowercase: true, trim: true },
-        codeHash: { type: String, required: true },
         expiresAt: { type: Date, required: true },
-        attempts: { type: Number, default: 0, min: 0 },
         requestedAt: { type: Date, default: () => new Date() }
     },
     { _id: false }
