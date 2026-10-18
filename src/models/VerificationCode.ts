@@ -1,4 +1,9 @@
-import { Schema, model, Model, Types } from "mongoose";
+import {
+    Schema,
+    model,
+    Model,
+    Types
+} from "mongoose";
 import crypto from "crypto";
 
 export type VerificationPurpose =
@@ -38,14 +43,14 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
-            index: true,
+            index: true
         },
 
         purpose: {
             type: String,
             enum: ["change_password", "change_email_old", "change_email_new", "login_2fa", "reset_password"],
             required: true,
-            index: true,
+            index: true
         },
 
         codeHash: { type: String, required: true },
@@ -59,7 +64,7 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
         consumedAt: { type: Date, default: null },
 
         ip: String,
-        userAgent: String,
+        userAgent: String
     },
     { timestamps: true }
 );
@@ -75,6 +80,7 @@ verificationCodeSchema.statics.generateCode = function () {
     const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
     const salt = crypto.randomBytes(16).toString("hex");
     const codeHash = crypto.createHash("sha256").update(code + salt).digest("hex");
+
     return { code, codeHash, salt };
 };
 
