@@ -31,7 +31,8 @@ export interface GitHubRepoInfo {
    URL parser
    ================================================================== */
 export function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
-    if (!url) return null;
+    if (!url)
+        return null;
 
     // پشتیبانی از:
     //   https://github.com/owner/repo
@@ -43,22 +44,29 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
     // حالت owner/repo ساده
     if (/^[\w.-]+\/[\w.-]+$/.test(cleaned)) {
         const [owner, repo] = cleaned.split("/");
+
         return { owner, repo };
     }
 
     // حالت URL کامل
     try {
         const u = new URL(cleaned);
-        if (!/(^|\.)github\.com$/i.test(u.hostname)) return null;
+        if (!/(^|\.)github\.com$/i.test(u.hostname))
+            return null;
+
         const parts = u.pathname.split("/").filter(Boolean);
-        if (parts.length < 2) return null;
+        if (parts.length < 2)
+            return null;
+
         return { owner: parts[0], repo: parts[1] };
     }
 
     catch {
         // git@github.com:owner/repo
         const m = cleaned.match(/^git@github\.com:([\w.-]+)\/([\w.-]+)$/);
-        if (m) return { owner: m[1], repo: m[2] };
+        if (m)
+            return { owner: m[1], repo: m[2] };
+
         return null;
     }
 }
@@ -71,6 +79,7 @@ async function ghFetch<T>(path: string): Promise<T> {
         Accept: "application/vnd.github+json",
         "User-Agent": "manage-projects-app",
     };
+
     if (process.env.GITHUB_TOKEN) {
         headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
     }
@@ -128,7 +137,7 @@ export async function fetchRepoInfo(owner: string, repo: string): Promise<GitHub
         isFork: !!data.fork,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
-        pushedAt: new Date(data.pushed_at),
+        pushedAt: new Date(data.pushed_at)
     };
 }
 
@@ -150,7 +159,9 @@ export async function fetchRepoDownloads(owner: string, repo: string): Promise<n
 
     catch (err) {
         // اگه release نداشت، 0 برگردون بدون خطا
-        if (err instanceof AppError && err.statusCode === 404) return 0;
+        if (err instanceof AppError && err.statusCode === 404)
+            return 0;
+
         throw err;
     }
 }
