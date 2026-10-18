@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
-import { Review } from "../models/Review";
 import { Project } from "../models/Project";
+import { Review } from "../models/Review";
+import { Types } from "mongoose";
 
 /**
  * میانگین rating و satisfaction رو از روی همه‌ی reviewها حساب می‌کنه
@@ -16,9 +16,9 @@ export async function recalculateProjectStats(projectId: Types.ObjectId | string
                 _id: null,
                 avgRating: { $avg: "$rating" },
                 avgSatisfaction: { $avg: "$satisfaction" },
-                count: { $sum: 1 },
-            },
-        },
+                count: { $sum: 1 }
+            }
+        }
     ]);
 
     const rating = result ? Math.round(result.avgRating * 10) / 10 : 0;
