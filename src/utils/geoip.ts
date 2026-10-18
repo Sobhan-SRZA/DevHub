@@ -71,7 +71,7 @@ export async function lookupIp(ip: string): Promise<ILocationInfo> {
             latitude: data.latitude,
             longitude: data.longitude,
             timezone: data.timezone,
-            isp: data.org,
+            isp: data.org
         };
     }
 
