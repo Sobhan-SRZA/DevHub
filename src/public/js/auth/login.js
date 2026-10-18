@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
             screen.width + 'x' + screen.height,
             new Date().getTimezoneOffset(),
             navigator.hardwareConcurrency || '',
-            navigator.platform || '',
+            navigator.platform || ''
         ];
 
         // hash ساده (FNV-1a)
@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
             hash ^= str.charCodeAt(i);
             hash = (hash * 0x01000193) >>> 0;
         }
+
         return hash.toString(16);
     }
 
@@ -33,13 +34,16 @@ document.addEventListener("DOMContentLoaded", () => {
             id = crypto.randomUUID
                 ? crypto.randomUUID()
                 : 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+
             localStorage.setItem('deviceId', id);
         }
+
         return id;
     }
-    
+
     const form = document.getElementById("loginForm");
-    if (!form) return;
+    if (!form)
+        return;
 
     FormKit.attach(form, {
         /* ---------------- اعتبارسنجی سمت کلاینت ---------------- */
@@ -91,7 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // اگه خطای invalid credentials بود → روی فیلد password تمرکز کن
             if (payload?.code === FormKit.ERROR_CODES.INVALID_CREDENTIALS) {
                 const pw = form.querySelector(`[name="password"]`);
-                if (pw) pw.select?.();
+                if (pw)
+                    pw.select?.();
             }
         }
     });
