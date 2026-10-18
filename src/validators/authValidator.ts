@@ -66,15 +66,15 @@ export const registerSchema = z
 
         terms: z
             .union([z.boolean(), z.literal('on'), z.literal('true'), z.literal('1')])
-            .optional(),
+            .optional()
     })
     .refine((d) => d.password === d.confirmPassword, {
         message: 'رمز عبور و تکرار آن یکسان نیستند',
-        path: ['confirmPassword'],
+        path: ['confirmPassword']
     })
     .refine((d) => !!d.terms, {
         message: 'پذیرش قوانین الزامی است',
-        path: ['terms'],
+        path: ['terms']
     });
 
 /* ==================================================================
@@ -93,7 +93,7 @@ export const loginSchema = z.object({
 
     remember: z
         .union([z.boolean(), z.literal('on'), z.literal('true'), z.literal('1')])
-        .optional(),
+        .optional()
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
