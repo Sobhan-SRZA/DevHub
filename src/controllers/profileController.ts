@@ -174,7 +174,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
 
     const existing = await User.findOne({
         email: data.newEmail,
-        _id: { $ne: user._id },
+        _id: { $ne: user._id }
     }).lean();
 
     if (existing) {
@@ -192,12 +192,25 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
     /* ---------- ذخیره pendingEmail روی کاربر ---------- */
     user.pendingEmail = {
         newEmail: data.newEmail,
-        codeHash: "", // hash داخل VerificationCode نگه داشته می‌شه
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-        attempts: 0,
         requestedAt: new Date()
     };
-    await user.save();
+
+    try {
+        await user.save();
+    }
+
+    catch (err) {
+        // ✅ rollback: اگه save شکست خورد، کد رو پاک کن
+        await VerificationCode.deleteMany({
+            user: user._id,
+            purpose: "change_email_new",
+            targetEmail: data.newEmail.toLowerCase(),
+            consumedAt: null
+        }).catch(() => { });
+        
+        throw err;
+    }
 
     res.json({
         ok: true,
