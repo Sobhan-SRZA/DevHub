@@ -59,7 +59,15 @@ export function publicUser(u: any) {
         bio: u.bio || '',
         avatar: u.avatar || null,
         role: u.role || 'user',
-        createdAt: u.createdAt
+        createdAt: u.createdAt,
+        
+        pendingEmail: u.pendingEmail
+            ? {
+                newEmail: u.pendingEmail.newEmail,
+                expiresAt: u.pendingEmail.expiresAt,
+                requestedAt: u.pendingEmail.requestedAt,
+            }
+            : null
     };
 }
 
