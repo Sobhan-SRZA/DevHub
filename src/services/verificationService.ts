@@ -129,6 +129,7 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
         await record.save();
 
         const remaining = record.maxAttempts - record.attempts;
+        
         throw new AppError(
             400,
             ErrorCodes.INVALID_TOKEN,
