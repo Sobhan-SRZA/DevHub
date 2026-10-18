@@ -15,8 +15,8 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "JavaScript", "TypeScript", "Python", "Go", "Rust", "Java",
             "C#", "C++", "C", "PHP", "Ruby", "Swift", "Kotlin", "Dart",
-            "Elixir", "Scala", "Haskell", "Lua", "R", "Perl",
-        ],
+            "Elixir", "Scala", "Haskell", "Lua", "R", "Perl"
+        ]
     },
     {
         name: "فریمورک",
@@ -29,8 +29,8 @@ const DEFAULT_TAG_TYPES = [
             "React", "Vue", "Angular", "Svelte", "Next.js", "Nuxt",
             "Remix", "Astro", "Express", "NestJS", "Fastify", "Koa",
             "Django", "Flask", "FastAPI", "Laravel", "Rails", "Spring",
-            "Gin", "Fiber", "Echo", "Actix", "Rocket",
-        ],
+            "Gin", "Fiber", "Echo", "Actix", "Rocket"
+        ]
     },
     {
         name: "دیتابیس",
@@ -42,8 +42,8 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "MongoDB", "PostgreSQL", "MySQL", "SQLite", "Redis",
             "Cassandra", "DynamoDB", "Elasticsearch", "Neo4j",
-            "MariaDB", "Oracle", "SQL Server", "CouchDB", "Firebase",
-        ],
+            "MariaDB", "Oracle", "SQL Server", "CouchDB", "Firebase"
+        ]
     },
     {
         name: "سئو",
@@ -54,8 +54,8 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "SEO", "Google Analytics", "Search Console", "Sitemap",
-            "Meta Tags", "Structured Data", "Core Web Vitals", "Backlinks",
-        ],
+            "Meta Tags", "Structured Data", "Core Web Vitals", "Backlinks"
+        ]
     },
     {
         name: "دواپس",
@@ -67,8 +67,8 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "Docker", "Kubernetes", "CI/CD", "GitHub Actions", "GitLab CI",
             "Jenkins", "Terraform", "Ansible", "Nginx", "Apache",
-            "AWS", "GCP", "Azure", "DigitalOcean", "Cloudflare",
-        ],
+            "AWS", "GCP", "Azure", "DigitalOcean", "Cloudflare"
+        ]
     },
     {
         name: "هوش مصنوعی",
@@ -80,8 +80,8 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "Machine Learning", "Deep Learning", "NLP", "Computer Vision",
             "TensorFlow", "PyTorch", "OpenAI", "LangChain", "LLM",
-            "Stable Diffusion", "Hugging Face",
-        ],
+            "Stable Diffusion", "Hugging Face"
+        ]
     },
     {
         name: "موبایل",
@@ -92,8 +92,8 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "React Native", "Flutter", "Ionic", "Capacitor",
-            "Android", "iOS", "Kotlin Multiplatform", "Expo",
-        ],
+            "Android", "iOS", "Kotlin Multiplatform", "Expo"
+        ]
     },
     {
         name: "امنیت",
@@ -104,8 +104,8 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "JWT", "OAuth", "Authentication", "Encryption", "HTTPS",
-            "CORS", "XSS", "CSRF", "SQL Injection", "Penetration Testing",
-        ],
+            "CORS", "XSS", "CSRF", "SQL Injection", "Penetration Testing"
+        ]
     },
     {
         name: "دیزاین",
@@ -116,8 +116,8 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "UI", "UX", "Figma", "Tailwind CSS", "Bootstrap",
-            "Material UI", "Ant Design", "Sass", "CSS", "Responsive",
-        ],
+            "Material UI", "Ant Design", "Sass", "CSS", "Responsive"
+        ]
     },
     {
         name: "عمومی",
@@ -128,8 +128,8 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "Open Source", "API", "REST", "GraphQL", "WebSocket",
-            "CLI", "Library", "Plugin", "Template", "Boilerplate",
-        ],
+            "CLI", "Library", "Plugin", "Template", "Boilerplate"
+        ]
     },
 ];
 
@@ -165,8 +165,9 @@ export async function seedDefaultTags() {
                 ...typeFields,
                 isSystem: true,
                 isApproved: true,
-                createdBy: null,
+                createdBy: null
             });
+
             typesCreated++;
         }
 
@@ -174,7 +175,8 @@ export async function seedDefaultTags() {
         for (const tagName of tagNames) {
             const slug = slugify(tagName);
             const exists = await Tag.findOne({ slug, type: type._id });
-            if (exists) continue;
+            if (exists)
+                 continue;
 
             await Tag.create({
                 name: tagName,
@@ -184,8 +186,9 @@ export async function seedDefaultTags() {
                 isSystem: true,
                 isApproved: true,
                 createdBy: null,
-                usageCount: 0,
+                usageCount: 0
             });
+            
             tagsCreated++;
         }
     }
