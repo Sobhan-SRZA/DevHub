@@ -65,6 +65,7 @@ export async function createVerificationCode(opts: CreateCodeOptions) {
         targetEmail: targetEmail?.toLowerCase() || null,
         expiresAt,
         maxAttempts: MAX_ATTEMPTS,
+        requestedAt: new Date(),
         ip: req ? getClientIp(req) : undefined,
         userAgent: req?.headers["user-agent"] as string | undefined
     });
