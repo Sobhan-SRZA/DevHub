@@ -2,18 +2,18 @@ import { z } from "zod";
 
 export const createCommentSchema = z.object({
     body: z.string().trim().min(1, "متن نظر الزامی است").max(2000),
-    parent: z.string().regex(/^[a-f\d]{24}$/i).optional().nullable(),
+    parent: z.string().regex(/^[a-f\d]{24}$/i).optional().nullable()
 });
 
 export const updateCommentSchema = z.object({
-    body: z.string().trim().min(1).max(2000),
+    body: z.string().trim().min(1).max(2000)
 });
 
 export const commentListQuerySchema = z.object({
     sort: z.enum(["recent", "oldest", "top"]).optional().default("recent"),
     page: z.coerce.number().int().min(1).optional().default(1),
     limit: z.coerce.number().int().min(1).max(100).optional().default(20),
-    parentId: z.string().regex(/^[a-f\d]{24}$/i).optional(),  // برای لیست پاسخ‌ها
+    parentId: z.string().regex(/^[a-f\d]{24}$/i).optional()  // برای لیست پاسخ‌ها
 });
 
 
