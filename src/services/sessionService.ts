@@ -26,6 +26,7 @@ export function computeDeviceHash(
     deviceId?: string
 ): string {
     const fp = fingerprint || deviceId || "";
+
     return crypto
         .createHash("sha256")
         .update(`${userAgent}|${fp}`)
@@ -67,8 +68,8 @@ async function buildMetadata(
         client: {
             deviceId,
             fingerprint,
-            macAddress: macAddress ?? null,
-        },
+            macAddress: macAddress ?? null
+        }
     };
 }
 
@@ -109,7 +110,7 @@ export async function startSession(
     let session = await Session.findOne({
         user: userId,
         deviceHash,
-        expiresAt: { $gt: now },
+        expiresAt: { $gt: now }
     });
 
     let reused = false;
@@ -123,7 +124,9 @@ export async function startSession(
         session.loginAt = now;
         session.expiresAt = expiresAt;
         reused = true;
-    } else {
+    } 
+    
+    else {
         // سشن جدید
         session = new Session({
             user: userId,
@@ -134,7 +137,7 @@ export async function startSession(
             client: meta.client,
             loginAt: now,
             lastActiveAt: now,
-            expiresAt,
+            expiresAt
         });
     }
 
@@ -142,11 +145,12 @@ export async function startSession(
     // (اگه سشن قبلی بود، همون sessionId حفظ می‌شه)
     const access = signAccessToken({
         sub: userId.toString(),
-        sid: session.sessionId,
+        sid: session.sessionId
     });
+
     const refresh = signRefreshToken({
         sub: userId.toString(),
-        sid: session.sessionId,
+        sid: session.sessionId
     });
 
     session.token = access;
@@ -164,9 +168,11 @@ export async function endSession(
     userId?: Types.ObjectId | string
 ): Promise<boolean> {
     const filter: Record<string, unknown> = { sessionId };
-    if (userId) filter.user = userId;
+    if (userId) 
+        filter.user = userId;
 
     const result = await Session.deleteOne(filter);
+    
     return (result.deletedCount ?? 0) > 0;
 }
 
@@ -177,6 +183,7 @@ export async function endAllSessions(
     userId: Types.ObjectId | string
 ): Promise<number> {
     const result = await Session.deleteMany({ user: userId });
+
     return result.deletedCount ?? 0;
 }
 
