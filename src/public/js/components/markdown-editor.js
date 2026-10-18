@@ -19,7 +19,7 @@
         'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD', 'CAPTION',
         'DETAILS', 'SUMMARY',
         'INPUT', // only checkbox
-        'FIGURE', 'FIGCAPTION',
+        'FIGURE', 'FIGCAPTION'
     ]);
 
     // attribute های مجاز به تفکیک tag
@@ -35,7 +35,7 @@
         'OL': ['start', 'type'],
         'DETAILS': ['open'],
         'DIV': ['class', 'align'],
-        'P': ['class', 'align'],
+        'P': ['class', 'align']
     };
 
     /**
@@ -48,11 +48,13 @@
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
         function walk(node) {
-            if (node.nodeType === Node.TEXT_NODE) return;
+            if (node.nodeType === Node.TEXT_NODE)
+                return;
 
             // حذف کامل comment ها
             if (node.nodeType === Node.COMMENT_NODE) {
                 node.parentNode.removeChild(node);
+
                 return;
             }
 
@@ -65,12 +67,16 @@
                 // اگه script/style/iframe بود، کاملاً حذف کن (نه unwrap)
                 if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'META', 'LINK', 'BASE', 'SVG', 'MATH'].includes(tag)) {
                     node.parentNode.removeChild(node);
+
                     return;
                 }
 
                 const parent = node.parentNode;
-                while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                while (node.firstChild)
+                    parent.insertBefore(node.firstChild, node);
+
                 parent.removeChild(node);
+
                 return;
             }
 
@@ -83,6 +89,7 @@
                 // event handlers
                 if (name.startsWith('on')) {
                     node.removeAttribute(attr.name);
+
                     continue;
                 }
 
@@ -95,6 +102,7 @@
                         trimmed.startsWith('vbscript:')
                     ) {
                         node.removeAttribute(attr.name);
+
                         continue;
                     }
                 }
@@ -102,6 +110,7 @@
                 // style attribute ممنوع (برای جلوگیری از XSS)
                 if (name === 'style') {
                     node.removeAttribute(attr.name);
+
                     continue;
                 }
 
@@ -117,8 +126,10 @@
             if (tag === 'INPUT') {
                 if (node.getAttribute('type') !== 'checkbox') {
                     node.parentNode.removeChild(node);
+
                     return;
                 }
+
                 node.setAttribute('disabled', '');
             }
 
@@ -142,6 +153,7 @@
         }
 
         Array.from(doc.body.childNodes).forEach(walk);
+
         return doc.body.innerHTML;
     }
 
@@ -165,7 +177,8 @@
     }
 
     function parseMarkdown(md) {
-        if (!md) return '';
+        if (!md)
+            return '';
 
         let html = md.replace(/\r\n?/g, '\n');
 
@@ -178,6 +191,7 @@
             codeBlocks.push(
                 `<pre${langAttr}><code${cls}>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`
             );
+
             return `\u0000CB${idx}\u0000`;
         });
 
@@ -186,6 +200,7 @@
         html = html.replace(/`([^`\n]+)`/g, (_, code) => {
             const idx = inlineCodes.length;
             inlineCodes.push(`<code>${escapeHtml(code)}</code>`);
+
             return `\u0000IC${idx}\u0000`;
         });
 
@@ -212,13 +227,16 @@
                 const rows = bodyRows.trim().split('\n').map((r) =>
                     r.split('|').slice(1, -1).map((c) => c.trim())
                 );
+
                 let t = '<table><thead><tr>';
                 t += headers.map((h) => `<th>${h}</th>`).join('');
                 t += '</tr></thead><tbody>';
                 for (const row of rows) {
                     t += '<tr>' + row.map((c) => `<td>${c}</td>`).join('') + '</tr>';
                 }
+
                 t += '</tbody></table>';
+
                 return t;
             }
         );
@@ -226,6 +244,7 @@
         /* ---------- 7) Task lists ---------- */
         html = html.replace(/^(\s*)[-*]\s+\[\s\]\s+(.+)$/gm,
             '$1<li class="task"><input type="checkbox" disabled> $2</li>');
+
         html = html.replace(/^(\s*)[-*]\s+\[x\]\s+(.+)$/gim,
             '$1<li class="task"><input type="checkbox" checked disabled> $2</li>');
 
@@ -237,6 +256,7 @@
         html = html.replace(/((?:<li[^>]*>[\s\S]*?<\/li>\n?)+)/g, (match) => {
             const isOrdered = match.includes('data-ordered');
             const tag = isOrdered ? 'ol' : 'ul';
+
             return `<${tag}>${match.replace(/ data-ordered/g, '')}</${tag}>`;
         });
 
@@ -266,36 +286,54 @@
 
         const isBlockLine = (l) => {
             const t = l.trim();
-            if (!t) return false;
+            if (!t)
+                return false;
+
             // block tags
-            if (/^<\/?(?:h[1-6]|hr|blockquote|pre|ul|ol|table|details|li|div|p|figure|section|article|header|footer|nav|aside|main)/i.test(t)) return true;
+            if (/^<\/?(?:h[1-6]|hr|blockquote|pre|ul|ol|table|details|li|div|p|figure|section|article|header|footer|nav|aside|main)/i.test(t))
+                return true;
+
             // self-closing
-            if (/^<(?:hr|br)\b/i.test(t)) return true;
+            if (/^<(?:hr|br)\b/i.test(t))
+                return true;
+
             return false;
         };
 
         const flushPara = () => {
             if (para.length) {
                 const text = para.join(' ').trim();
-                if (text) out.push(`<p>${text}</p>`);
+                if (text)
+                    out.push(`<p>${text}</p>`);
+
                 para = [];
             }
         };
 
         for (const line of lines) {
             const trimmed = line.trim();
-            if (!trimmed) { flushPara(); continue; }
+            if (!trimmed) {
+                flushPara();
+
+                continue;
+            }
+
             if (isBlockLine(line)) {
                 flushPara();
                 out.push(line);
-            } else if (isHtmlBlock(line) && trimmed.startsWith('<')) {
+            }
+
+            else if (isHtmlBlock(line) && trimmed.startsWith('<')) {
                 // HTML بلاک (مثل <div>...</div>)
                 flushPara();
                 out.push(line);
-            } else {
+            }
+
+            else {
                 para.push(line);
             }
         }
+
         flushPara();
 
         html = out.join('\n');
@@ -332,7 +370,7 @@
         table: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`,
         hr: `<svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line></svg>`,
         details: `<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline><path d="M3 6v12h18V6z"></path></svg>`,
-        html: `<svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>`,
+        html: `<svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>`
     };
 
     /* ============================================================
@@ -341,7 +379,8 @@
     class MarkdownEditor {
         constructor(target, options = {}) {
             this.root = typeof target === 'string' ? document.querySelector(target) : target;
-            if (!this.root) throw new Error('MarkdownEditor: target not found');
+            if (!this.root)
+                throw new Error('MarkdownEditor: target not found');
 
             this.name = options.name || 'content';
             this.value = options.value || '';
@@ -470,7 +509,9 @@
 
             this.els.toolbar.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-action]');
-                if (!btn) return;
+                if (!btn)
+                    return;
+
                 e.preventDefault();
                 this._applyAction(btn.dataset.action);
             });
@@ -480,11 +521,17 @@
 
                 if (ctrl && e.key.toLowerCase() === 'b') {
                     e.preventDefault(); this._applyAction('bold');
-                } else if (ctrl && e.key.toLowerCase() === 'i') {
+                }
+
+                else if (ctrl && e.key.toLowerCase() === 'i') {
                     e.preventDefault(); this._applyAction('italic');
-                } else if (ctrl && e.key.toLowerCase() === 'k') {
+                }
+
+                else if (ctrl && e.key.toLowerCase() === 'k') {
                     e.preventDefault(); this._applyAction('link');
-                } else if (e.key === 'Tab') {
+                }
+
+                else if (e.key === 'Tab') {
                     e.preventDefault(); this._insertText('  ');
                 }
             });
@@ -497,7 +544,9 @@
                 this._updatePreview();
                 this.els.write.classList.add('hidden');
                 this.els.preview.classList.add('active');
-            } else {
+            }
+
+            else {
                 this.els.write.classList.remove('hidden');
                 this.els.preview.classList.remove('active');
                 this.els.textarea.focus();
@@ -512,7 +561,9 @@
         _updateCounter() {
             const text = this.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
-            if (this.els.wordcount) this.els.wordcount.textContent = `${words} کلمه`;
+            if (this.els.wordcount)
+                this.els.wordcount.textContent = `${words} کلمه`;
+
             if (this.els.charcount && this.maxLength) {
                 this.els.charcount.textContent = `${this.value.length} / ${this.maxLength}`;
             }
@@ -543,14 +594,17 @@
 
             let lineStart = value.lastIndexOf('\n', start - 1) + 1;
             let lineEnd = value.indexOf('\n', end);
-            if (lineEnd === -1) lineEnd = value.length;
+            if (lineEnd === -1)
+                lineEnd = value.length;
 
             const block = value.slice(lineStart, lineEnd);
             const lines = block.split('\n');
             const hasPrefix = lines.every((l) => l.startsWith(prefix));
 
             const newLines = lines.map((l) => {
-                if (hasPrefix) return l.slice(prefix.length);
+                if (hasPrefix)
+                    return l.slice(prefix.length);
+
                 return prefix + l.replace(/^(#{1,6}\s+|[-*+]\s+|\d+\.\s+|>\s+|- \[[ x]\]\s+)/, '');
             });
 
@@ -604,15 +658,24 @@
         }
 
         /* API */
-        getValue() { return this.value; }
+        getValue() {
+            return this.value;
+        }
+
         setValue(v) {
             this.value = v || '';
             this.els.textarea.value = this.value;
             this._updatePreview();
             this._updateCounter();
         }
-        focus() { this.els.textarea.focus(); }
-        getTextarea() { return this.els.textarea; }
+
+        focus() {
+            this.els.textarea.focus();
+        }
+
+        getTextarea() {
+            return this.els.textarea;
+        }
     }
 
     /* ---------- Expose ---------- */
