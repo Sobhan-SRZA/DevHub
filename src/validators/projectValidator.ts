@@ -20,7 +20,7 @@ export const createProjectSchema = z.object({
     tags: z.array(z.string().regex(/^[a-f\d]{24}$/i)).max(20).optional(),
 
     status: z.enum(["draft", "published", "archived"]).optional(),
-    isPublic: z.boolean().optional(),
+    isPublic: z.boolean().optional()
 });
 
 /* ---------------- Update ---------------- */
@@ -35,7 +35,7 @@ export const projectListQuerySchema = z.object({
     mine: z.coerce.boolean().optional(),           // فقط پروژه‌های خودم
     sort: z.enum(["recent", "rating", "downloads", "stars"]).optional().default("recent"),
     page: z.coerce.number().int().min(1).optional().default(1),
-    limit: z.coerce.number().int().min(1).max(50).optional().default(12),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(12)
 });
 
 export const exploreQuerySchema = z.object({
@@ -45,14 +45,14 @@ export const exploreQuerySchema = z.object({
         'top',
         'new',
         'top-rated',
-        'top-downloaded',
+        'top-downloaded'
     ]).optional().default('trending'),
     window: z.enum(['24h', '7d', '30d', 'all']).optional(),
     tag: z.string().regex(/^[a-f\d]{24}$/i).optional(),
     tagType: z.string().regex(/^[a-f\d]{24}$/i).optional(),
     search: z.string().trim().max(80).optional(),
     page: z.coerce.number().int().min(1).optional().default(1),
-    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20)
 });
 
 /**
