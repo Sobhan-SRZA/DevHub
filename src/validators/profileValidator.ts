@@ -18,6 +18,7 @@ export const requestEmailChangeSchema = z.object({
         .toLowerCase()
         .email("ایمیل نامعتبر است")
         .max(254),
+
     password: z.string({ error: "رمز عبور فعلی الزامی است" }).min(1)
 });
 
@@ -52,6 +53,7 @@ export const requestPasswordChangeSchema = z
                 passwordRegex,
                 "رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد"
             ),
+
         confirmPassword: z.string({ error: "تکرار رمز الزامی است" })
     })
     .refine((d) => d.newPassword === d.confirmPassword, {
@@ -72,11 +74,13 @@ export const confirmPasswordChangeSchema = z
             .string({ error: "کد تایید الزامی است" })
             .trim()
             .regex(/^\d{6}$/, "کد باید ۶ رقم باشد"),
+
         newPassword: z
             .string()
             .min(8, "رمز جدید باید حداقل ۸ کاراکتر باشد")
             .max(128)
             .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد"),
+            
         confirmPassword: z.string()
     })
     .refine((d) => d.newPassword === d.confirmPassword, {
