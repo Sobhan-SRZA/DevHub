@@ -1,7 +1,7 @@
-import { Types } from 'mongoose';
 import { Project } from '../models/Project';
-import { Tag } from '../models/Tag';
+import { Types } from 'mongoose';
 import { User } from '../models/User';
+import { Tag } from '../models/Tag';
 
 /* ==================================================================
    Types
@@ -23,14 +23,14 @@ const GRAVITY: Record<ExploreWindow, number> = {
     '24h': 1.5,
     '7d': 1.8,
     '30d': 2.0,
-    'all': 0,
+    'all': 0
 };
 
 const WINDOW_MS: Record<ExploreWindow, number> = {
     '24h': 24 * 60 * 60 * 1000,
     '7d': 7 * 24 * 60 * 60 * 1000,
     '30d': 30 * 24 * 60 * 60 * 1000,
-    'all': 0,
+    'all': 0
 };
 
 /* ==================================================================
@@ -50,9 +50,11 @@ export function computeHotScore(project: any, window: ExploreWindow = '7d'): num
         (project.demoVideo?.url ? 10 : 0) +
         (project.downloadFile?.url ? 5 : 0);
 
-    if (gravity === 0) return points;
+    if (gravity === 0)
+        return points;
 
     const ageHours = (Date.now() - new Date(project.createdAt).getTime()) / (1000 * 60 * 60);
+
     return points / Math.pow(ageHours + 2, gravity);
 }
 
@@ -74,10 +76,10 @@ function buildHotScorePipeline(window: ExploreWindow) {
                 _ageHours: {
                     $divide: [
                         { $subtract: [new Date(), '$createdAt'] },
-                        1000 * 60 * 60,
-                    ],
-                },
-            },
+                        1000 * 60 * 60
+                    ]
+                }
+            }
         },
 
         // امتیاز پایه
@@ -93,11 +95,11 @@ function buildHotScorePipeline(window: ExploreWindow) {
                         { $multiply: [4.0, { $ifNull: ['$reviewCount', 0] }] },
                         { $cond: [{ $gt: [{ $size: { $ifNull: ['$images', []] } }, 0] }, 10, 0] },
                         { $cond: [{ $ne: [{ $ifNull: ['$demoVideo.url', null] }, null] }, 10, 0] },
-                        { $cond: [{ $ne: [{ $ifNull: ['$downloadFile.url', null] }, null] }, 5, 0] },
-                    ],
-                },
-            },
-        },
+                        { $cond: [{ $ne: [{ $ifNull: ['$downloadFile.url', null] }, null] }, 5, 0] }
+                    ]
+                }
+            }
+        }
     ];
 
     // اعمال gravity
@@ -107,12 +109,14 @@ function buildHotScorePipeline(window: ExploreWindow) {
                 _hotScore: {
                     $divide: [
                         '$_points',
-                        { $pow: [{ $add: ['$_ageHours', 2] }, gravity] },
-                    ],
-                },
-            },
+                        { $pow: [{ $add: ['$_ageHours', 2] }, gravity] }
+                    ]
+                }
+            }
         });
-    } else {
+    }
+
+    else {
         pipeline.push({ $addFields: { _hotScore: '$_points' } });
     }
 
@@ -140,20 +144,22 @@ export async function exploreProjects(opts: ExploreOptions) {
         tagType,
         search,
         page = 1,
-        limit = 20,
+        limit = 20
     } = opts;
 
     /* ---------- base match ---------- */
     const match: Record<string, any> = {
         status: 'published',
-        isPublic: true,
+        isPublic: true
     };
 
-    if (tag) match.tags = new Types.ObjectId(tag);
+    if (tag)
+        match.tags = new Types.ObjectId(tag);
+
     if (search) {
         match.$or = [
             { title: { $regex: search, $options: 'i' } },
-            { shortDescription: { $regex: search, $options: 'i' } },
+            { shortDescription: { $regex: search, $options: 'i' } }
         ];
     }
 
@@ -176,25 +182,29 @@ export async function exploreProjects(opts: ExploreOptions) {
             ...buildHotScorePipeline(window),
             { $sort: { _hotScore: -1, createdAt: -1 } },
             { $skip: skip },
-            { $limit: limit },
+            { $limit: limit }
         ];
+
         sortStage = { _hotScore: -1 };
-    } else {
+    }
+
+    else {
         const sortMap: Record<ExploreSort, Record<string, 1 | -1>> = {
             'trending': { 'githubData.stars': -1 },
             'hot': { createdAt: -1 },
             'top': { rating: -1, reviewCount: -1 },
             'new': { createdAt: -1 },
             'top-rated': { rating: -1, reviewCount: -1 },
-            'top-downloaded': { downloads: -1, createdAt: -1 },
+            'top-downloaded': { downloads: -1, createdAt: -1 }
         };
+
         sortStage = sortMap[sort];
 
         pipeline = [
             { $match: match },
             { $sort: sortStage },
             { $skip: skip },
-            { $limit: limit },
+            { $limit: limit }
         ];
     }
 
@@ -203,10 +213,11 @@ export async function exploreProjects(opts: ExploreOptions) {
         Project.aggregate(pipeline).then((docs) =>
             Project.populate(docs, [
                 { path: 'owner', select: 'name username avatar' },
-                { path: 'tags', select: 'name slug color type' },
+                { path: 'tags', select: 'name slug color type' }
             ])
         ),
-        Project.countDocuments(match),
+
+        Project.countDocuments(match)
     ]);
 
     return {
@@ -215,10 +226,10 @@ export async function exploreProjects(opts: ExploreOptions) {
             page,
             limit,
             total,
-            pages: Math.ceil(total / limit),
+            pages: Math.ceil(total / limit)
         },
         sort,
-        window: needsHotScore ? window : null,
+        window: needsHotScore ? window : null
     };
 }
 
@@ -251,7 +262,7 @@ export async function getHomeFeeds(opts: HomeFeedOptions = {}) {
             .populate('tags', 'name slug color type')
             .sort({ featuredOrder: 1, updatedAt: -1 })
             .limit(6)
-            .lean(),
+            .lean()
     ]);
 
     /* ---------- آمار کلی ---------- */
@@ -261,8 +272,8 @@ export async function getHomeFeeds(opts: HomeFeedOptions = {}) {
         Tag.countDocuments({ isApproved: true }),
         Project.aggregate([
             { $match: { status: 'published', isPublic: true } },
-            { $group: { _id: null, total: { $sum: '$downloads' } } },
-        ]),
+            { $group: { _id: null, total: { $sum: '$downloads' } } }
+        ])
     ]);
 
     return {
@@ -271,14 +282,14 @@ export async function getHomeFeeds(opts: HomeFeedOptions = {}) {
             featured: { title: 'پروژه‌های ویژه', subtitle: 'انتخاب تیم ما', projects: featured },
             newProjects: { title: 'تازه‌ها', subtitle: 'آخرین پروژه‌های منتشرشده', projects: newProjects },
             topRated: { title: 'بهترین امتیازها', subtitle: 'بر اساس نظرات کاربران', projects: topRated },
-            topDownloaded: { title: 'پرطرفدارترین دانلودها', subtitle: 'بیشترین بارگیری', projects: topDownloaded },
+            topDownloaded: { title: 'پرطرفدارترین دانلودها', subtitle: 'بیشترین بارگیری', projects: topDownloaded }
         },
         stats: {
             projects: totalProjects,
             users: totalUsers,
             tags: totalTags,
-            downloads: downloadsAgg[0]?.total || 0,
-        },
+            downloads: downloadsAgg[0]?.total || 0
+        }
     };
 }
 
