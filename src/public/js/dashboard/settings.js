@@ -30,14 +30,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let data = null;
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) {
-            try { data = await res.json(); } catch { }
+            try {
+                data = await res.json();
+            }
+
+            catch { }
         }
 
         if (!res.ok) {
             const err = new Error(data?.message || 'خطا');
             Object.assign(err, data || {}, { status: res.status });
+
             throw err;
         }
+
         return data;
     }
 
@@ -279,17 +285,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const newEmail = $('#newEmail').value.trim();
         const password = $('#confirmPasswordForEmail').value;
 
+        FormKit.clearAllErrors($('#changeEmailForm'));
+
         if (!newEmail) {
             return FormKit.showFieldError($('#newEmail'), 'ایمیل جدید الزامی است');
         }
+
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail)) {
             return FormKit.showFieldError($('#newEmail'), 'ایمیل نامعتبر است');
         }
+
         if (!password) {
             return FormKit.showFieldError($('#confirmPasswordForEmail'), 'رمز عبور الزامی است');
         }
-
-        FormKit.clearAllErrors($('#changeEmailForm'));
 
         const btn = $('#requestEmailBtn');
         btn.disabled = true;
@@ -297,10 +305,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'در حال ارسال…';
 
         try {
+            console.log('🟦 [requestEmailChange] sending:', { newEmail });
+
             const data = await api('/api/profile/email/request', {
                 method: 'POST',
                 body: JSON.stringify({ newEmail, password }),
             });
+
+            console.log('🟩 [requestEmailChange] response:', data);
+
+            if (!data?.pendingEmail) {
+                console.error('❌ response missing pendingEmail:', data);
+                toast('خطا در پردازش پاسخ سرور', 'error');
+                return;
+            }
 
             state.pendingEmail = { newEmail: data.pendingEmail };
             showPendingEmailState(data.pendingEmail);
@@ -313,13 +331,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Focus OTP
             setTimeout(() => $('#emailCode').focus(), 300);
-        } catch (err) {
-            if (err.field) {
-                const el = $(`[name="${err.field}"]`);
-                if (el) FormKit.showFieldError(el, err.message);
+        }
+
+        catch (err) {
+            console.error('❌ [requestEmailChange] failed:', err);
+            console.error('   status :', err.status);
+            console.error('   message:', err.message);
+            console.error('   details:', err.details);
+
+            if (err.details) {
+                for (const [field, messages] of Object.entries(err.details)) {
+                    const input = document.querySelector(`[name="${field}"]`);
+                    if (input && Array.isArray(messages) && messages.length) {
+                        FormKit.showFieldError(input, messages[0]);
+                    }
+                }
             }
-            toast(err.message || 'خطا', 'error');
-        } finally {
+            
+            else if (err.field) {
+                const input = document.querySelector(`[name="${err.field}"]`);
+                if (input) 
+                    FormKit.showFieldError(input, err.message);
+            }
+
+            toast(err.message || 'خطا در ارسال کد', 'error');
+        }
+
+        finally {
             btn.disabled = false;
             btn.textContent = original;
         }
