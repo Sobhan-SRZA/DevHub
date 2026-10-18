@@ -83,7 +83,7 @@ export const ErrorCodes = {
     FILE_TYPE_INVALID: "FILE_TYPE_INVALID",
     FILE_UPLOAD_FAILED: "FILE_UPLOAD_FAILED",
     MEDIA_LIMIT_REACHED: "MEDIA_LIMIT_REACHED",
-    NO_FILE_PROVIDED: "NO_FILE_PROVIDED",
+    NO_FILE_PROVIDED: "NO_FILE_PROVIDED"
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
@@ -152,7 +152,7 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.REVIEW_ALREADY_EXISTS]: 'شما قبلاً برای این پروژه ریویو ثبت کرده‌اید',
     [ErrorCodes.REVIEW_NOT_OWNED]: 'این ریویو متعلق به شما نیست',
     [ErrorCodes.CANNOT_REVIEW_OWN]: 'نمی‌توانید به پروژه خودتان امتیاز دهید',
-    
+
     [ErrorCodes.COMMENT_NOT_FOUND]: 'نظر یافت نشد',
     [ErrorCodes.COMMENT_NOT_OWNED]: 'این نظر متعلق به شما نیست',
     [ErrorCodes.COMMENT_PARENT_INVALID]: 'نظر والد نامعتبر است',
@@ -162,7 +162,7 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.FILE_TYPE_INVALID]: 'فرمت فایل مجاز نیست',
     [ErrorCodes.FILE_UPLOAD_FAILED]: 'آپلود فایل ناموفق بود',
     [ErrorCodes.MEDIA_LIMIT_REACHED]: 'به حداکثر تعداد رسیده‌اید',
-    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است',
+    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است'
 };
 
 /**
