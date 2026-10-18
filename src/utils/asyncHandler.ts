@@ -17,11 +17,16 @@ export const asyncHandler =
         (req, res, next) => {
             try {
                 Promise.resolve(fn(req as T, res, next)).catch((err) => {
-                    if (res.headersSent) return; // خطا رو به Express واگذار نکن
+                    if (res.headersSent)
+                        return; // خطا رو به Express واگذار نکن
+
                     next(err);
                 });
-            } catch (err) {
-                if (!res.headersSent) next(err);
+            }
+
+            catch (err) {
+                if (!res.headersSent)
+                    next(err);
             }
         };
 
