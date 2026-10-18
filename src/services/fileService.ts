@@ -1,12 +1,13 @@
-import fs from "fs/promises";
-import path from "path";
 import { UPLOAD_ROOT } from "../config/upload";
+import path from "path";
+import fs from "fs/promises";
 
 /* ==================================================================
    Convert absolute path → public URL
    ================================================================== */
 export function toPublicUrl(absolutePath: string): string {
     const rel = path.relative(UPLOAD_ROOT, absolutePath);
+
     return `/uploads/${rel.split(path.sep).join("/")}`;
 }
 
@@ -17,10 +18,14 @@ export function toAbsolutePath(publicUrl: string): string {
     if (!publicUrl.startsWith("/uploads/")) {
         throw new Error("Invalid upload URL");
     }
+
     const rel = publicUrl.replace("/uploads/", "");
     const abs = path.resolve(UPLOAD_ROOT, rel);
+
     // جلوگیری از path traversal
-    if (!abs.startsWith(UPLOAD_ROOT)) throw new Error("Path traversal detected");
+    if (!abs.startsWith(UPLOAD_ROOT)) 
+        throw new Error("Path traversal detected");
+
     return abs;
 }
 
@@ -31,8 +36,11 @@ export async function deleteFile(publicUrl: string): Promise<boolean> {
     try {
         const abs = toAbsolutePath(publicUrl);
         await fs.unlink(abs);
+
         return true;
-    } catch {
+    } 
+    
+    catch {
         return false;
     }
 }
@@ -48,7 +56,9 @@ export async function deleteProjectFiles(projectId: string): Promise<void> {
         const dir = path.join(baseDir, sub, String(projectId));
         try {
             await fs.rm(dir, { recursive: true, force: true });
-        } catch {
+        }
+        
+        catch {
             /* ignore */
         }
     }
@@ -58,9 +68,15 @@ export async function deleteProjectFiles(projectId: string): Promise<void> {
    Human readable size
    ================================================================== */
 export function humanSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (bytes < 1024)
+         return `${bytes} B`;
+
+    if (bytes < 1024 * 1024)
+         return `${(bytes / 1024).toFixed(1)} KB`;
+
+    if (bytes < 1024 * 1024 * 1024)
+         return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
     return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
