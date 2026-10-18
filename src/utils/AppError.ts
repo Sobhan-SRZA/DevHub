@@ -36,7 +36,7 @@ export class AppError extends Error {
             code: this.code,
             message: this.message,
             ...(this.field ? { field: this.field } : {}),
-            ...(this.details ? { details: this.details } : {}),
+            ...(this.details ? { details: this.details } : {})
         };
     }
 }
