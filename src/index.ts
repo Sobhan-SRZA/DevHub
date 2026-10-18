@@ -1,7 +1,9 @@
+import { cleanupOldVerificationCodes } from "./scripts/cleanupVerificationCodes";
 import { seedDefaultTags } from "./scripts/seedDefaultData";
 import { connectDB } from "./config/db";
 import { config } from "./config/env";
 import app from "./app";
+import { cleanupVerificationCodes, syncAllIndexes } from "./scripts/syncIndexes";
 
 /* ============================================================
    Process-level guards
@@ -41,7 +43,10 @@ process.on("SIGTERM", () => {
 const startServer = async () => {
     try {
         await connectDB();
-        await seedDefaultTags(); 
+        // await seedDefaultTags(); 
+        // await cleanupOldVerificationCodes()
+        // await cleanupVerificationCodes();
+        // await syncAllIndexes(); 
 
         const server = app.listen(config.port, () => {
             console.log(`🚀 Server running on http://localhost:${config.port}`);
