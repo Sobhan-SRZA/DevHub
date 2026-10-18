@@ -27,6 +27,7 @@ export interface IVerificationCode {
     maxAttempts: number;
     expiresAt: Date;
     consumedAt: Date | null;
+    requestedAt: Date;
 
     ip?: string;
     userAgent?: string;
@@ -60,9 +61,10 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
 
         attempts: { type: Number, default: 0, min: 0 },
         maxAttempts: { type: Number, default: 5, min: 1 },
-        expiresAt: { type: Date, required: true, index: true },
+        expiresAt: { type: Date, required: true },
         consumedAt: { type: Date, default: null },
-
+        requestedAt: { type: Date, default: () => new Date() },
+        
         ip: String,
         userAgent: String
     },
@@ -71,8 +73,14 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
 
 /* ---------------- indexes ---------------- */
 verificationCodeSchema.index({ user: 1, purpose: 1, consumedAt: 1 });
-// TTL: خودکار پاک‌سازی کدهای منقضی
-verificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 60 * 60 }); // ۱ ساعت بعد از انقضا
+
+// TTL: به محض رسیدن expiresAt حذف کن
+// MongoDB هر ~۶۰ ثانیه TTL رو چک می‌کنه، پس حداکثر ۱ دقیقه بعد از انقضا حذف می‌شه
+verificationCodeSchema.index(
+    { expiresAt: 1 },
+    { expireAfterSeconds: 0 }   // ← از 60*60 به 0 تغییر کن
+);
+
 
 /* ---------------- statics ---------------- */
 verificationCodeSchema.statics.generateCode = function () {
