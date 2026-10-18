@@ -4,14 +4,15 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registerForm");
-    if (!form) return;
+    if (!form) 
+        return;
 
     /* ---------------- regex هم‌راستا با سرور ---------------- */
     const RE = {
         name: /^.{2,60}$/,
         username: /^[a-zA-Z0-9_.-]{3,20}$/,
         email: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-        password: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
+        password: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/
     };
 
     FormKit.attach(form, {
@@ -109,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (location.hostname === "localhost") {
                 console.debug("[register error]", payload);
             }
-        },
+        }
     });
 });
 
