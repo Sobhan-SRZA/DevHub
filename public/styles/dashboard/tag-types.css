@@ -1,0 +1,451 @@
+/* ============================================================
+   TAG TYPES PAGE
+   ============================================================ */
+
+/* ---------- Tabs ---------- */
+.tt-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.tt-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: #888;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tt-tab:hover {
+    background: #171717;
+    color: #ccc;
+}
+
+.tt-tab.active {
+    background: #1e1e1e;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tt-tab.active svg {
+    color: #6ebbff;
+}
+
+.tt-tab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #2a2a2a;
+    color: #aaa;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.tt-tab.active .tt-tab__badge {
+    background: rgba(0, 123, 255, 0.2);
+    color: #6ebbff;
+}
+
+.tt-tab__badge--warn {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+/* ---------- Grid ---------- */
+.tag-types-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+/* ---------- Type Card ---------- */
+.tt-card {
+    position: relative;
+    background: #101010;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.25s ease;
+    overflow: hidden;
+    text-align: right;
+}
+
+.tt-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: var(--tt-color, #6ebbff);
+    opacity: 0.6;
+}
+
+.tt-card:hover {
+    border-color: #2f2f2f;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tt-card:hover::before {
+    opacity: 1;
+}
+
+.tt-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.tt-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--tt-color) 15%, transparent);
+    color: var(--tt-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    border: 1px solid color-mix(in srgb, var(--tt-color) 25%, transparent);
+}
+
+.tt-card__title-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.tt-card__title {
+    font-size: 1.05rem;
+    color: #fff;
+    font-weight: 700;
+    margin: 0 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tt-card__slug {
+    color: #666;
+    font-size: 0.75rem;
+    direction: ltr;
+    text-align: right;
+    font-family: ui-monospace, monospace;
+}
+
+.tt-card__desc {
+    color: #999;
+    font-size: 0.83rem;
+    line-height: 1.6;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 2.6em;
+}
+
+.tt-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #1a1a1a;
+}
+
+.tt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    background: #161616;
+    border: 1px solid #222;
+    border-radius: 6px;
+    color: #999;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.tt-chip svg {
+    color: #666;
+}
+
+.tt-chip--system {
+    background: rgba(110, 187, 255, 0.08);
+    border-color: rgba(110, 187, 255, 0.2);
+    color: #6ebbff;
+}
+
+.tt-chip--pending {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+}
+
+.tt-chip--locked {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ff6b6b;
+}
+
+.tt-card__actions {
+    display: flex;
+    gap: 6px;
+    padding-top: 4px;
+}
+
+.tt-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px;
+    background: #171717;
+    border: 1px solid #222;
+    border-radius: 8px;
+    color: #999;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tt-action:hover {
+    background: #222;
+    color: #fff;
+    border-color: #333;
+}
+
+.tt-action--danger:hover {
+    color: #ff6b6b;
+    border-color: #ff4d4d;
+    background: rgba(255, 77, 77, 0.08);
+}
+
+.tt-action--success:hover {
+    color: #4ade80;
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.tt-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---------- Color row ---------- */
+.tt-color-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.tt-color-row input[type="color"] {
+    width: 48px;
+    height: 38px;
+    padding: 2px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.tt-color-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.tt-color-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.tt-color-dot:hover {
+    transform: scale(1.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---------- Field icon ---------- */
+.field--icon {
+    flex: 0 0 80px !important;
+}
+
+.field--icon input {
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 6px !important;
+}
+
+/* ---------- Preview ---------- */
+.tt-preview {
+    padding: 12px;
+    background: #0e0e0e;
+    border: 1px dashed #2a2a2a;
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+.tt-preview__label {
+    color: #666;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.tt-preview__card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #161616;
+    border: 1px solid #222;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tt-preview__card {
+    border-color: color-mix(in srgb, var(--tt-color, #6ebbff) 30%, #222);
+    background: color-mix(in srgb, var(--tt-color, #6ebbff) 8%, #161616);
+}
+
+.tt-preview__icon {
+    font-size: 1rem;
+}
+
+.tt-preview__name {
+    color: #ddd;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.tt-preview__count {
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #888;
+    font-weight: 700;
+}
+
+/* ---------- Detail modal ---------- */
+.detail-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #141414;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+}
+
+.detail-tag-row__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.detail-tag-row__name {
+    color: #ddd;
+    font-size: 0.88rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.detail-tag-row__usage {
+    color: #666;
+    font-size: 0.75rem;
+}
+
+/* ---------- Empty ---------- */
+.tt-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: #0e0e0e;
+    border: 1px dashed #2a2a2a;
+    border-radius: 14px;
+}
+
+.tt-empty__icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.tt-empty__title {
+    color: #ddd;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+
+.tt-empty__sub {
+    color: #777;
+    font-size: 0.88rem;
+    margin: 0 0 20px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+    .tag-types-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .field--icon {
+        flex: 1 !important;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
