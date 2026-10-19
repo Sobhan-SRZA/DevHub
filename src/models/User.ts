@@ -1,9 +1,13 @@
 import {
     Schema,
     model,
-    Model
+    Model,
+    Types
 } from "mongoose";
 import bcrypt from "bcrypt";
+
+/* ---------------- قخمثس ---------------- */
+export type UserRole = 'user' | 'admin' | 'developer';
 
 /* ---------------- avatar ---------------- */
 export interface IUserAvatar {
@@ -35,8 +39,13 @@ export interface IUser {
 
     pendingEmail: IPendingEmail | null;
 
-    role: "user" | "admin";
     isBanned: boolean;
+
+    role: UserRole;
+    // نقش توسط کی داده شد؟
+    roleChangedBy?: Types.ObjectId | null;
+    roleChangedAt?: Date | null;
+    roleChangeReason?: string | null;
 
     createdAt: Date;
     updatedAt: Date;
@@ -133,10 +142,18 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 
         role: {
             type: String,
-            enum: ["user", "admin"],
-            default: "user",
+            enum: ['user', 'admin', 'developer'],
+            default: 'user',
             index: true
         },
+
+        roleChangedBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        },
+        roleChangedAt: { type: Date, default: null },
+        roleChangeReason: { type: String, maxlength: 300, default: null },
 
         isBanned: { type: Boolean, default: false }
     },
