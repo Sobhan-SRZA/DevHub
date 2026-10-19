@@ -8,7 +8,7 @@ const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
    TagType
    ================================================================== */
 export const createTagTypeSchema = z.object({
-    name: z.string().trim().min(2).max(50),
+    name: z.string().trim().min(2, "نام باید حداقل ۲ کاراکتر باشد").max(50),
     slug: z.string().trim().toLowerCase().regex(SLUG_RE).optional(),
     description: z.string().trim().max(300).optional(),
     color: z.string().regex(HEX_COLOR_RE).optional(),
@@ -23,26 +23,29 @@ export const updateTagTypeSchema = createTagTypeSchema.partial();
    Tag
    ================================================================== */
 export const createTagSchema = z.object({
-    name: z.string().trim().min(1).max(40),
+    name: z.string().trim().min(1, "نام تگ الزامی است").max(40),
     slug: z.string().trim().toLowerCase().regex(SLUG_RE).optional(),
-    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است"),
+    // ✅ اختیاری: اگه نده، پیش‌فرض «عمومی» می‌شه
+    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است").optional(),
     color: z.string().regex(HEX_COLOR_RE).optional(),
     description: z.string().trim().max(200).optional()
 });
 
-export const updateTagSchema = createTagSchema.partial().omit({ type: true });
-
+export const updateTagSchema = createTagSchema
+    .partial()
+    .omit({ type: true });
 
 /* ==================================================================
-   find-or-create — endpoint اصلی برای picker
+   find-or-create — picker
    ================================================================== */
 export const findOrCreateTagSchema = z.object({
     name: z.string().trim().min(1, "نام تگ الزامی است").max(40),
-    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است")
+    // ✅ اختیاری
+    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است").optional()
 });
 
 /* ==================================================================
-   suggest — autocomplete
+   suggest
    ================================================================== */
 export const suggestTagsSchema = z.object({
     q: z.string().trim().max(40).optional().default(""),
@@ -58,8 +61,20 @@ export const listQuerySchema = z.object({
     search: z.string().trim().max(60).optional(),
     sort: z.enum(["name", "usage", "recent"]).optional().default("usage"),
     approved: z.coerce.boolean().optional().default(true),
+    mine: z.coerce.boolean().optional().default(false),
     page: z.coerce.number().int().min(1).optional().default(1),
     limit: z.coerce.number().int().min(1).max(100).optional().default(50)
+});
+
+/* ==================================================================
+   Request tag type (کاربر عادی — pending)
+   ================================================================== */
+export const requestTagTypeSchema = z.object({
+    name: z.string().trim().min(2, "نام باید حداقل ۲ کاراکتر باشد").max(50),
+    description: z.string().trim().max(300).optional(),
+    color: z.string().regex(HEX_COLOR_RE).optional(),
+    icon: z.string().trim().max(8).optional(),
+    reason: z.string().trim().max(500).optional()
 });
 
 /**
