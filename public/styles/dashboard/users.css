@@ -1,0 +1,84 @@
+.users-table {
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.users-table__head {
+    display: grid;
+    grid-template-columns: 1fr 140px 100px 100px;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #131313;
+    border-bottom: 1px solid #1f1f1f;
+    font-size: 0.78rem;
+    color: #888;
+    font-weight: 700;
+}
+
+.users-table__row {
+    display: grid;
+    grid-template-columns: 1fr 140px 100px 100px;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: center;
+    border-bottom: 1px solid #161616;
+}
+
+.users-table__row:last-child {
+    border-bottom: none;
+}
+
+.users-table__row:hover {
+    background: #121212;
+}
+
+.users-table__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.users-table__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.users-table__name {
+    color: #ddd;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+.users-table__email {
+    color: #666;
+    font-size: 0.75rem;
+    direction: ltr;
+    text-align: right;
+}
+
+.users-table__date {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
