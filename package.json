@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node .",
     "dev": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "promote": "tsx src/scripts/promoteUser.ts"
   },
   "repository": {
     "type": "git",
