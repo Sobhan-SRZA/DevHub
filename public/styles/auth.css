@@ -1,0 +1,338 @@
+/* ============================================================
+   AUTH PAGES (LOGIN / REGISTER)
+   ============================================================ */
+
+.auth.container {
+    max-width: 460px;
+    width: 100%;
+    margin: 2rem auto;
+    padding: 25px 20px;
+}
+
+.auth-card {
+    background-color: #151515;
+    border-radius: 12px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid #222;
+}
+
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    text-align: right;
+}
+
+.auth-sub {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 22px;
+    text-align: right;
+}
+
+.auth-form {
+    text-align: right;
+}
+
+/* ---------- Fields ---------- */
+.field {
+    margin-bottom: 16px;
+    text-align: right;
+}
+
+.field label {
+    display: block;
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.field input {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    outline: none;
+}
+
+.field input::placeholder {
+    color: #555;
+    font-size: 0.85rem;
+}
+
+.field input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* ---------- Password wrapper with toggle button ---------- */
+.password-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrap input {
+    padding-left: 44px;
+    /* room for the button */
+    direction: ltr;
+    text-align: left;
+}
+
+/* ============================================================
+   PASSWORD TOGGLE
+   ============================================================ */
+
+.toggle-pass {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #777;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    overflow: hidden;
+    transition:
+        color 0.25s ease,
+        background-color 0.25s ease,
+        transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* hover */
+.toggle-pass:hover {
+    color: #6ebbff;
+    background-color: rgba(110, 187, 255, 0.08);
+}
+
+/* active (کلیک) */
+.toggle-pass:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+/* وقتی پسورد نمایش داده می‌شه */
+.toggle-pass.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* focus برای دسترس‌پذیری */
+.toggle-pass:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* ---------- آیکون‌ها ---------- */
+.toggle-pass .icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+    transition:
+        opacity 0.3s ease,
+        transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+        filter 0.3s ease;
+    will-change: transform, opacity;
+}
+
+/* پیش‌فرض: چشم باز دیده می‌شه، چشم خط‌خورده پنهان */
+.toggle-pass .icon-eye {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+}
+
+.toggle-pass .icon-eye-off {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-90deg) scale(0.5);
+}
+
+/* وقتی active: چشم باز می‌ره، چشم خط‌خورده میاد */
+.toggle-pass.active .icon-eye {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+}
+
+.toggle-pass.active .icon-eye-off {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+}
+
+/* ---------- انیمیشن pop کوچیک هنگام کلیک ---------- */
+@keyframes toggle-pop {
+    0% {
+        transform: translateY(-50%) scale(1);
+    }
+
+    40% {
+        transform: translateY(-50%) scale(0.85);
+    }
+
+    100% {
+        transform: translateY(-50%) scale(1);
+    }
+}
+
+.toggle-pass.pop {
+    animation: toggle-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* ---------- پشتیبانی از prefers-reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+    .toggle-pass,
+    .toggle-pass .icon {
+        transition: opacity 0.15s ease;
+    }
+
+    .toggle-pass .icon-eye,
+    .toggle-pass .icon-eye-off {
+        transform: translate(-50%, -50%);
+    }
+
+    .toggle-pass.pop {
+        animation: none;
+    }
+}
+
+/* ---------- Error message ---------- */
+.field-error {
+    display: none;
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    margin-top: 6px;
+}
+
+.field-error.visible {
+    display: block;
+}
+
+/* ---------- Row (remember / forgot) ---------- */
+.auth-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: 0.85rem;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+}
+
+.checkbox input[type="checkbox"] {
+    accent-color: #007bff;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.auth-link {
+    color: #6ebbff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding-bottom: 0;
+}
+
+.auth-link::after {
+    display: none;
+}
+
+.auth-link:hover {
+    color: #8ed0ff;
+    text-decoration: underline;
+}
+
+/* ---------- Submit button ---------- */
+.auth-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    margin-top: 4px;
+    font-family: inherit;
+}
+
+.auth-btn:hover {
+    background-color: #0056b3;
+}
+
+.auth-btn:active {
+    transform: scale(0.98);
+}
+
+/* ---------- Footer text ---------- */
+.auth-foot {
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: #888;
+    text-align: center;
+}
+
+.auth-foot .auth-link {
+    font-weight: 600;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+    .auth.container {
+        padding: 15px 12px;
+    }
+
+    .auth-card {
+        padding: 18px 14px;
+    }
+
+    .auth-title {
+        font-size: 1.3rem;
+    }
+
+    .field input {
+        padding: 10px 12px;
+    }
+
+    .auth-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
