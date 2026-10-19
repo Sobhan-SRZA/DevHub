@@ -25,6 +25,7 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
+import { shouldBecomeDeveloper } from "../services/roleService";
 
 /* ==================================================================
    Helpers
@@ -56,17 +57,18 @@ export function publicUser(u: any) {
         username: u.username,
         email: u.email,
         emailVerified: !!u.emailVerified,
-        bio: u.bio || '',
+        bio: u.bio || "",
         avatar: u.avatar || null,
-        role: u.role || 'user',
+        role: u.role || "user",
         createdAt: u.createdAt,
-        
+
         pendingEmail: u.pendingEmail
             ? {
                 newEmail: u.pendingEmail.newEmail,
                 expiresAt: u.pendingEmail.expiresAt,
-                requestedAt: u.pendingEmail.requestedAt,
+                requestedAt: u.pendingEmail.requestedAt
             }
+
             : null
     };
 }
@@ -74,6 +76,7 @@ export function publicUser(u: any) {
 
 function getDeviceHints(req: Request) {
     const body = (req.body || {}) as Record<string, unknown>;
+
     return {
         fingerprint: typeof body.fingerprint === "string" ? body.fingerprint : undefined,
         deviceId: typeof body.deviceId === "string" ? body.deviceId : undefined
@@ -105,13 +108,26 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     /* -------- ساخت کاربر -------- */
     let user;
     try {
+        /* ---------- نقش اولیه ---------- */
+        // اگه هیچ developer وجود نداره، این کاربر اول developer می‌شه
+        const isFirstDeveloper = await shouldBecomeDeveloper();
+
         user = await User.create({
             name: data.name,
             username: data.username,
             usernameLower,
             email: emailLower,
-            password: data.password
+            password: data.password,
+            role: isFirstDeveloper ? "developer" : "user",
+            ...(isFirstDeveloper && {
+                roleChangedAt: new Date(),
+                roleChangeReason: "First registered user"
+            })
         });
+
+        if (isFirstDeveloper) {
+            console.log(`🎉 First user registered as developer: ${user.email}`);
+        }
     }
 
     catch (err: any) {
