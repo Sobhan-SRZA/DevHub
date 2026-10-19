@@ -30,7 +30,7 @@ app.use(
 /* ==================================================================
    Static — uploads
    ================================================================== */
-const UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
+const UPLOAD_DIR = path.resolve(process.cwd(), "backend/uploads");
 app.use(
     "/uploads",
     express.static(UPLOAD_DIR, {

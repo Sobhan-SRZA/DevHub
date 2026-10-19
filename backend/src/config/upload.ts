@@ -8,7 +8,7 @@ import fs from "fs";
 /* ==================================================================
    Constants
    ================================================================== */
-export const UPLOAD_ROOT = path.resolve(process.cwd(), "uploads");
+export const UPLOAD_ROOT = path.resolve(process.cwd(), "backend/uploads");
 
 export const LIMITS = {
     IMAGE_SIZE: 5 * 1024 * 1024,          // 5 MB

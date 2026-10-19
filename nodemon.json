@@ -1,12 +1,13 @@
 {
     "watch": [
-        "src"
+        "src",
+        "frontend"
     ],
     "ext": "ts,ejs",
     "ignore": [
         "dist",
         "node_modules",
-        "src/public"
+        "frontend/public"
     ],
-    "exec": "tsx src/index.ts"
+    "exec": "tsx backend/src/index.ts"
 }
