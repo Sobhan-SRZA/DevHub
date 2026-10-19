@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/users.css">
+  <title>مدیریت کاربران</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+
+    <main class="dash-main">
+      <div class="dash-head">
+        <div>
+          <h2 class="dash-title">مدیریت کاربران</h2>
+          <p class="dash-sub" id="usersCount">—</p>
+        </div>
+      </div>
+
+      <div class="dash-filters">
+        <div class="dash-search">
+          <input type="text" id="userSearch" placeholder="جستجو نام، ایمیل، یوزرنیم...">
+        </div>
+        <select id="filterRole" class="dash-select">
+          <option value="">همه نقش‌ها</option>
+          <option value="user">کاربر</option>
+          <option value="admin">ادمین</option>
+          <option value="developer">دولوپر</option>
+        </select>
+      </div>
+
+      <div id="usersTable" class="users-table"></div>
+      <div class="dash-pagination" id="usersPagination"></div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const $ = (s) => document.querySelector(s);
+      const state = {
+        page: 1,
+        search: '',
+        role: '',
+        user: null
+      };
+
+      async function api(path, opts = {}) {
+        const res = await fetch(path, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          ...opts,
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw Object.assign(new Error(data?.message || 'خطا'), data);
+        return data;
+      }
+
+      async function loadCurrentUser() {
+        const res = await fetch('/api/auth/me', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        state.user = data.user;
+        state.isDeveloper = data.user?.role === 'developer';
+      }
+
+      async function load() {
+        const params = new URLSearchParams({
+          page: state.page,
+          limit: 20
+        });
+        if (state.search) params.set('search', state.search);
+        if (state.role) params.set('role', state.role);
+
+        const data = await api(`/api/admin/users?${params}`);
+        $('#usersCount').textContent = `${data.pagination.total} کاربر`;
+
+        if (!data.users.length) {
+          $('#usersTable').innerHTML = `<div class="dash-empty">کاربری یافت نشد</div>`;
+          return;
+        }
+
+        $('#usersTable').innerHTML = `
+                <div class="users-table__head">
+                    <span>کاربر</span>
+                    <span>نقش</span>
+                    <span>تاریخ</span>
+                    <span>عملیات</span>
+                </div>
+                ${data.users.map((u) => {
+                    const name = u.name || u.username;
+                    const isMe = String(u._id) === String(state.user.id);
+                    const canChangeDeveloper = state.isDeveloper;
+
+                    return `
+                        <div class="users-table__row" data-id="${u._id}">
+                            <div class="users-table__user">
+                                <div class="users-table__avatar" ${u.avatar?.url ? `style="background-image:url('${u.avatar.url}')"` : ''}>
+                                    ${!u.avatar?.url ? name.charAt(0).toUpperCase() : ''}
+                                </div>
+                                <div>
+                                    <div class="users-table__name">${escapeHtml(name)}</div>
+                                    <div class="users-table__email">${escapeHtml(u.email)}</div>
+                                </div>
+                            </div>
+
+                            <select class="dash-select" data-role-select ${isMe ? 'disabled' : ''}>
+                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>کاربر</option>
+                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>ادمین</option>
+                                <option value="developer" ${u.role === 'developer' ? 'selected' : ''}
+                                    ${!canChangeDeveloper ? 'disabled' : ''}>
+                                    دولوپر
+                                </option>
+                            </select>
+
+                            <span class="users-table__date">${new Date(u.createdAt).toLocaleDateString('fa-IR')}</span>
+
+                            <button class="btn-ghost" data-ban ${isMe ? 'disabled' : ''}>
+                                ${u.isBanned ? 'آنبن' : 'بن'}
+                            </button>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+
+        bindActions();
+      }
+
+      function bindActions() {
+        document.querySelectorAll('[data-role-select]').forEach((sel) => {
+          sel.addEventListener('change', async () => {
+            const row = sel.closest('.users-table__row');
+            const userId = row.dataset.id;
+            const newRole = sel.value;
+
+            const reason = prompt(`دلیل تغییر نقش به ${newRole}؟ (اختیاری)`);
+            if (reason === null) {
+              load();
+              return;
+            }
+
+            try {
+              await api(`/api/admin/users/${userId}/role`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  role: newRole,
+                  reason: reason || undefined
+                }),
+              });
+              toast('نقش تغییر کرد', 'success');
+              load();
+            } catch (err) {
+              toast(err.message || 'خطا', 'error');
+              load();
+            }
+          });
+        });
+
+        document.querySelectorAll('[data-ban]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const row = btn.closest('.users-table__row');
+            const userId = row.dataset.id;
+            try {
+              const data = await api(`/api/admin/users/${userId}/ban`, {
+                method: 'POST'
+              });
+              toast(data.message, 'success');
+              load();
+            } catch (err) {
+              toast(err.message || 'خطا', 'error');
+            }
+          });
+        });
+      }
+
+      function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      // Filters
+      let timer;
+      $('#userSearch').addEventListener('input', (e) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          state.search = e.target.value.trim();
+          state.page = 1;
+          load();
+        }, 350);
+      });
+
+      $('#filterRole').addEventListener('change', (e) => {
+        state.role = e.target.value;
+        state.page = 1;
+        load();
+      });
+
+      (async () => {
+        await loadCurrentUser();
+        await load();
+      })();
+    });
+  </script>
+</body>
+
+</html>
