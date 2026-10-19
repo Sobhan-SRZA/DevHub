@@ -1,0 +1,263 @@
+/* ============================================================
+   HEADER — AUTH AREA (login / register / profile)
+   ============================================================ */
+
+/* Header becomes flex: nav in center, auth area on the right */
+.header {
+    background: rgba(20, 20, 20, 0.9);
+    /* کمی شفافیت */
+    backdrop-filter: blur(10px);
+    /* افکت مات مدرن */
+    position: sticky;
+    top: 0;
+    width: 100%;
+    margin-bottom: 2rem;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.nav-ul {
+    gap: 2.5rem;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+/* keep nav centered */
+.h-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+/* ---------- Auth area wrapper ---------- */
+.auth-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* ---------- Guest buttons ---------- */
+.auth-guests {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-btn {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+/* kill global link underline effect inside header */
+.nav-btn::after {
+    display: none !important;
+}
+
+.nav-btn-primary {
+    background-color: #007bff;
+    color: #fff !important;
+    border: 1px solid #007bff;
+}
+
+.nav-btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: #fff !important;
+}
+
+.nav-btn-outline {
+    background-color: transparent;
+    color: #6ebbff !important;
+    border: 1px solid #6ebbff;
+}
+
+.nav-btn-outline:hover {
+    background-color: #6ebbff;
+    color: #000 !important;
+}
+
+/* ---------- Profile button ---------- */
+.auth-profile {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 6px 12px 6px 6px;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.profile-btn:hover {
+    background-color: #202020;
+    border-color: #333;
+}
+
+.profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+}
+
+.profile-name {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #e0e0e0;
+}
+
+.profile-caret {
+    color: #888;
+    transition: transform 0.25s ease;
+}
+
+.profile-btn[aria-expanded="true"] .profile-caret {
+    transform: rotate(180deg);
+}
+
+/* ---------- Profile dropdown menu ---------- */
+.profile-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 190px;
+    background-color: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.22s ease;
+    z-index: 1100;
+}
+
+.profile-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-menu-item {
+    display: block;
+    width: 100%;
+    text-align: right;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #ddd;
+    font-size: 0.88rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+}
+
+.profile-menu-item::after {
+    display: none !important;
+}
+
+.profile-menu-item:hover {
+    background-color: #202020;
+    color: #6ebbff;
+}
+
+.profile-menu-divider {
+    height: 1px;
+    background-color: #2a2a2a;
+    margin: 6px 4px;
+}
+
+.profile-menu-item.logout {
+    color: #ff6b6b;
+}
+
+.profile-menu-item.logout:hover {
+    background-color: rgba(255, 107, 107, 0.1);
+    color: #ff8080;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+    .header {
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+    }
+
+    .h-nav {
+        order: 3;
+        flex-basis: 100%;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
+    .nav-ul {
+        gap: 1.5rem;
+    }
+
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+    }
+
+    .profile-name {
+        display: none;
+    }
+
+    .profile-btn {
+        padding: 4px;
+        gap: 0;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
