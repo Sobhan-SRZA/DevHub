@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/auth.css">
+  <link rel="stylesheet" href="/styles/form-errors.css">
+  <title>ورود</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <section class="container auth">
+    <div class="auth-card">
+
+      <h2 class="auth-title">خوش آمدید</h2>
+      <p class="auth-sub">برای ادامه وارد حساب خود شوید</p>
+
+      <form class="auth-form" id="loginForm" action="/api/auth/login" method="POST">
+
+        <div class="field">
+          <label for="login-identifier">ایمیل یا نام کاربری</label>
+          <input id="login-identifier" type="text" name="identifier" placeholder="example@mail.com یا username" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <label for="login-password">رمز عبور</label>
+          <div class="password-wrap">
+            <input id="login-password" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+            <button type="button" class="toggle-pass" data-target="login-password" aria-label="نمایش رمز"></button>
+          </div>
+        </div>
+
+        <div class="auth-row">
+          <label class="checkbox">
+            <input type="checkbox" name="remember">
+            <span>مرا به خاطر بسپار</span>
+          </label>
+          <a href="/auth/forgot-password" class="auth-link">فراموشی رمز؟</a>
+        </div>
+
+        <button type="submit" class="auth-btn">ورود</button>
+
+        <p class="auth-foot">
+          حساب نداری؟
+          <a href="/auth/register" class="auth-link">ثبت نام کن</a>
+        </p>
+      </form>
+
+    </div>
+  </section>
+</body>
+
+<script src="/js/index.js"></script>
+<script src="/js/form-errors.js"></script>
+<script src="/js/auth/login.js"></script>
+
+</html>
