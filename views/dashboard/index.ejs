@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/home.css">
+  <title>داشبورد</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+
+    <main class="dash-main">
+      <div class="dash-topbar">
+        <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()" aria-label="منو">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1 class="dash-topbar__title">داشبورد</h1>
+      </div>
+
+      <!-- welcome -->
+      <div class="dash-welcome">
+        <div class="dash-welcome__avatar" id="welcomeAvatar">
+          <span id="welcomeAvatarContent">?</span>
+        </div>
+        
+        <div class="dash-welcome__text">
+          <h2 class="dash-welcome__title">
+            سلام، <span id="welcomeName">…</span> 👋
+          </h2>
+          <p class="dash-welcome__sub" id="welcomeSub">به داشبورد خودت خوش آمدی</p>
+        </div>
+        <div class="dash-welcome__actions">
+          <a href="/dashboard/projects" class="btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            پروژه جدید
+          </a>
+        </div>
+      </div>
+
+      <!-- stats -->
+      <section class="dash-stats" id="dashStats">
+        <div class="stat-card stat-card--skeleton"></div>
+        <div class="stat-card stat-card--skeleton"></div>
+        <div class="stat-card stat-card--skeleton"></div>
+        <div class="stat-card stat-card--skeleton"></div>
+        <div class="stat-card stat-card--skeleton"></div>
+        <div class="stat-card stat-card--skeleton"></div>
+      </section>
+
+      <!-- two-column: recent projects + recent activity -->
+      <div class="dash-columns">
+        <!-- Recent Projects -->
+        <section class="dash-panel">
+          <div class="dash-panel__header">
+            <h3 class="dash-panel__title">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+              پروژه‌های اخیر
+            </h3>
+            <a href="/dashboard/projects" class="dash-panel__link">
+              همه
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </a>
+          </div>
+          <div class="dash-panel__body" id="recentProjects">
+            <div class="dash-loading">در حال بارگذاری…</div>
+          </div>
+        </section>
+
+        <!-- Recent Comments -->
+        <section class="dash-panel">
+          <div class="dash-panel__header">
+            <h3 class="dash-panel__title">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              آخرین نظرات
+            </h3>
+          </div>
+          <div class="dash-panel__body" id="recentComments">
+            <div class="dash-loading">در حال بارگذاری…</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Quick actions -->
+      <section class="dash-quick">
+        <h3 class="dash-quick__title">دسترسی سریع</h3>
+        <div class="dash-quick__grid">
+          <a href="/dashboard/projects" class="quick-card">
+            <div class="quick-card__icon" style="--c: #6ebbff">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+            </div>
+            <div class="quick-card__body">
+              <strong>پروژه‌های من</strong>
+              <small>مدیریت پروژه‌ها</small>
+            </div>
+          </a>
+
+          <a href="/dashboard/tags" class="quick-card">
+            <div class="quick-card__icon" style="--c: #a78bfa">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            </div>
+            <div class="quick-card__body">
+              <strong>تگ‌ها</strong>
+              <small>مدیریت تگ‌ها</small>
+            </div>
+          </a>
+
+          <a href="/profile" class="quick-card">
+            <div class="quick-card__icon" style="--c: #34d399">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="quick-card__body">
+              <strong>پروفایل</strong>
+              <small>اطلاعات حساب</small>
+            </div>
+          </a>
+
+          <a href="/projects" class="quick-card">
+            <div class="quick-card__icon" style="--c: #f59e0b">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div class="quick-card__body">
+              <strong>کاوش</strong>
+              <small>پروژه‌های عمومی</small>
+            </div>
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/dashboard/home.js"></script>
+</body>
+
+</html>
