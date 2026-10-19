@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/auth.css">
+  <link rel="stylesheet" href="/styles/form-errors.css">
+  <title>ثبت نام</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <section class="container auth">
+    <div class="auth-card">
+
+      <h2 class="auth-title">ساخت حساب جدید</h2>
+      <p class="auth-sub">چند ثانیه بیشتر طول نمی‌کشد</p>
+
+      <form class="auth-form" id="registerForm" action="/api/auth/register" method="POST">
+
+        <div class="field">
+          <label for="reg-name">نام و نام خانوادگی</label>
+          <input id="reg-name" type="text" name="name" placeholder="علی رضایی" autocomplete="name" required>
+        </div>
+
+        <div class="field">
+          <label for="reg-username">نام کاربری</label>
+          <input id="reg-username" type="text" name="username" placeholder="ali_reza" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <label for="reg-email">ایمیل</label>
+          <input id="reg-email" type="email" name="email" placeholder="example@mail.com" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="reg-password">رمز عبور</label>
+          <div class="password-wrap">
+            <input id="reg-password" type="password" name="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+            <button type="button" class="toggle-pass" data-target="reg-password" aria-label="نمایش رمز"></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="reg-confirm">تکرار رمز عبور</label>
+          <div class="password-wrap">
+            <input id="reg-confirm" type="password" name="confirmPassword" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
+            <button type="button" class="toggle-pass" data-target="reg-confirm" aria-label="نمایش رمز"></button>
+          </div>
+          <small class="field-error" id="confirm-error">رمز عبور و تکرار آن یکسان نیستند.</small>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" name="terms" required>
+          <span>با <a href="/terms" class="auth-link">قوانین</a> موافقم</span>
+        </label>
+
+        <button type="submit" class="auth-btn">ثبت نام</button>
+
+        <p class="auth-foot">
+          قبلاً ثبت نام کردی؟
+          <a href="/auth/login" class="auth-link">وارد شو</a>
+        </p>
+      </form>
+
+    </div>
+  </section>
+</body>
+
+<script src="/js/index.js"></script>
+<script src="/js/form-errors.js"></script>
+<script src="/js/auth/register.js"></script>
+
+</html>
