@@ -1,3 +1,8 @@
+import {
+    hasRole,
+    isAdmin as checkAdmin,
+    isDeveloper as checkDev
+} from "../services/roleService";
 import type {
     Response,
     NextFunction
@@ -5,41 +10,55 @@ import type {
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 
-/**
- * چک می‌کنه کاربر فعلی ادمین یا دولوپر باشه.
- * برای API routes.
- */
-export function requireAdmin(req: any, _res: Response, next: NextFunction) {
-    const role = req.user?.role;
-    if (role !== "admin" && role !== "developer") {
-        return next(
-            new AppError(
-                403,
-                ErrorCodes.PROJECT_NOT_OWNED,
-                "این بخش فقط برای ادمین است"
-            )
-        );
-    }
+/* ==================================================================
+   API Guards
+   ================================================================== */
+export function requireRole(minRole: "admin" | "developer") {
+    return (req: any, _res: Response, next: NextFunction) => {
+        if (!req.user) {
+            return next(new AppError(401, ErrorCodes.UNAUTHENTICATED));
+        }
 
-    next();
+        if (!hasRole(req.user, minRole)) {
+            return next(
+                new AppError(
+                    403,
+                    ErrorCodes.PROJECT_NOT_OWNED,
+                    minRole === "developer"
+                        ? "این بخش فقط برای developer است"
+                        : "این بخش فقط برای ادمین است"
+                )
+            );
+        }
+
+        next();
+    };
 }
 
-/**
- * برای صفحه‌های HTML — اگه کاربر ادمین نبود، ریدایرکت.
- */
-export function pageAdminGuard(req: any, res: Response, next: NextFunction) {
-    const role = req.user?.role;
-    if (role !== "admin" && role !== "developer") {
-        return res.redirect("/dashboard");
-    }
+export const requireAdmin = requireRole("admin");
+export const requireDeveloper = requireRole("developer");
 
-    next();
+/* ==================================================================
+   Page Guards
+   ================================================================== */
+export function pageRoleGuard(minRole: "admin" | "developer") {
+    return (req: any, res: Response, next: NextFunction) => {
+        if (!hasRole(req.user, minRole)) {
+            return res.redirect("/dashboard");
+        }
+
+        next();
+    };
 }
 
-/** helper */
-export function isAdmin(user: any): boolean {
-    return user?.role === "admin" || user?.role === "developer";
-}
+export const pageAdminGuard = pageRoleGuard("admin");
+export const pageDeveloperGuard = pageRoleGuard("developer");
+
+/* ==================================================================
+   Helpers
+   ================================================================== */
+export const isAdmin = checkAdmin;
+export const isDeveloper = checkDev;
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
