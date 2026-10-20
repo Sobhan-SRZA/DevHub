@@ -2,7 +2,7 @@
    Dashboard — Projects (Full CRUD + Media + Tags)
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     /* ============================================================
        State
        ============================================================ */
@@ -10,16 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // list
         page: 1,
         limit: 12,
-        search: '',
-        status: '',
-        sort: 'recent',
+        search: "",
+        status: "",
+        sort: "recent",
         totalPages: 1,
         items: [],
 
         // modal
         editingId: null,
         currentStep: 0,
-        steps: ['basic', 'content', 'media', 'tags', 'settings'],
+        steps: ["basic", "content", "media", "tags", "settings"],
 
         // media
         newImages: [],          // فایل‌های جدید که هنوز آپلود نشدن
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileToDelete: false,
 
         // picker
-        tagPicker: null,
+        tagPicker: null
     };
 
     const $ = (s, r = document) => r.querySelector(s);
@@ -42,50 +42,56 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        Refs — List
        ============================================================ */
-    const grid = $('#projectsGrid');
-    const pagination = $('#pagination');
-    const countEl = $('#projectsCount');
-    const searchInput = $('#filterSearch');
-    const statusSelect = $('#filterStatus');
-    const sortSelect = $('#filterSort');
-    const btnNew = $('#btnNewProject');
+    const grid = $("#projectsGrid");
+    const pagination = $("#pagination");
+    const countEl = $("#projectsCount");
+    const searchInput = $("#filterSearch");
+    const statusSelect = $("#filterStatus");
+    const sortSelect = $("#filterSort");
+    const btnNew = $("#btnNewProject");
 
     /* ============================================================
        Refs — Modal
        ============================================================ */
-    const modal = $('#projectModal');
-    const modalBackdrop = $('#projectModalBackdrop');
-    const modalTitle = $('#projectModalTitle');
-    const modalSubtitle = $('#projectModalSubtitle');
-    const modalClose = $('#projectModalClose');
-    const modalCancel = $('#projectModalCancel');
-    const modalPrev = $('#projectModalPrev');
-    const modalNext = $('#projectModalNext');
-    const modalSubmit = $('#projectModalSubmit');
-    const form = $('#projectForm');
-    const tabs = $$('.pm-tab');
+    const modal = $("#projectModal");
+    const modalBackdrop = $("#projectModalBackdrop");
+    const modalTitle = $("#projectModalTitle");
+    const modalSubtitle = $("#projectModalSubtitle");
+    const modalClose = $("#projectModalClose");
+    const modalCancel = $("#projectModalCancel");
+    const modalPrev = $("#projectModalPrev");
+    const modalNext = $("#projectModalNext");
+    const modalSubmit = $("#projectModalSubmit");
+    const form = $("#projectForm");
+    const tabs = $$(".pm-tab");
 
     /* ============================================================
        API helper
        ============================================================ */
     async function api(path, opts = {}) {
         const res = await fetch(path, {
-            credentials: 'include',
-            headers: opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
-            ...opts,
+            credentials: "include",
+            headers: opts.body instanceof FormData ? {} : { "Content-Type": "application/json" },
+            ...opts
         });
 
         let data = null;
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-            try { data = await res.json(); } catch { /* ignore */ }
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+            try {
+                data = await res.json();
+            }
+
+            catch { /* ignore */ }
         }
 
         if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
+            const err = new Error(data?.message || "خطا");
             Object.assign(err, data || {}, { status: res.status });
+
             throw err;
         }
+
         return data;
     }
 
@@ -99,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="dash-empty__icon">📦</div>
                     <h3 class="dash-empty__title">هنوز پروژه‌ای ندارید</h3>
                     <p class="dash-empty__sub">اولین پروژه‌تان را بسازید و با دنیا به اشتراک بگذارید</p>
-                    <button type="button" class="btn-primary" onclick="document.getElementById('btnNewProject').click()">
+                    <button type="button" class="btn-primary" onclick="document.getElementById("btnNewProject").click()">
                         ساخت اولین پروژه
                     </button>
                 </div>
@@ -107,15 +113,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        grid.innerHTML = state.items.map(renderCard).join('');
+        grid.innerHTML = state.items.map(renderCard).join("");
+
         bindCardActions();
     }
 
     function renderCard(p) {
         const statusMap = {
-            draft: 'پیش‌نویس',
-            published: 'منتشر شده',
-            archived: 'آرشیو',
+            draft: "پیش‌نویس",
+            published: "منتشر شده",
+            archived: "آرشیو",
         };
         const gh = p.githubData || {};
         const tags = (p.tags || []).slice(0, 5);
@@ -127,16 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const dlIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
         const rateIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
         const mediaIcons = `
-            ${p.images?.length ? `<span class="p-stat" title="تصاویر">🖼 ${p.images.length}</span>` : ''}
-            ${p.demoVideo ? `<span class="p-stat" title="ویدیو">🎬</span>` : ''}
-            ${p.downloadFile ? `<span class="p-stat" title="فایل">📦</span>` : ''}
+            ${p.images?.length ? `<span class="p-stat" title="تصاویر">🖼 ${p.images.length}</span>` : ""}
+            ${p.demoVideo ? `<span class="p-stat" title="ویدیو">🎬</span>` : ""}
+            ${p.downloadFile ? `<span class="p-stat" title="فایل">📦</span>` : ""}
         `;
 
         return `
             <article class="p-card" data-id="${p._id}">
                 ${cover ? `
-                    <div class="p-card__cover" style="background-image:url('${escapeHtml(cover)}')"></div>
-                ` : ''}
+                    <div class="p-card__cover" style="background-image:url("${escapeHtml(cover)}")"></div>
+                ` : ""}
 
                 <div class="p-card__head">
                     <h3 class="p-card__title">${escapeHtml(p.title)}</h3>
@@ -145,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </span>
                 </div>
 
-                <p class="p-card__desc">${escapeHtml(p.shortDescription || '')}</p>
+                <p class="p-card__desc">${escapeHtml(p.shortDescription || "")}</p>
 
                 ${tags.length ? `
                     <div class="p-card__tags">
@@ -153,16 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="p-tag" style="background:${hexA(t.color, 0.12)}; color:${t.color}; border-color:${hexA(t.color, 0.25)}">
                                 ${escapeHtml(t.name)}
                             </span>
-                        `).join('')}
-                        ${moreTags > 0 ? `<span class="p-tag">+${moreTags}</span>` : ''}
+                        `).join("")}
+                        ${moreTags > 0 ? `<span class="p-tag">+${moreTags}</span>` : ""}
                     </div>
-                ` : ''}
+                ` : ""}
 
                 <div class="p-card__stats">
-                    ${gh.stars !== undefined ? `<span class="p-stat">${starIcon}<strong>${gh.stars || 0}</strong></span>` : ''}
-                    ${gh.forks !== undefined ? `<span class="p-stat">${forkIcon}<strong>${gh.forks || 0}</strong></span>` : ''}
+                    ${gh.stars !== undefined ? `<span class="p-stat">${starIcon}<strong>${gh.stars || 0}</strong></span>` : ""}
+                    ${gh.forks !== undefined ? `<span class="p-stat">${forkIcon}<strong>${gh.forks || 0}</strong></span>` : ""}
                     <span class="p-stat">${dlIcon}<strong>${p.downloads || 0}</strong></span>
-                    <span class="p-stat">${rateIcon}<strong>${(p.rating || 0).toFixed(1)}</strong>${p.reviewCount ? ` <small>(${p.reviewCount})</small>` : ''}</span>
+                    <span class="p-stat">${rateIcon}<strong>${(p.rating || 0).toFixed(1)}</strong>${p.reviewCount ? ` <small>(${p.reviewCount})</small>` : ""}</span>
                     ${mediaIcons}
                 </div>
 
@@ -176,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             سینک
                         </button>
-                    ` : ''}
+                    ` : ""}
                     <button type="button" class="p-icon-btn p-icon-btn--danger" data-action="delete">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         حذف
@@ -187,14 +194,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function bindCardActions() {
-        $$('.p-card').forEach((card) => {
+        $$(".p-card").forEach((card) => {
             const id = card.dataset.id;
-            card.querySelectorAll('[data-action]').forEach((btn) => {
-                btn.addEventListener('click', () => {
+            card.querySelectorAll("[data-action]").forEach((btn) => {
+                btn.addEventListener("click", () => {
                     const action = btn.dataset.action;
-                    if (action === 'edit') openEditModal(id);
-                    else if (action === 'delete') deleteProject(id);
-                    else if (action === 'sync') syncGithub(id, btn);
+                    if (action === "edit")
+                        openEditModal(id);
+
+                    else if (action === "delete")
+                        deleteProject(id);
+
+                    else if (action === "sync")
+                        syncGithub(id, btn);
                 });
             });
         });
@@ -207,13 +219,17 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.innerHTML = `<div class="dash-loading">در حال بارگذاری…</div>`;
         try {
             const params = new URLSearchParams({
-                mine: 'true',
+                mine: "true",
                 page: state.page,
                 limit: state.limit,
-                sort: state.sort,
+                sort: state.sort
             });
-            if (state.search) params.set('search', state.search);
-            if (state.status) params.set('status', state.status);
+
+            if (state.search)
+                params.set("search", state.search);
+
+            if (state.status)
+                params.set("status", state.status);
 
             const data = await api(`/api/projects?${params}`);
 
@@ -221,53 +237,66 @@ document.addEventListener('DOMContentLoaded', () => {
             state.totalPages = data.pagination?.pages || 1;
 
             const total = data.pagination?.total || 0;
-            countEl.textContent = total === 0 ? 'هیچ پروژه‌ای ندارید' : `${total} پروژه`;
+            countEl.textContent = total === 0 ? "هیچ پروژه‌ای ندارید" : `${total} پروژه`;
 
             renderProjects();
             renderPagination();
-        } catch (err) {
+        }
+
+        catch (err) {
             grid.innerHTML = `<div class="dash-empty">
                 <div class="dash-empty__icon">⚠️</div>
                 <h3 class="dash-empty__title">خطا در بارگذاری</h3>
-                <p class="dash-empty__sub">${escapeHtml(err.message || '')}</p>
+                <p class="dash-empty__sub">${escapeHtml(err.message || "")}</p>
                 <button class="btn-primary" onclick="location.reload()">تلاش مجدد</button>
             </div>`;
         }
     }
 
     function renderPagination() {
-        if (state.totalPages <= 1) { pagination.innerHTML = ''; return; }
+        if (state.totalPages <= 1) {
+            pagination.innerHTML = ""; return;
+        }
 
         const cur = state.page;
         const total = state.totalPages;
         const pages = [];
 
         if (total <= 7) {
-            for (let i = 1; i <= total; i++) pages.push(i);
-        } else {
+            for (let i = 1; i <= total; i++)
+                pages.push(i);
+        }
+
+        else {
             pages.push(1);
-            if (cur > 3) pages.push('...');
-            for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
-            if (cur < total - 2) pages.push('...');
+            if (cur > 3)
+                pages.push("...");
+
+            for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
+                pages.push(i);
+
+            if (cur < total - 2)
+                pages.push("...");
+
             pages.push(total);
         }
 
         pagination.innerHTML = `
-            <button class="page-btn" ${cur === 1 ? 'disabled' : ''} data-page="${cur - 1}">قبلی</button>
-            ${pages.map((p) => p === '...'
+            <button class="page-btn" ${cur === 1 ? "disabled" : ""} data-page="${cur - 1}">قبلی</button>
+            ${pages.map((p) => p === "..."
             ? `<span class="page-btn" style="cursor:default;border:none;background:transparent">…</span>`
-            : `<button class="page-btn ${p === cur ? 'active' : ''}" data-page="${p}">${p}</button>`
-        ).join('')}
-            <button class="page-btn" ${cur === total ? 'disabled' : ''} data-page="${cur + 1}">بعدی</button>
+            : `<button class="page-btn ${p === cur ? "active" : ""}" data-page="${p}">${p}</button>`
+        ).join("")}
+            <button class="page-btn" ${cur === total ? "disabled" : ""} data-page="${cur + 1}">بعدی</button>
         `;
 
-        pagination.querySelectorAll('[data-page]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+        pagination.querySelectorAll("[data-page]").forEach((btn) => {
+            btn.addEventListener("click", () => {
                 const p = Number(btn.dataset.page);
                 if (p >= 1 && p <= total && p !== cur) {
                     state.page = p;
                     loadProjects();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                 }
             });
         });
@@ -275,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ---------- Filters ---------- */
     let searchTimer;
-    searchInput.addEventListener('input', () => {
+    searchInput.addEventListener("input", () => {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => {
             state.search = searchInput.value.trim();
@@ -284,15 +313,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 350);
     });
 
-    statusSelect.addEventListener('change', () => {
+    statusSelect.addEventListener("change", () => {
         state.status = statusSelect.value;
         state.page = 1;
+
         loadProjects();
     });
 
-    sortSelect.addEventListener('change', () => {
+    sortSelect.addEventListener("change", () => {
         state.sort = sortSelect.value;
         state.page = 1;
+
         loadProjects();
     });
 
@@ -300,43 +331,46 @@ document.addEventListener('DOMContentLoaded', () => {
        ============ MODAL — Steps =================================
        ============================================================ */
     function goToStep(index) {
-        if (index < 0 || index >= state.steps.length) return;
+        if (index < 0 || index >= state.steps.length)
+            return;
+
         state.currentStep = index;
 
         // tabs
-        tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+        tabs.forEach((t, i) => t.classList.toggle("active", i === index));
 
         // panels
-        $$('.pm-panel').forEach((p) => {
-            p.classList.toggle('active', p.dataset.panel === state.steps[index]);
+        $$(".pm-panel").forEach((p) => {
+            p.classList.toggle("active", p.dataset.panel === state.steps[index]);
         });
 
         // footer buttons
-        modalPrev.style.display = index === 0 ? 'none' : '';
-        modalNext.style.display = index === state.steps.length - 1 ? 'none' : '';
-        modalSubmit.style.display = index === state.steps.length - 1 ? '' : 'none';
+        modalPrev.style.display = index === 0 ? "none" : "";
+        modalNext.style.display = index === state.steps.length - 1 ? "none" : "";
+        modalSubmit.style.display = index === state.steps.length - 1 ? "" : "none";
     }
 
     tabs.forEach((tab, i) => {
-        tab.addEventListener('click', () => goToStep(i));
+        tab.addEventListener("click", () => goToStep(i));
     });
 
-    modalNext.addEventListener('click', () => goToStep(state.currentStep + 1));
-    modalPrev.addEventListener('click', () => goToStep(state.currentStep - 1));
+    modalNext.addEventListener("click", () => goToStep(state.currentStep + 1));
+    modalPrev.addEventListener("click", () => goToStep(state.currentStep - 1));
 
     /* ============================================================
        Modal open/close
        ============================================================ */
     function openModal() {
-        modal.classList.add('open');
-        modalBackdrop.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        modal.classList.add("open");
+        modalBackdrop.classList.add("open");
+        document.body.style.overflow = "hidden";
     }
 
     function closeModal() {
-        modal.classList.remove('open');
-        modalBackdrop.classList.remove('open');
-        document.body.style.overflow = '';
+        modal.classList.remove("open");
+        modalBackdrop.classList.remove("open");
+        document.body.style.overflow = "";
+
         resetModal();
     }
 
@@ -360,26 +394,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderFile();
         updateBadges();
         goToStep(0);
-        mdEditor.setValue('');
-        form.elements.fullDescription.value = '';
+        mdEditor.setValue("");
+        form.elements.fullDescription.value = "";
 
 
-        if (state.tagPicker) state.tagPicker.setSelected([]);
+        if (state.tagPicker)
+            state.tagPicker.setSelected([]);
     }
 
-    modalClose.addEventListener('click', closeModal);
-    modalCancel.addEventListener('click', closeModal);
-    modalBackdrop.addEventListener('click', closeModal);
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    modalClose.addEventListener("click", closeModal);
+    modalCancel.addEventListener("click", closeModal);
+    modalBackdrop.addEventListener("click", closeModal);
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.classList.contains("open"))
+            closeModal();
     });
 
-    btnNew.addEventListener('click', () => {
+    btnNew.addEventListener("click", () => {
         resetModal();
-        modalTitle.textContent = 'پروژه جدید';
-        modalSubtitle.textContent = 'اطلاعات پروژه را در ۵ مرحله وارد کنید';
-        modalSubmit.textContent = 'ساخت پروژه';
+        modalTitle.textContent = "پروژه جدید";
+        modalSubtitle.textContent = "اطلاعات پروژه را در ۵ مرحله وارد کنید";
+        modalSubmit.textContent = "ساخت پروژه";
         openModal();
+
         setTimeout(() => form.elements.title.focus(), 200);
     });
 
@@ -393,20 +430,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const p = data.project;
 
             state.editingId = p._id;
-            modalTitle.textContent = 'ویرایش پروژه';
+            modalTitle.textContent = "ویرایش پروژه";
             modalSubtitle.textContent = p.title;
-            modalSubmit.textContent = 'ذخیره تغییرات';
+            modalSubmit.textContent = "ذخیره تغییرات";
 
             /* basic */
             form.elements._id.value = p._id;
             form.elements.title.value = p.title;
             form.elements.slug.value = p.slug;
-            form.elements.githubUrl.value = p.githubUrl || '';
+            form.elements.githubUrl.value = p.githubUrl || "";
             form.elements.autoSync.checked = !!p.autoSync;
 
             /* content */
-            form.elements.shortDescription.value = p.shortDescription || '';
-            form.elements.fullDescription.value = p.fullDescription || '';
+            form.elements.shortDescription.value = p.shortDescription || "";
+            form.elements.fullDescription.value = p.fullDescription || "";
             updateCounters();
 
             /* media */
@@ -420,25 +457,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
             /* tags */
             if (state.tagPicker) {
-                state.tagPicker.setSelected((p.tags || []).map((t) => t._id));
+                const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
+                const tagIds = (p.tags || [])
+                    .map((t) => (t && typeof t === 'object' ? t._id : t))
+                    .filter((id) => id && OBJECT_ID_RE.test(String(id)));
+                    
+                state.tagPicker.setSelected(tagIds);
             }
-
             /* settings */
-            const status = p.status || 'published';
+            const status = p.status || "published";
             const radio = form.querySelector(`input[name="status"][value="${status}"]`);
-            if (radio) radio.checked = true;
+            if (radio)
+                radio.checked = true;
+
             form.elements.isPublic.checked = !!p.isPublic;
 
             openModal();
             validateGithubUrl();
-            mdEditor.setValue(p.fullDescription || '');
-        } catch (err) {
+            mdEditor.setValue(p.fullDescription || "");
+        }
+
+        catch (err) {
             // ✅ لاگ خطای کامل برای دیباگ
-            console.error('[openEditModal] failed:', err);
+            console.error("[openEditModal] failed:", err);
 
             toast(
-                err.message || 'خطا در بارگذاری پروژه',
-                'error'
+                err.message || "خطا در بارگذاری پروژه",
+                "error"
             );
         }
     }
@@ -446,50 +491,55 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        ============ IMAGES ========================================
        ============================================================ */
-    const imagesDropzone = $('#imagesDropzone');
-    const imagesInput = $('#imagesInput');
-    const imagesGrid = $('#imagesGrid');
+    const imagesDropzone = $("#imagesDropzone");
+    const imagesInput = $("#imagesInput");
+    const imagesGrid = $("#imagesGrid");
 
-    imagesDropzone.addEventListener('click', () => imagesInput.click());
+    imagesDropzone.addEventListener("click", () => imagesInput.click());
 
-    imagesDropzone.addEventListener('dragover', (e) => {
+    imagesDropzone.addEventListener("dragover", (e) => {
         e.preventDefault();
-        imagesDropzone.classList.add('dragover');
+        imagesDropzone.classList.add("dragover");
     });
-    imagesDropzone.addEventListener('dragleave', () => {
-        imagesDropzone.classList.remove('dragover');
+    imagesDropzone.addEventListener("dragleave", () => {
+        imagesDropzone.classList.remove("dragover");
     });
-    imagesDropzone.addEventListener('drop', (e) => {
+    imagesDropzone.addEventListener("drop", (e) => {
         e.preventDefault();
-        imagesDropzone.classList.remove('dragover');
+        imagesDropzone.classList.remove("dragover");
         handleImageFiles(e.dataTransfer.files);
     });
 
-    imagesInput.addEventListener('change', (e) => {
+    imagesInput.addEventListener("change", (e) => {
         handleImageFiles(e.target.files);
-        imagesInput.value = '';
+        imagesInput.value = "";
     });
 
     function handleImageFiles(fileList) {
         const files = Array.from(fileList);
-        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
         const currentTotal = state.existingImages.length + state.newImages.length;
         const remaining = 10 - currentTotal;
 
         if (remaining <= 0) {
-            toast('حداکثر ۱۰ تصویر', 'error');
+            toast("حداکثر ۱۰ تصویر", "error");
+
             return;
         }
 
         for (const f of files.slice(0, remaining)) {
             if (!allowed.includes(f.type)) {
-                toast(`فرمت ${f.type} مجاز نیست`, 'error');
+                toast(`فرمت ${f.type} مجاز نیست`, "error");
+
                 continue;
             }
+
             if (f.size > 5 * 1024 * 1024) {
-                toast(`«${f.name}» بزرگتر از 5MB است`, 'error');
+                toast(`«${f.name}» بزرگتر از 5MB است`, "error");
+
                 continue;
             }
+
             state.newImages.push({
                 file: f,
                 previewUrl: URL.createObjectURL(f),
@@ -504,18 +554,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderImages() {
         const total = state.existingImages.length + state.newImages.length;
         const all = [
-            ...state.existingImages.map((img) => ({ ...img, source: 'existing' })),
-            ...state.newImages.map((img, i) => ({ ...img, source: 'new', newIndex: i, url: img.previewUrl })),
+            ...state.existingImages.map((img) => ({ ...img, source: "existing" })),
+            ...state.newImages.map((img, i) => ({ ...img, source: "new", newIndex: i, url: img.previewUrl }))
         ];
 
         imagesGrid.innerHTML = all.map((img, idx) => `
             <div class="pm-image" data-source="${img.source}"
-                 data-id="${img._id || ''}"
-                 data-new-index="${img.newIndex ?? ''}"
+                 data-id="${img._id || ""}"
+                 data-new-index="${img.newIndex ?? ""}"
                  draggable="true">
                 <img src="${escapeHtml(img.url)}" alt="">
 
-                ${idx === 0 ? `<span class="pm-image__cover">کاور</span>` : ''}
+                ${idx === 0 ? `<span class="pm-image__cover">کاور</span>` : ""}
 
                 <span class="pm-image__index">${idx + 1}</span>
 
@@ -528,13 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `).join("");
 
         // remove buttons
-        imagesGrid.querySelectorAll('[data-remove]').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
+        imagesGrid.querySelectorAll("[data-remove]").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const wrap = btn.closest('.pm-image');
+                const wrap = btn.closest(".pm-image");
                 removeImage(wrap);
             });
         });
@@ -548,10 +598,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = wrap.dataset.id;
         const newIndex = wrap.dataset.newIndex;
 
-        if (source === 'existing' && id) {
+        if (source === "existing" && id) {
             state.imagesToDelete.push(id);
             state.existingImages = state.existingImages.filter((i) => i._id !== id);
-        } else if (source === 'new' && newIndex !== '') {
+        }
+
+        else if (source === "new" && newIndex !== "") {
             state.newImages.splice(Number(newIndex), 1);
         }
 
@@ -562,67 +614,69 @@ document.addEventListener('DOMContentLoaded', () => {
     let draggedImage = null;
 
     function bindImageDragAndDrop() {
-        imagesGrid.querySelectorAll('.pm-image').forEach((el) => {
-            el.addEventListener('dragstart', (e) => {
+        imagesGrid.querySelectorAll(".pm-image").forEach((el) => {
+            el.addEventListener("dragstart", (e) => {
                 draggedImage = el;
-                el.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
+                el.classList.add("dragging");
+                e.dataTransfer.effectAllowed = "move";
             });
 
-            el.addEventListener('dragend', () => {
-                el.classList.remove('dragging');
-                imagesGrid.querySelectorAll('.pm-image').forEach((x) => x.classList.remove('drag-over'));
+            el.addEventListener("dragend", () => {
+                el.classList.remove("dragging");
+                imagesGrid.querySelectorAll(".pm-image").forEach((x) => x.classList.remove("drag-over"));
                 draggedImage = null;
             });
 
-            el.addEventListener('dragover', (e) => {
+            el.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 if (draggedImage && draggedImage !== el) {
-                    el.classList.add('drag-over');
+                    el.classList.add("drag-over");
                 }
             });
 
-            el.addEventListener('dragleave', () => {
-                el.classList.remove('drag-over');
+            el.addEventListener("dragleave", () => {
+                el.classList.remove("drag-over");
             });
 
-            el.addEventListener('drop', (e) => {
+            el.addEventListener("drop", (e) => {
                 e.preventDefault();
-                if (!draggedImage || draggedImage === el) return;
+                if (!draggedImage || draggedImage === el)
+                    return;
 
                 // جمع‌آوری همه تصاویر به ترتیب فعلی
                 const all = [
-                    ...state.existingImages.map((img) => ({ type: 'existing', data: img })),
-                    ...state.newImages.map((img) => ({ type: 'new', data: img })),
+                    ...state.existingImages.map((img) => ({ type: "existing", data: img })),
+                    ...state.newImages.map((img) => ({ type: "new", data: img }))
                 ];
 
                 const dragIdx = Number(draggedImage.dataset.newIndex ?? -1);
-                const dragIsExisting = draggedImage.dataset.source === 'existing';
+                const dragIsExisting = draggedImage.dataset.source === "existing";
                 const dragId = draggedImage.dataset.id;
 
                 const dropIdx = Number(el.dataset.newIndex ?? -1);
-                const dropIsExisting = el.dataset.source === 'existing';
+                const dropIsExisting = el.dataset.source === "existing";
                 const dropId = el.dataset.id;
 
                 // پیدا کردن ایندکس در all
                 const findIdx = (source, id, nIdx) =>
                     all.findIndex((x) =>
-                        source === 'existing'
-                            ? x.type === 'existing' && String(x.data._id) === String(id)
-                            : x.type === 'new' && state.newImages.indexOf(x.data) === nIdx
+                        source === "existing"
+                            ? x.type === "existing" && String(x.data._id) === String(id)
+                            : x.type === "new" && state.newImages.indexOf(x.data) === nIdx
                     );
 
-                const from = findIdx(dragIsExisting ? 'existing' : 'new', dragId, dragIdx);
-                const to = findIdx(dropIsExisting ? 'existing' : 'new', dropId, dropIdx);
+                const from = findIdx(dragIsExisting ? "existing" : "new", dragId, dragIdx);
+                const to = findIdx(dropIsExisting ? "existing" : "new", dropId, dropIdx);
 
-                if (from < 0 || to < 0) return;
+                if (from < 0 || to < 0)
+                    return;
 
                 const [moved] = all.splice(from, 1);
                 all.splice(to, 0, moved);
 
                 // بازسازی state
-                state.existingImages = all.filter((x) => x.type === 'existing').map((x) => x.data);
-                state.newImages = all.filter((x) => x.type === 'new').map((x) => x.data);
+                state.existingImages = all.filter((x) => x.type === "existing").map((x) => x.data);
+                state.newImages = all.filter((x) => x.type === "new").map((x) => x.data);
 
                 renderImages();
             });
@@ -632,43 +686,48 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        ============ VIDEO =========================================
        ============================================================ */
-    const videoDropzone = $('#videoDropzone');
-    const videoInput = $('#videoInput');
-    const videoContainer = $('#videoContainer');
+    const videoDropzone = $("#videoDropzone");
+    const videoInput = $("#videoInput");
+    const videoContainer = $("#videoContainer");
 
-    videoDropzone.addEventListener('click', () => videoInput.click());
+    videoDropzone.addEventListener("click", () => videoInput.click());
 
-    videoDropzone.addEventListener('dragover', (e) => {
+    videoDropzone.addEventListener("dragover", (e) => {
         e.preventDefault();
-        videoDropzone.classList.add('dragover');
+
+        videoDropzone.classList.add("dragover");
     });
-    videoDropzone.addEventListener('dragleave', () => videoDropzone.classList.remove('dragover'));
-    videoDropzone.addEventListener('drop', (e) => {
+    videoDropzone.addEventListener("dragleave", () => videoDropzone.classList.remove("dragover"));
+    videoDropzone.addEventListener("drop", (e) => {
         e.preventDefault();
-        videoDropzone.classList.remove('dragover');
+        videoDropzone.classList.remove("dragover");
         handleVideoFile(e.dataTransfer.files[0]);
     });
 
-    videoInput.addEventListener('change', (e) => {
+    videoInput.addEventListener("change", (e) => {
         handleVideoFile(e.target.files[0]);
-        videoInput.value = '';
+        videoInput.value = "";
     });
 
     function handleVideoFile(file) {
         if (!file) return;
-        const allowed = ['video/mp4', 'video/webm', 'video/quicktime'];
+        const allowed = ["video/mp4", "video/webm", "video/quicktime"];
         if (!allowed.includes(file.type)) {
-            toast('فرمت ویدیو مجاز نیست', 'error');
+            toast("فرمت ویدیو مجاز نیست", "error");
+
             return;
         }
+
         if (file.size > 200 * 1024 * 1024) {
-            toast('حجم ویدیو بیش از 200MB است', 'error');
+            toast("حجم ویدیو بیش از 200MB است", "error");
+
             return;
         }
 
         state.newVideo = { file, previewUrl: URL.createObjectURL(file), filename: file.name };
         state.existingVideo = null;
         state.videoToDelete = false;
+
         renderVideo();
     }
 
@@ -693,7 +752,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
+
             reinitVideoDropzone();
+
             return;
         }
 
@@ -711,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="pm-media-preview__name">${escapeHtml(video.filename)}</div>
                     <div class="pm-media-preview__meta">
                         <span>${humanSize(video.size)}</span>
-                        ${video.isNew ? '<span style="color:#fbbf24">آپلود نشده</span>' : ''}
+                        ${video.isNew ? `<span style="color:#fbbf24">آپلود نشده</span>` : ""}
                     </div>
                 </div>
                 <div class="pm-media-preview__actions">
@@ -725,76 +786,89 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        videoContainer.querySelector('[data-remove-video]')?.addEventListener('click', () => {
-            if (state.existingVideo) state.videoToDelete = true;
+        videoContainer.querySelector("[data-remove-video]")?.addEventListener("click", () => {
+            if (state.existingVideo)
+                state.videoToDelete = true;
+
             state.newVideo = null;
             state.existingVideo = null;
+
             renderVideo();
         });
     }
 
     function reinitVideoDropzone() {
-        const dz = $('#videoDropzone');
-        const inp = $('#videoInput');
-        if (!dz || !inp) return;
+        const dz = $("#videoDropzone");
+        const inp = $("#videoInput");
+        if (!dz || !inp)
+            return;
 
-        dz.addEventListener('click', () => inp.click());
-        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
-        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-        dz.addEventListener('drop', (e) => {
+        dz.addEventListener("click", () => inp.click());
+        dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("dragover"); });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", (e) => {
             e.preventDefault();
-            dz.classList.remove('dragover');
+
+            dz.classList.remove("dragover");
             handleVideoFile(e.dataTransfer.files[0]);
         });
-        inp.addEventListener('change', (e) => {
+        inp.addEventListener("change", (e) => {
             handleVideoFile(e.target.files[0]);
-            inp.value = '';
+            inp.value = "";
         });
     }
 
     /* ============================================================
        ============ FILE (ZIP) ====================================
        ============================================================ */
-    const fileDropzone = $('#fileDropzone');
-    const fileInput = $('#fileInput');
-    const fileContainer = $('#fileContainer');
-    const fileVersionField = $('#fileVersionField');
+    const fileDropzone = $("#fileDropzone");
+    const fileInput = $("#fileInput");
+    const fileContainer = $("#fileContainer");
+    const fileVersionField = $("#fileVersionField");
 
-    fileDropzone.addEventListener('click', () => fileInput.click());
+    fileDropzone.addEventListener("click", () => fileInput.click());
 
-    fileDropzone.addEventListener('dragover', (e) => {
+    fileDropzone.addEventListener("dragover", (e) => {
         e.preventDefault();
-        fileDropzone.classList.add('dragover');
+
+        fileDropzone.classList.add("dragover");
     });
-    fileDropzone.addEventListener('dragleave', () => fileDropzone.classList.remove('dragover'));
-    fileDropzone.addEventListener('drop', (e) => {
+    fileDropzone.addEventListener("dragleave", () => fileDropzone.classList.remove("dragover"));
+    fileDropzone.addEventListener("drop", (e) => {
         e.preventDefault();
-        fileDropzone.classList.remove('dragover');
+
+        fileDropzone.classList.remove("dragover");
         handleZipFile(e.dataTransfer.files[0]);
     });
 
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener("change", (e) => {
         handleZipFile(e.target.files[0]);
-        fileInput.value = '';
+        fileInput.value = "";
     });
 
     function handleZipFile(file) {
-        if (!file) return;
-        const allowed = ['application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed', 'application/gzip', 'application/x-7z-compressed', 'application/x-tar'];
-        const ext = file.name.split('.').pop()?.toLowerCase();
-        const allowedExts = ['zip', 'rar', '7z', 'tar', 'gz'];
-        if (!allowed.includes(file.type) && !allowedExts.includes(ext || '')) {
-            toast('فرمت فایل مجاز نیست', 'error');
+        if (!file)
+            return;
+
+        const allowed = ["application/zip", "application/x-zip-compressed", "application/x-rar-compressed", "application/gzip", "application/x-7z-compressed", "application/x-tar"];
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        const allowedExts = ["zip", "rar", "7z", "tar", "gz"];
+        if (!allowed.includes(file.type) && !allowedExts.includes(ext || "")) {
+            toast("فرمت فایل مجاز نیست", "error");
+
             return;
         }
+
         if (file.size > 500 * 1024 * 1024) {
-            toast('حجم فایل بیش از 500MB است', 'error');
+            toast("حجم فایل بیش از 500MB است", "error");
+
             return;
         }
 
         state.newFile = { file, filename: file.name, size: file.size };
         state.existingFile = null;
         state.fileToDelete = false;
+
         renderFile();
     }
 
@@ -816,8 +890,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-            fileVersionField.style.display = 'none';
+            fileVersionField.style.display = "none";
+
             reinitFileDropzone();
+
             return;
         }
 
@@ -835,8 +911,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="pm-media-preview__name">${escapeHtml(f.filename)}</div>
                     <div class="pm-media-preview__meta">
                         <span>${humanSize(f.size || 0)}</span>
-                        ${isNew ? '<span style="color:#fbbf24">آپلود نشده</span>' : ''}
-                        ${!isNew && f.downloads ? `<span>${f.downloads} دانلود</span>` : ''}
+                        ${isNew ? `<span style="color:#fbbf24">آپلود نشده</span>` : ""}
+                        ${!isNew && f.downloads ? `<span>${f.downloads} دانلود</span>` : ""}
                     </div>
                 </div>
                 <div class="pm-media-preview__actions">
@@ -850,33 +926,40 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        fileContainer.querySelector('[data-remove-file]')?.addEventListener('click', () => {
-            if (state.existingFile) state.fileToDelete = true;
+        fileContainer.querySelector("[data-remove-file]")?.addEventListener("click", () => {
+            if (state.existingFile)
+                state.fileToDelete = true;
+
             state.newFile = null;
             state.existingFile = null;
+
             renderFile();
         });
 
-        fileVersionField.style.display = '';
-        if (!isNew && f.version) $('#p-fileVersion').value = f.version;
+        fileVersionField.style.display = "";
+        if (!isNew && f.version)
+            $("#p-fileVersion").value = f.version;
     }
 
     function reinitFileDropzone() {
-        const dz = $('#fileDropzone');
-        const inp = $('#fileInput');
-        if (!dz || !inp) return;
+        const dz = $("#fileDropzone");
+        const inp = $("#fileInput");
+        if (!dz || !inp)
+            return;
 
-        dz.addEventListener('click', () => inp.click());
-        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
-        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-        dz.addEventListener('drop', (e) => {
+        dz.addEventListener("click", () => inp.click());
+        dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("dragover"); });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", (e) => {
             e.preventDefault();
-            dz.classList.remove('dragover');
+
+            dz.classList.remove("dragover");
             handleZipFile(e.dataTransfer.files[0]);
         });
-        inp.addEventListener('change', (e) => {
+        inp.addEventListener("change", (e) => {
             handleZipFile(e.target.files[0]);
-            inp.value = '';
+
+            inp.value = "";
         });
     }
 
@@ -884,61 +967,76 @@ document.addEventListener('DOMContentLoaded', () => {
        Counters & badges
        ============================================================ */
     function updateCounters() {
-        const shortEl = $('#shortCount');
+        const shortEl = $("#shortCount");
         if (shortEl) {
             shortEl.textContent = form.elements.shortDescription.value.length;
         }
 
-        const fullEl = $('#fullCount');
+        const fullEl = $("#fullCount");
         if (fullEl) {
             fullEl.textContent = form.elements.fullDescription.value.length;
         }
     }
 
-    form.elements.shortDescription?.addEventListener('input', updateCounters);
-    form.elements.fullDescription?.addEventListener('input', updateCounters);
+    form.elements.shortDescription?.addEventListener("input", updateCounters);
+    form.elements.fullDescription?.addEventListener("input", updateCounters);
 
     function updateBadges() {
         const imgCount = state.existingImages.length + state.newImages.length;
-        $('#imagesCount').textContent = `${imgCount}/10`;
+        $("#imagesCount").textContent = `${imgCount}/10`;
     }
 
     /* ============================================================
        GitHub URL — inline validation
        ============================================================ */
     const githubInput = form.elements.githubUrl;
-    const githubHint = $('#githubHint');
+    const githubHint = $("#githubHint");
 
     function validateGithubUrl() {
         const val = githubInput.value.trim();
-        githubHint.className = 'field-hint';
-        githubHint.textContent = '';
+        githubHint.className = "field-hint";
+        githubHint.textContent = "";
 
-        if (!val) return;
+        if (!val)
+            return;
 
         const re = /^(https?:\/\/)?(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i;
         if (re.test(val)) {
-            githubHint.textContent = '✓ لینک معتبر است';
-            githubHint.classList.add('success');
-        } else {
-            githubHint.textContent = '✗ لینک گیت‌هاب نامعتبر است';
-            githubHint.classList.add('error');
+            githubHint.textContent = "✓ لینک معتبر است";
+            githubHint.classList.add("success");
+        }
+
+        else {
+            githubHint.textContent = "✗ لینک گیت‌هاب نامعتبر است";
+            githubHint.classList.add("error");
         }
     }
 
-    githubInput?.addEventListener('blur', validateGithubUrl);
-    githubInput?.addEventListener('input', () => {
-        githubHint.className = 'field-hint';
-        githubHint.textContent = '';
+    githubInput?.addEventListener("blur", validateGithubUrl);
+    githubInput?.addEventListener("input", () => {
+        githubHint.className = "field-hint";
+        githubHint.textContent = "";
     });
 
     /* ============================================================
        ============ SUBMIT ========================================
        ============================================================ */
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        /* ---------- جمع‌آوری داده ---------- */
+        /* ---------- جمع‌آوری + sanitize تگ‌ها ---------- */
+        const rawTags = state.tagPicker ? state.tagPicker.getSelected() : [];
+        const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
+        const tags = [...new Set(rawTags)]
+            .filter((id) => typeof id === "string" && OBJECT_ID_RE.test(id));
+
+        if (rawTags.length !== tags.length) {
+            console.warn(
+                `[submit] sanitized tags: ${rawTags.length} → ${tags.length}`,
+                "removed:", rawTags.filter((id) => !tags.includes(id))
+            );
+        }
+
         const values = {
             title: form.elements.title.value.trim(),
             slug: form.elements.slug.value.trim() || undefined,
@@ -946,34 +1044,42 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSync: form.elements.autoSync.checked,
             shortDescription: form.elements.shortDescription.value.trim(),
             fullDescription: form.elements.fullDescription.value.trim(),
-            tags: state.tagPicker ? state.tagPicker.getSelected() : [],
-            status: form.querySelector('input[name="status"]:checked')?.value || 'published',
-            isPublic: form.elements.isPublic.checked,
+            tags,   // ✅ sanitized
+            status: form.querySelector(`input[name="status"]:checked`)?.value || "published",
+            isPublic: form.elements.isPublic.checked
         };
 
         /* ---------- client validation ---------- */
         const errors = {};
         if (!values.title || values.title.length < 2) {
-            errors.title = 'عنوان باید حداقل ۲ کاراکتر باشد';
+            errors.title = "عنوان باید حداقل ۲ کاراکتر باشد";
+
             goToStep(0);
         }
+
         if (!values.shortDescription) {
-            errors.shortDescription = 'توضیح مختصر الزامی است';
-            if (!errors.title) goToStep(1);
+            errors.shortDescription = "توضیح مختصر الزامی است";
+            if (!errors.title)
+                goToStep(1);
         }
+
         if (!values.fullDescription || values.fullDescription.length < 20) {
-            errors.fullDescription = 'شرح کامل باید حداقل ۲۰ کاراکتر باشد';
-            if (!errors.title && !errors.shortDescription) goToStep(1);
+            errors.fullDescription = "شرح کامل باید حداقل ۲۰ کاراکتر باشد";
+            if (!errors.title && !errors.shortDescription)
+                goToStep(1);
         }
 
         if (Object.keys(errors).length) {
             FormKit.clearAllErrors(form);
             for (const [k, m] of Object.entries(errors)) {
                 const input = form.querySelector(`[name="${k}"]`);
-                if (input) FormKit.showFieldError(input, m);
+                if (input)
+                    FormKit.showFieldError(input, m);
             }
+
             const first = Object.keys(errors)[0];
             form.querySelector(`[name="${first}"]`)?.focus();
+
             return;
         }
 
@@ -981,14 +1087,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modalSubmit.disabled = true;
         const originalText = modalSubmit.textContent;
-        modalSubmit.textContent = 'در حال ذخیره…';
+        modalSubmit.textContent = "در حال ذخیره…";
 
         values.fullDescription = mdEditor.getValue();
 
         try {
             const isEdit = !!state.editingId;
-            const url = isEdit ? `/api/projects/${state.editingId}` : '/api/projects';
-            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit ? `/api/projects/${state.editingId}` : "/api/projects";
+            const method = isEdit ? "PUT" : "POST";
 
             /* ---------- 1) Save project core ---------- */
             const saved = await api(url, { method, body: JSON.stringify(values) });
@@ -998,15 +1104,21 @@ document.addEventListener('DOMContentLoaded', () => {
             await uploadAllMedia(projectId);
 
             /* ---------- Done ---------- */
-            toast(isEdit ? 'پروژه ویرایش شد' : 'پروژه ساخته شد', 'success');
+            toast(isEdit ? "پروژه ویرایش شد" : "پروژه ساخته شد", "success");
             closeModal();
+
             await loadProjects();
-        } catch (err) {
+        }
+
+        catch (err) {
             if (err.details || err.field) {
                 FormKit.applyServerErrors(form, err);
             }
-            toast(err.message || 'خطا در ذخیره', 'error');
-        } finally {
+
+            toast(err.message || "خطا در ذخیره", "error");
+        }
+
+        finally {
             modalSubmit.disabled = false;
             modalSubmit.textContent = originalText;
         }
@@ -1026,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2) images to delete (فقط در حالت ویرایش)
         for (const imgId of state.imagesToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/images/${imgId}`, { method: 'DELETE' }).catch(() => { })
+                api(`/api/projects/${projectId}/images/${imgId}`, { method: "DELETE" }).catch(() => { })
             );
         }
 
@@ -1036,18 +1148,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4) video
         if (state.newVideo) {
             tasks.push(uploadVideo(projectId));
-        } else if (state.videoToDelete) {
+        }
+
+        else if (state.videoToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/video`, { method: 'DELETE' }).catch(() => { })
+                api(`/api/projects/${projectId}/video`, { method: "DELETE" }).catch(() => { })
             );
         }
 
         // 5) file
         if (state.newFile) {
             tasks.push(uploadFile(projectId));
-        } else if (state.fileToDelete) {
+        }
+
+        else if (state.fileToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/file`, { method: 'DELETE' }).catch(() => { })
+                api(`/api/projects/${projectId}/file`, { method: "DELETE" }).catch(() => { })
             );
         }
 
@@ -1057,11 +1173,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function uploadImages(projectId) {
         const fd = new FormData();
         for (const img of state.newImages) {
-            fd.append('images', img.file);
+            fd.append("images", img.file);
         }
 
         await api(`/api/projects/${projectId}/images`, {
-            method: 'POST',
+            method: "POST",
             body: fd,
         });
     }
@@ -1069,34 +1185,36 @@ document.addEventListener('DOMContentLoaded', () => {
     async function reorderImages(projectId) {
         // ساخت ترتیب جدید
         const existingIds = state.existingImages.map((i) => i._id).filter(Boolean);
-        if (existingIds.length === 0) return;
+        if (existingIds.length === 0)
+            return;
 
         // فقط اگه ترتیب تغییر کرده
         // (ساده: همیشه ارسال کن — سرور idempotent هست)
         await api(`/api/projects/${projectId}/images/order`, {
-            method: 'PATCH',
-            body: JSON.stringify({ order: existingIds }),
+            method: "PATCH",
+            body: JSON.stringify({ order: existingIds })
         }).catch(() => { });
     }
 
     async function uploadVideo(projectId) {
         const fd = new FormData();
-        fd.append('video', state.newVideo.file);
+        fd.append("video", state.newVideo.file);
 
         await api(`/api/projects/${projectId}/video`, {
-            method: 'POST',
-            body: fd,
+            method: "POST",
+            body: fd
         });
     }
 
     async function uploadFile(projectId) {
         const fd = new FormData();
-        fd.append('file', state.newFile.file);
-        const version = $('#p-fileVersion')?.value?.trim();
-        if (version) fd.append('version', version);
+        fd.append("file", state.newFile.file);
+        const version = $("#p-fileVersion")?.value?.trim();
+        if (version)
+            fd.append("version", version);
 
         await api(`/api/projects/${projectId}/file`, {
-            method: 'POST',
+            method: "POST",
             body: fd,
         });
     }
@@ -1107,34 +1225,41 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteProject(id) {
         const p = state.items.find((x) => x._id === id);
         const ok = await confirmDialog({
-            title: 'حذف پروژه',
-            message: `آیا از حذف «${p?.title || 'این پروژه'}» مطمئنید؟ تمام تصاویر، ویدیو، فایل و نظرات هم حذف می‌شوند.`,
-            confirmText: 'بله، حذف کن',
-            cancelText: 'انصراف',
-            danger: true,
+            title: "حذف پروژه",
+            message: `آیا از حذف «${p?.title || "این پروژه"}» مطمئنید؟ تمام تصاویر، ویدیو، فایل و نظرات هم حذف می‌شوند.`,
+            confirmText: "بله، حذف کن",
+            cancelText: "انصراف",
+            danger: true
         });
-        if (!ok) return;
+        if (!ok)
+            return;
 
         try {
-            await api(`/api/projects/${id}`, { method: 'DELETE' });
-            toast('پروژه حذف شد', 'success');
+            await api(`/api/projects/${id}`, { method: "DELETE" });
+            toast("پروژه حذف شد", "success");
+
             await loadProjects();
-        } catch (err) {
-            toast(err.message || 'حذف ناموفق', 'error');
+        }
+
+        catch (err) {
+            toast(err.message || "حذف ناموفق", "error");
         }
     }
 
     async function syncGithub(id, btn) {
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '...';
+        btn.innerHTML = "...";
 
         try {
-            await api(`/api/projects/${id}/sync-github`, { method: 'POST' });
-            toast('اطلاعات از گیت‌هاب آپدیت شد', 'success');
+            await api(`/api/projects/${id}/sync-github`, { method: "POST" });
+            toast("اطلاعات از گیت‌هاب آپدیت شد", "success");
+
             await loadProjects();
-        } catch (err) {
-            toast(err.message || 'سینک ناموفق', 'error');
+        }
+
+        catch (err) {
+            toast(err.message || "سینک ناموفق", "error");
             btn.disabled = false;
             btn.innerHTML = originalHTML;
         }
@@ -1144,29 +1269,40 @@ document.addEventListener('DOMContentLoaded', () => {
        ============ Helpers =======================================
        ============================================================ */
     function escapeHtml(str) {
-        if (str == null) return '';
+        if (str == null)
+            return "";
+
         return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/"/g, "&#39;");
     }
 
     function hexA(hex, alpha) {
         if (!hex) return `rgba(110,187,255,${alpha})`;
-        const h = hex.replace('#', '');
+        const h = hex.replace("#", "");
         const r = parseInt(h.substr(0, 2), 16);
         const g = parseInt(h.substr(2, 2), 16);
         const b = parseInt(h.substr(4, 2), 16);
+
         return `rgba(${r},${g},${b},${alpha})`;
     }
 
     function humanSize(bytes) {
-        if (!bytes) return '0 B';
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+        if (!bytes)
+            return "0 B";
+
+        if (bytes < 1024)
+            return `${bytes} B`;
+
+        if (bytes < 1024 * 1024)
+            return `${(bytes / 1024).toFixed(1)} KB`;
+
+        if (bytes < 1024 * 1024 * 1024)
+            return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
         return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
     }
 
@@ -1177,26 +1313,27 @@ document.addEventListener('DOMContentLoaded', () => {
     (function init() {
 
         if (window.MarkdownEditor) {
-            mdEditor = new MarkdownEditor('#fullDescriptionEditor', {
-                name: 'fullDescriptionEditor',
-                value: '',
+            mdEditor = new MarkdownEditor("#fullDescriptionEditor", {
+                name: "fullDescriptionEditor",
+                value: "",
                 maxLength: 20000,
                 onChange: () => {
                     // sync با hidden input
                     form.elements.fullDescription.value = mdEditor.getValue();
-                },
+                }
             });
         }
 
 
         // Tag picker
         if (window.TagPicker) {
-            state.tagPicker = new TagPicker(document.getElementById('tagPickerRoot'), {
+            state.tagPicker = new TagPicker(document.getElementById("tagPickerRoot"), {
                 maxTags: 20,
                 onChange: (ids) => {
-                    const badge = $('#tagsCountBadge');
-                    if (badge) badge.textContent = `${ids.length}/20`;
-                },
+                    const badge = $("#tagsCountBadge");
+                    if (badge)
+                        badge.textContent = `${ids.length}/20`;
+                }
             });
         }
 
