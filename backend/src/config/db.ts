@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import { config } from './env';
+import mongoose from "mongoose";
+import { config } from "./env";
 
 export const connectDB = async (): Promise<void> => {
     try {
@@ -9,7 +9,7 @@ export const connectDB = async (): Promise<void> => {
     }
 
     catch (error) {
-        console.error('Error connecting to MongoDB:', error);
+        console.error("Error connecting to MongoDB:", error);
 
         // Exit process with failure
         process.exit(1);
