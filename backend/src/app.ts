@@ -17,13 +17,13 @@ app.use(cookieParser());
 
 // Set EJS as the view engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../frontend/views"));
+app.set("views", path.join(process.cwd(), "frontend/views"));
 
 
 // Serve static files (your CSS, client-side JS)
 app.use(
     express.static(
-        path.join(__dirname, "../frontend/public")
+        path.join(process.cwd(), "frontend/public")
     )
 );
 
