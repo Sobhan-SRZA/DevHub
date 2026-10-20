@@ -249,11 +249,22 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
             throw Conflict(ErrorCodes.GITHUB_ALREADY_LINKED);
     }
 
-    /* -------- چک وجود تگ‌ها -------- */
+    /* -------- چک وجود تگ‌ها (با dedupe) -------- */
     if (data.tags && data.tags.length) {
-        const found = await Tag.countDocuments({ _id: { $in: data.tags } });
-        if (found !== data.tags.length) {
-            throw new AppError(400, ErrorCodes.TAG_NOT_FOUND);
+        const uniqueIds = [...new Set(data.tags)];
+        const found = await Tag.find({ _id: { $in: uniqueIds } })
+            .select("_id")
+            .lean();
+
+        const foundSet = new Set(found.map((t) => String(t._id)));
+        const missing = uniqueIds.filter((id) => !foundSet.has(id));
+
+        if (missing.length) {
+            throw new AppError(
+                400,
+                ErrorCodes.TAG_NOT_FOUND,
+                `${missing.length} تگ یافت نشد. لطفاً صفحه را رفرش کنید`
+            );
         }
     }
 
@@ -360,11 +371,22 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
         githubChanged = true;
     }
 
-    /* -------- چک تگ‌ها -------- */
+    /* -------- چک تگ‌ها (با dedupe) -------- */
     if (data.tags) {
-        const found = await Tag.countDocuments({ _id: { $in: data.tags } });
-        if (found !== data.tags.length) {
-            throw new AppError(400, ErrorCodes.TAG_NOT_FOUND);
+        const uniqueIds = [...new Set(data.tags)];
+        const found = await Tag.find({ _id: { $in: uniqueIds } })
+            .select("_id")
+            .lean();
+
+        const foundSet = new Set(found.map((t) => String(t._id)));
+        const missing = uniqueIds.filter((id) => !foundSet.has(id));
+
+        if (missing.length) {
+            throw new AppError(
+                400,
+                ErrorCodes.TAG_NOT_FOUND,
+                `${missing.length} تگ یافت نشد. لطفاً صفحه را رفرش کنید`
+            );
         }
     }
 
@@ -496,7 +518,7 @@ export const deleteProjectImage = asyncHandler(async (req: any, res: Response) =
 
     const img = project.images.id(imageId);
     if (!img)
-         throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "تصویر یافت نشد");
+        throw new AppError(404, ErrorCodes.FILE_UPLOAD_FAILED, "تصویر یافت نشد");
 
     await deleteFile(img.url);
 
@@ -519,7 +541,7 @@ export const reorderImages = asyncHandler(async (req: any, res: Response) => {
 
     order.forEach((id, idx) => {
         const img = project.images.id(id);
-        if (img) 
+        if (img)
             img.order = idx;
     });
 
@@ -534,7 +556,7 @@ export const uploadProjectVideo = asyncHandler(async (req: any, res: Response) =
     const project = req.project;
     const file = req.file as Express.Multer.File | undefined;
 
-    if (!file) 
+    if (!file)
         throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
 
     // پاک کردن ویدیوی قبلی
@@ -578,7 +600,7 @@ export const uploadProjectZip = asyncHandler(async (req: any, res: Response) => 
     const file = req.file as Express.Multer.File | undefined;
     const version = (req.body?.version as string) || undefined;
 
-    if (!file) 
+    if (!file)
         throw new AppError(400, ErrorCodes.NO_FILE_PROVIDED);
 
     // پاک کردن فایل قبلی
