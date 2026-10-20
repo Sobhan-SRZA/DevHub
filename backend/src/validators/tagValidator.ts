@@ -23,10 +23,13 @@ export const updateTagTypeSchema = createTagTypeSchema.partial();
    Tag
    ================================================================== */
 export const createTagSchema = z.object({
-    name: z.string().trim().min(1, "نام تگ الزامی است").max(40),
+    name: z.string().trim().min(1, 'نام تگ الزامی است').max(40),
     slug: z.string().trim().toLowerCase().regex(SLUG_RE).optional(),
-    // ✅ اختیاری: اگه نده، پیش‌فرض «عمومی» می‌شه
-    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است").optional(),
+    type: z
+        .preprocess(
+            (v) => (v === '' || v === null ? undefined : v),
+            z.string().regex(OBJECT_ID_RE, 'شناسه کتگوری نامعتبر است').optional()
+        ),
     color: z.string().regex(HEX_COLOR_RE).optional(),
     description: z.string().trim().max(200).optional()
 });
@@ -39,9 +42,13 @@ export const updateTagSchema = createTagSchema
    find-or-create — picker
    ================================================================== */
 export const findOrCreateTagSchema = z.object({
-    name: z.string().trim().min(1, "نام تگ الزامی است").max(40),
-    // ✅ اختیاری
-    type: z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است").optional()
+    name: z.string().trim().min(1, 'نام تگ الزامی است').max(40),
+    type: z
+        .preprocess(
+            // "" یا null → undefined (یعنی «عمومی»)
+            (v) => (v === '' || v === null ? undefined : v),
+            z.string().regex(OBJECT_ID_RE, 'شناسه کتگوری نامعتبر است').optional()
+        ),
 });
 
 /* ==================================================================
