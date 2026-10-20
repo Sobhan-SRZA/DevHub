@@ -7,6 +7,24 @@
    - ساخت کتگوری جدید
    ============================================================ */
 
+/* ============================================================
+   Validate tag ID helper
+   ============================================================ */
+const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
+
+function isValidTagId(id) {
+    return typeof id === 'string' && OBJECT_ID_RE.test(id);
+}
+
+function normalizeTagId(id) {
+    if (id == null) return null;
+    // اگه ObjectId object اومد (از populate)، به string تبدیل کن
+    if (typeof id === 'object' && id._id) id = id._id;
+    if (typeof id === 'object' && id.toString) id = id.toString();
+    const s = String(id);
+    return isValidTagId(s) ? s : null;
+}
+
 class TagPicker {
     constructor(rootEl, options = {}) {
         this.root = rootEl;
@@ -326,16 +344,27 @@ class TagPicker {
        Actions
        ============================================================ */
     _add(tagId) {
+        const normalized = normalizeTagId(tagId);
+        if (!normalized) {
+            console.warn('[TagPicker] invalid tag id:', tagId);
+
+            return;
+        }
+
+        if (this.selected.has(normalized))
+            return;
+
         if (this.selected.size >= this.maxTags) {
             if (window.toast)
                 toast(`حداکثر ${this.maxTags} تگ`, 'error');
 
             return;
         }
-        this.selected.add(tagId);
+
+        this.selected.add(normalized);
         this._renderSelected();
         this._renderDropdown(this.els.search.value);
-        this.onChange(Array.from(this.selected));
+        this.onChange(this.getSelected());
     }
 
     _remove(tagId) {
@@ -346,19 +375,23 @@ class TagPicker {
     }
 
     async _createTag(name, typeId) {
-        if (!name.trim())
-            return;
+        if (!name.trim()) return;
 
         try {
+            const body = { name: name.trim() };
+            // ✅ فقط اگه type معتبر بود بفرست
+            if (typeId && isValidTagId(typeId)) {
+                body.type = typeId;
+            }
+
             const res = await fetch('/api/tags/find-or-create', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name.trim(), type: typeId }),
+                body: JSON.stringify(body),
             });
 
             const data = await res.json();
-
             if (!res.ok) {
                 if (window.toast)
                     toast(data.message || 'ساخت تگ ناموفق', 'error');
@@ -367,32 +400,33 @@ class TagPicker {
             }
 
             const tag = data.tag;
+            if (!tag || !isValidTagId(tag._id)) {
+                if (window.toast)
+                    toast('پاسخ سرور نامعتبر است', 'error');
+
+                return;
+            }
 
             // اضافه به کش
-            if (!this.allTags.find((t) => t._id === tag._id))
+            if (!this.allTags.find((t) => t._id === tag._id)) {
                 this.allTags.push(tag);
-
-            if (!this.tagsByType[typeId])
-                this.tagsByType[typeId] = [];
-
-            if (!this.tagsByType[typeId].find((t) => t._id === tag._id)) {
-                this.tagsByType[typeId].unshift(tag);
             }
 
-            // انتخاب خودکار
+            const typeKey = tag.type?._id || tag.type;
+            if (!this.tagsByType[typeKey])
+                this.tagsByType[typeKey] = [];
+
+            if (!this.tagsByType[typeKey].find((t) => t._id === tag._id)) {
+                this.tagsByType[typeKey].unshift(tag);
+            }
+
             this._add(tag._id);
             this.els.search.value = '';
-
-            if (data.pendingApproval && window.toast) {
-                toast('تگ ساخته شد و در انتظار تایید است', 'info');
-            }
-
-            else if (window.toast) {
+            if (window.toast)
                 toast(`تگ «${tag.name}» ساخته شد`, 'success');
-            }
 
-            // آپدیت count کتگوری
-            const type = this.types.find((t) => t._id === typeId);
+            // آپدیت count
+            const type = this.types.find((x) => x._id === typeKey);
             if (type)
                 type.tagCount = (type.tagCount || 0) + 1;
 
@@ -400,6 +434,7 @@ class TagPicker {
         }
 
         catch (err) {
+            console.error('[TagPicker._createTag] failed:', err);
             if (window.toast)
                 toast('خطا در ساخت تگ', 'error');
         }
@@ -457,11 +492,18 @@ class TagPicker {
        Public API
        ============================================================ */
     getSelected() {
-        return Array.from(this.selected);
+        return Array.from(this.selected).filter(isValidTagId);
     }
 
     setSelected(ids) {
-        this.selected = new Set(ids || []);
+        const clean = new Set();
+        for (const id of (ids || [])) {
+            const n = normalizeTagId(id);
+            if (n)
+                clean.add(n);
+        }
+
+        this.selected = clean;
         this._renderSelected();
     }
 
