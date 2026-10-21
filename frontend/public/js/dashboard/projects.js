@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusMap = {
             draft: "پیش‌نویس",
             published: "منتشر شده",
-            archived: "آرشیو",
+            archived: "آرشیو"
         };
         const gh = p.githubData || {};
         const tags = (p.tags || []).slice(0, 5);
@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return `
             <article class="p-card" data-id="${p._id}">
                 ${cover ? `
-                    <div class="p-card__cover" style="background-image:url("${escapeHtml(cover)}")"></div>
+                    <div class="p-card__cover" style="background-image:url('${escapeHtml(cover)}')"></div>
                 ` : ""}
 
                 <div class="p-card__head">
