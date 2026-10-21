@@ -2,36 +2,36 @@
    PROFILE PAGE LOGIC
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
 
     /* ---------------- DOM refs ---------------- */
     const els = {
-        avatarBig: document.getElementById('profileAvatarBig'),
-        heroName: document.getElementById('profileHeroName'),
-        heroUser: document.getElementById('profileHeroUsername'),
-        heroEmail: document.getElementById('profileHeroEmail'),
-        infoUser: document.getElementById('infoUsername'),
-        infoEmail: document.getElementById('infoEmail'),
-        infoCreated: document.getElementById('infoCreatedAt'),
+        avatarBig: document.getElementById("profileAvatarBig"),
+        heroName: document.getElementById("profileHeroName"),
+        heroUser: document.getElementById("profileHeroUsername"),
+        heroEmail: document.getElementById("profileHeroEmail"),
+        infoUser: document.getElementById("infoUsername"),
+        infoEmail: document.getElementById("infoEmail"),
+        infoCreated: document.getElementById("infoCreatedAt"),
 
-        sessionsList: document.getElementById('sessionsList'),
+        sessionsList: document.getElementById("sessionsList"),
 
-        logoutBtn: document.getElementById('logoutSessionBtn'),
-        logoutAllBtn: document.getElementById('logoutAllBtn'),
+        logoutBtn: document.getElementById("logoutSessionBtn"),
+        logoutAllBtn: document.getElementById("logoutAllBtn"),
     };
 
     /* ---------------- helpers ---------------- */
     async function apiGet(path) {
         const res = await fetch(path, {
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
+            credentials: "include",
+            headers: { "Content-Type": "application/json" }
         });
 
         let data = null;
         try { data = await res.json(); } catch { /* no body */ }
 
         if (!res.ok) {
-            const err = new Error(data?.message || 'Request failed');
+            const err = new Error(data?.message || "Request failed");
             err.code = data?.code;
             err.status = res.status;
             err.details = data?.details;
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showError(title, message) {
-        if (typeof openDialogError === 'function') {
+        if (typeof openDialogError === "function") {
             openDialogError(title, message);
         }
 
@@ -53,27 +53,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatDate(dateStr) {
         if (!dateStr)
-            return '—';
+            return "—";
 
         const d = new Date(dateStr);
         if (Number.isNaN(d.getTime()))
-            return '—';
+            return "—";
 
         // Persian-friendly short format
-        return new Intl.DateTimeFormat('fa-IR', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
+        return new Intl.DateTimeFormat("fa-IR", {
+            dateStyle: "medium",
+            timeStyle: "short",
         }).format(d);
     }
 
     function relativeTime(dateStr) {
         if (!dateStr)
-            return '';
+            return "";
 
         const diff = Date.now() - new Date(dateStr).getTime();
         const s = Math.floor(diff / 1000);
         if (s < 60)
-            return 'همین الان';
+            return "همین الان";
 
         const m = Math.floor(s / 60);
         if (m < 60)
@@ -106,21 +106,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function deviceLabel(device) {
         if (!device)
-            return 'دستگاه ناشناس';
+            return "دستگاه ناشناس";
 
         const parts = [];
         if (device.os)
-            parts.push(device.os + (device.osVersion ? ` ${device.osVersion}` : ''));
+            parts.push(device.os + (device.osVersion ? ` ${device.osVersion}` : ""));
 
         if (device.browser)
             parts.push(device.browser);
 
-        return parts.join(' • ') || device.deviceType || 'دستگاه ناشناس';
+        return parts.join(" • ") || device.deviceType || "دستگاه ناشناس";
     }
 
     function locationLabel(loc) {
         if (!loc)
-            return '—';
+            return "—";
 
         const parts = [];
         if (loc.city)
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loc.country)
             parts.push(loc.country);
 
-        return parts.join(', ') || loc.ip || '—';
+        return parts.join(", ") || loc.ip || "—";
     }
 
     /* ---------------- render user info ---------------- */
@@ -137,31 +137,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!user)
             return;
 
-        const name = user.name || user.username || 'کاربر';
+        const name = user.name || user.username || "کاربر";
         els.heroName.textContent = name;
-        els.heroUser.textContent = '@' + (user.username || '—');
-        els.heroEmail.textContent = user.email || '—';
+        els.heroUser.textContent = "@" + (user.username || "—");
+        els.heroEmail.textContent = user.email || "—";
 
 
-        const avatarBig = document.getElementById('profileAvatarBig');
-        const initialEl = document.getElementById('profileAvatarInitial');
+        const avatarBig = document.getElementById("profileAvatarBig");
+        const initialEl = document.getElementById("profileAvatarInitial");
         if (user.avatar?.url) {
             avatarBig.style.backgroundImage = `url('${user.avatar.url}')`;
-            avatarBig.style.backgroundSize = 'cover';
-            avatarBig.style.backgroundPosition = 'center';
-            if (initialEl) initialEl.style.display = 'none';
+            avatarBig.style.backgroundSize = "cover";
+            avatarBig.style.backgroundPosition = "center";
+            if (initialEl) initialEl.style.display = "none";
         } else {
-            avatarBig.style.backgroundImage = '';
-            avatarBig.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
+            avatarBig.style.backgroundImage = "";
+            avatarBig.style.background = "linear-gradient(135deg, #007bff, #6ebbff)";
             if (initialEl) {
-                initialEl.style.display = '';
+                initialEl.style.display = "";
                 initialEl.textContent = name.trim().charAt(0).toUpperCase();
             }
         }
 
-        els.infoUser.textContent = user.username || '—';
-        els.infoEmail.textContent = user.email || '—';
-        els.infoCreated.textContent = user.createdAt ? formatDate(user.createdAt) : '—';
+        els.infoUser.textContent = user.username || "—";
+        els.infoEmail.textContent = user.email || "—";
+        els.infoCreated.textContent = user.createdAt ? formatDate(user.createdAt) : "—";
     }
 
     /* ---------------- render sessions ---------------- */
@@ -172,14 +172,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        els.sessionsList.innerHTML = '';
+        els.sessionsList.innerHTML = "";
 
         for (const s of list) {
             const isCurrent = String(s.id) === String(currentId);
-            const card = document.createElement('div');
-            card.className = 'session-card' + (isCurrent ? ' current' : '');
+            const card = document.createElement("div");
+            card.className = "session-card" + (isCurrent ? " current" : "");
 
-            const deviceType = s.device?.deviceType || 'unknown';
+            const deviceType = s.device?.deviceType || "unknown";
             const isBot = s.device?.isBot;
 
             card.innerHTML = `
@@ -188,14 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="session-body">
                     <div class="session-title">
                         <span class="session-device">${escapeHtml(deviceLabel(s.device))}</span>
-                        ${isCurrent ? '<span class="session-badge">دستگاه فعلی</span>' : ''}
-                        ${isBot ? '<span class="session-badge bot">BOT</span>' : ''}
+                        ${isCurrent ? `<span class="session-badge">دستگاه فعلی</span>` : ""}
+                        ${isBot ? `<span class="session-badge bot">BOT</span>` : ""}
                     </div>
 
                     <div class="session-meta">
                         <span title="IP">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                            ${escapeHtml(s.location?.ip || '—')}
+                            ${escapeHtml(s.location?.ip || "—")}
                         </span>
                         <span title="Location">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span title="ISP">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12" y2="20"></line></svg>
                             ${escapeHtml(s.location.isp)}
-                        </span>` : ''}
+                        </span>` : ""}
                     </div>
 
                     <div class="session-dates">
@@ -216,20 +216,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <div class="session-actions">
                     <button type="button" class="revoke-btn" data-id="${s.id}"
-                        ${isCurrent ? 'title="برای خروج از این دستگاه از دکمه خروج استفاده کنید"' : ''}>
-                        ${isCurrent ? 'دستگاه فعلی' : 'خروج از این دستگاه'}
+                        ${isCurrent ? `title="برای خروج از این دستگاه از دکمه خروج استفاده کنید"` : ""}>
+                        ${isCurrent ? "دستگاه فعلی" : "خروج از این دستگاه"}
                     </button>
                 </div>
             `;
 
             // disable revoke for current session
-            const btn = card.querySelector('.revoke-btn');
+            const btn = card.querySelector(".revoke-btn");
             if (isCurrent) {
                 btn.disabled = true;
             }
 
             else {
-                btn.addEventListener('click', () => revokeSession(s.id, btn));
+                btn.addEventListener("click", () => revokeSession(s.id, btn));
             }
 
             els.sessionsList.appendChild(card);
@@ -238,23 +238,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function escapeHtml(str) {
         if (str === null || str === undefined)
-            return '';
+            return "";
 
         return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/"/g, "&#39;");
     }
 
     /* ---------------- actions ---------------- */
     async function revokeSession(id, btn) {
         const ok = await confirmDialog({
-            title: 'خروج از دستگاه',
-            message: 'مطمئنید می‌خواهید از این دستگاه خارج شوید؟',
-            confirmText: 'بله، خارج شو',
-            cancelText: 'انصراف',
+            title: "خروج از دستگاه",
+            message: "مطمئنید می‌خواهید از این دستگاه خارج شوید؟",
+            confirmText: "بله، خارج شو",
+            cancelText: "انصراف",
             danger: true,
         });
 
@@ -263,18 +263,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btn.disabled = true;
         try {
-            await FormKit.postJSON(`/api/auth/sessions/${id}`, {}, { method: 'DELETE' });
-            toast('از این دستگاه خارج شدید', 'success');
+            await FormKit.postJSON(`/api/auth/sessions/${id}`, {}, { method: "DELETE" });
+            toast("از این دستگاه خارج شدید", "success");
+
             await loadSessions();
         }
 
         catch (err) {
-            if (err.code === 'SESSION_EXPIRED' || err.code === 'UNAUTHENTICATED') {
-                location.href = '/login';
+            if (err.code === "SESSION_EXPIRED" || err.code === "UNAUTHENTICATED") {
+                location.href = "/auth/login";
                 return;
             }
 
-            toast(err.message || 'خروج ناموفق بود', 'error');
+            toast(err.message || "خروج ناموفق بود", "error");
             btn.disabled = false;
         }
     }
@@ -282,9 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function logout() {
         const ok = await confirmDialog({
-            title: 'خروج از دستگاه فعلی',
-            message: 'سشن‌ شما بسته می‌شود. ادامه می‌دهید؟',
-            confirmText: 'بله، سشن را ببند',
+            title: "خروج از دستگاه فعلی",
+            message: "سشن‌ شما بسته می‌شود. ادامه می‌دهید؟",
+            confirmText: "بله، سشن را ببند",
             danger: true
         });
 
@@ -292,40 +293,41 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
 
         try {
-            await FormKit.postJSON('/api/auth/logout', {});
-            window.location.href = '/';
+            await FormKit.postJSON("/api/auth/logout", {});
+
+            window.location.href = "/";
         }
 
         catch (err) {
-            toast(err.message || 'خطا در خروج', 'error');
+            toast(err.message || "خطا در خروج", "error");
         }
     }
 
     async function logoutAll() {
         const ok = await confirmDialog({
-            title: 'خروج از همه دستگاه‌ها',
-            message: 'همه سشن‌های فعال شما بسته می‌شوند. ادامه می‌دهید؟',
-            confirmText: 'بله، همه را ببند',
-            danger: true,
+            title: "خروج از همه دستگاه‌ها",
+            message: "همه سشن‌های فعال شما بسته می‌شوند. ادامه می‌دهید؟",
+            confirmText: "بله، همه را ببند",
+            danger: true
         });
 
         if (!ok)
             return;
 
         try {
-            await FormKit.postJSON('/api/auth/logout-all', {});
-            window.location.href = '/';
+            await FormKit.postJSON("/api/auth/logout-all", {});
+            window.location.href = "/";
         }
 
         catch (err) {
-            toast(err.message || 'خطا در خروج', 'error');
+            toast(err.message || "خطا در خروج", "error");
         }
     }
 
     /* ---------------- loaders ---------------- */
     async function loadUser() {
         try {
-            const data = await apiGet('/api/auth/me');
+            const data = await apiGet("/api/auth/me");
             renderUser(data.user);
 
             return data;
@@ -333,18 +335,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         catch (err) {
             if (err.status === 401) {
-                window.location.href = '/login';
+                window.location.href = "/login";
+
                 return null;
             }
 
-            showError('خطا', err.message || 'دریافت اطلاعات کاربر ناموفق بود');
+            showError("خطا", err.message || "دریافت اطلاعات کاربر ناموفق بود");
+
             return null;
         }
     }
 
     async function loadSessions() {
         try {
-            const data = await apiGet('/api/auth/sessions');
+            const data = await apiGet("/api/auth/sessions");
             renderSessions(data.sessions, data.current);
         }
 
@@ -355,8 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ---------------- wire events ---------------- */
-    els.logoutBtn.addEventListener('click', logout);
-    els.logoutAllBtn.addEventListener('click', logoutAll);
+    els.logoutBtn.addEventListener("click", logout);
+    els.logoutAllBtn.addEventListener("click", logoutAll);
 
     /* ---------------- init ---------------- */
     (async function init() {
