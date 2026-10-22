@@ -23,6 +23,9 @@ export const ErrorCodes = {
     NAME_TOO_SHORT: "NAME_TOO_SHORT",
     NAME_TOO_LONG: "NAME_TOO_LONG",
 
+    // ---------- Auth ----------
+    EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+
     // ---------- Login ----------
     INVALID_CREDENTIALS: "INVALID_CREDENTIALS",      // یوزر/ایمیل یا پسورد غلط
     ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",        // (اختیاری، برای UX بهتر)
@@ -93,8 +96,10 @@ export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
  * کنترلر می‌تونه پیام دقیق‌تر بده، ولی اگه نداد از این استفاده می‌شه.
  */
 export const ErrorMessages: Record<string, string> = {
+    // ---------- Validation ----------
     [ErrorCodes.VALIDATION_ERROR]: "داده‌های ورودی نامعتبر است",
 
+    // ---------- Register ----------
     [ErrorCodes.USERNAME_TAKEN]: "این نام کاربری قبلاً گرفته شده است",
     [ErrorCodes.EMAIL_TAKEN]: "این ایمیل قبلاً ثبت شده است",
     [ErrorCodes.USERNAME_INVALID]: "نام کاربری نامعتبر است",
@@ -111,11 +116,16 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.NAME_TOO_SHORT]: "نام باید حداقل ۲ حرف باشد",
     [ErrorCodes.NAME_TOO_LONG]: "نام بیش از حد طولانی است",
 
+    // ---------- Auth ----------
+    [ErrorCodes.EMAIL_NOT_VERIFIED]: 'ایمیل شما تایید نشده است. لطفاً کد ارسال‌شده را وارد کنید',
+
+    // ---------- Login ----------
     [ErrorCodes.INVALID_CREDENTIALS]: "ایمیل/نام کاربری یا رمز عبور اشتباه است",
     [ErrorCodes.ACCOUNT_NOT_FOUND]: "حسابی با این مشخصات پیدا نشد",
     [ErrorCodes.ACCOUNT_DISABLED]: "این حساب غیرفعال شده است",
     [ErrorCodes.TOO_MANY_ATTEMPTS]: "تلاش‌های زیاد. لطفاً چند دقیقه بعد امتحان کنید",
 
+    // ---------- Session / Token ----------
     [ErrorCodes.NO_TOKEN]: "ابتدا وارد شوید",
     [ErrorCodes.INVALID_TOKEN]: "توکن نامعتبر است",
     [ErrorCodes.WRONG_TOKEN_TYPE]: "نوع توکن اشتباه است",
@@ -125,10 +135,12 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.INVALID_REFRESH_TOKEN]: "توکن refresh نامعتبر یا منقضی است",
     [ErrorCodes.UNAUTHENTICATED]: "ابتدا وارد شوید",
 
+    // ---------- Server ----------
     [ErrorCodes.INTERNAL_ERROR]: "خطای داخلی سرور",
     [ErrorCodes.DATABASE_ERROR]: "خطا در ارتباط با دیتابیس",
     [ErrorCodes.NETWORK_ERROR]: "اتصال به سرور برقرار نشد",
 
+    // ---------- Tag & TagType ----------
     [ErrorCodes.TAG_NOT_FOUND]: "تگ یافت نشد",
     [ErrorCodes.TAG_TAKEN]: "این تگ قبلاً در این نوع ثبت شده است",
     [ErrorCodes.TAG_IN_USE]: "این تگ در پروژه‌ها استفاده می‌شود و قابل حذف نیست",
@@ -137,27 +149,32 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.TAG_TYPE_HAS_TAGS]: "این نوع تگ دارای تگ است و قابل حذف نیست",
     [ErrorCodes.TAG_TYPE_IS_SYSTEM]: "تگ‌های سیستمی قابل حذف نیستند",
 
+    // ---------- Project ----------
     [ErrorCodes.PROJECT_NOT_FOUND]: "پروژه یافت نشد",
     [ErrorCodes.PROJECT_SLUG_TAKEN]: "این slug قبلاً استفاده شده است",
     [ErrorCodes.PROJECT_NOT_OWNED]: "این پروژه متعلق به شما نیست",
     [ErrorCodes.PROJECT_LIMIT_REACHED]: "به حداکثر تعداد پروژه رسیده‌اید",
 
+    // ---------- GitHub ----------
     [ErrorCodes.GITHUB_URL_INVALID]: "لینک GitHub نامعتبر است",
     [ErrorCodes.GITHUB_REPO_NOT_FOUND]: "مخزن GitHub یافت نشد",
     [ErrorCodes.GITHUB_API_ERROR]: "خطا در ارتباط با GitHub",
     [ErrorCodes.GITHUB_RATE_LIMIT]: "محدودیت درخواست GitHub، بعداً امتحان کنید",
     [ErrorCodes.GITHUB_ALREADY_LINKED]: "این مخزن قبلاً به پروژه دیگری لینک شده است",
 
+    // ---------- Review ----------
     [ErrorCodes.REVIEW_NOT_FOUND]: 'ریویو یافت نشد',
     [ErrorCodes.REVIEW_ALREADY_EXISTS]: 'شما قبلاً برای این پروژه ریویو ثبت کرده‌اید',
     [ErrorCodes.REVIEW_NOT_OWNED]: 'این ریویو متعلق به شما نیست',
     [ErrorCodes.CANNOT_REVIEW_OWN]: 'نمی‌توانید به پروژه خودتان امتیاز دهید',
 
+    // ---------- Comment ----------
     [ErrorCodes.COMMENT_NOT_FOUND]: 'نظر یافت نشد',
     [ErrorCodes.COMMENT_NOT_OWNED]: 'این نظر متعلق به شما نیست',
     [ErrorCodes.COMMENT_PARENT_INVALID]: 'نظر والد نامعتبر است',
     [ErrorCodes.COMMENT_DEPTH_EXCEEDED]: 'حداکثر عمق پاسخ‌ها رعایت نشده',
 
+    // ---------- Upload ----------
     [ErrorCodes.FILE_TOO_LARGE]: 'حجم فایل بیش از حد مجاز است',
     [ErrorCodes.FILE_TYPE_INVALID]: 'فرمت فایل مجاز نیست',
     [ErrorCodes.FILE_UPLOAD_FAILED]: 'آپلود فایل ناموفق بود',
