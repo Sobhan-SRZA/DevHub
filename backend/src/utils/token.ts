@@ -29,6 +29,32 @@ export function randomToken(bytes = 48): string {
     return crypto.randomBytes(bytes).toString("hex");
 }
 
+/* ==================================================================
+   Email Verify Token — JWT کوتاه‌عمر برای مرحله تایید ایمیل
+   ================================================================== */
+export interface EmailVerifyPayload {
+    sub: string;        // userId
+    email: string;
+    typ: "email_verify";
+}
+
+export function signEmailVerifyToken(userId: string, email: string): string {
+    return jwt.sign(
+        { sub: userId, email, typ: "email_verify" },
+        config.jwtSecret,
+        { expiresIn: "1h" } as SignOptions
+    );
+}
+
+export function verifyEmailVerifyToken(token: string): EmailVerifyPayload {
+    const payload = jwt.verify(token, config.jwtSecret) as any;
+    if (payload.typ !== "email_verify") {
+        throw new Error("wrong token type");
+    }
+
+    return payload as EmailVerifyPayload;
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
