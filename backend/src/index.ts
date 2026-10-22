@@ -8,6 +8,7 @@ import { seedDefaultTags } from "./scripts/seedDefaultData";
 import { connectDB } from "./config/db";
 import { config } from "./config/env";
 import app from "./app";
+import { mailer } from "./services/mail";
 
 /* ============================================================
    Process-level guards
@@ -37,7 +38,8 @@ process.on("uncaughtException", (err) => {
 // 3. بستن نرم‌افزاری (optional)
 process.on("SIGTERM", () => {
     console.log("👋 SIGTERM — shutting down...");
-
+    
+    mailer.shutdown();
     process.exit(0);
 });
 
@@ -47,6 +49,10 @@ process.on("SIGTERM", () => {
 const startServer = async () => {
     try {
         await connectDB();
+
+        // verify SMTP (فقط اگه mode=smtp)
+        await mailer.verifyOnStartup();
+
         // await cleanupOldVerificationCodes()
         // await cleanupVerificationCodes();
         await ensureDeveloperExists();

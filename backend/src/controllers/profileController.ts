@@ -186,6 +186,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
         userId: user._id,
         purpose: "change_email_new",
         targetEmail: data.newEmail,
+        userName: user.name,
         req
     });
 
@@ -208,7 +209,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
             targetEmail: data.newEmail.toLowerCase(),
             consumedAt: null
         }).catch(() => { });
-        
+
         throw err;
     }
 
@@ -316,6 +317,7 @@ export const requestPasswordChange = asyncHandler(async (req: any, res: Response
         userId: user._id,
         purpose: "change_password",
         targetEmail: user.email,
+        userName: user.name,
         req
     });
 

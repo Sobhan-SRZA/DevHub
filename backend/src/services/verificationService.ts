@@ -2,33 +2,43 @@ import {
     VerificationCode,
     type VerificationPurpose
 } from "../models/VerificationCode";
-import { ErrorCodes } from "../utils/errorCodes";
+import { sendOtpEmail } from "./mail";
 import type { Request } from "express";
 import type { Types } from "mongoose";
+import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
+import { User } from "../models/User";
 
 /* ==================================================================
    تنظیمات
    ================================================================== */
-const TTL_MINUTES = 10;         // کد ۱۰ دقیقه اعتبار
+const TTL_MINUTES = 10;
 const MAX_ATTEMPTS = 5;
-const RESEND_COOLDOWN_SEC = 60;  // حداقل فاصله بین دو درخواست
+const RESEND_COOLDOWN_SEC = 60;
 
 /* ==================================================================
-   ساخت و ذخیره کد جدید
+   Create + Send
    ================================================================== */
 export interface CreateCodeOptions {
     userId: Types.ObjectId | string;
     purpose: VerificationPurpose;
-    targetEmail?: string;
+    targetEmail?: string;          
+    userName?: string;
     req?: Request;
     ttlMinutes?: number;
 }
 
 export async function createVerificationCode(opts: CreateCodeOptions) {
-    const { userId, purpose, targetEmail, req, ttlMinutes = TTL_MINUTES } = opts;
+    const {
+        userId,
+        purpose,
+        targetEmail,
+        userName,
+        req,
+        ttlMinutes = TTL_MINUTES
+    } = opts;
 
-    /* ---------- جلوگیری از درخواست‌های پشت‌سرهم ---------- */
+    /* ---------- cooldown ---------- */
     const recent = await VerificationCode.findOne({
         user: userId,
         purpose,
@@ -38,7 +48,7 @@ export async function createVerificationCode(opts: CreateCodeOptions) {
 
     if (recent) {
         const elapsed = (Date.now() - new Date(recent.createdAt).getTime()) / 1000;
-        const remaining = Math.ceil(RESEND_COOLDOWN_SEC - elapsed);
+        const remaining = Math.max(1, Math.ceil(RESEND_COOLDOWN_SEC - elapsed));
         throw new AppError(
             429,
             ErrorCodes.TOO_MANY_ATTEMPTS,
@@ -46,14 +56,32 @@ export async function createVerificationCode(opts: CreateCodeOptions) {
         );
     }
 
-    /* ---------- حذف کدهای قبلی همین purpose ---------- */
+    /* ---------- resolve recipient ---------- */
+    let toEmail = targetEmail?.toLowerCase().trim();
+    let displayName = userName;
+
+    if (!toEmail) {
+        const user = await User.findById(userId).select("email name").lean();
+        if (!user) {
+            throw new AppError(404, ErrorCodes.UNAUTHENTICATED, "کاربر یافت نشد");
+        }
+
+        toEmail = user.email;
+        displayName = displayName || user.name;
+    }
+
+    if (!toEmail) {
+        throw new AppError(400, ErrorCodes.EMAIL_INVALID, "گیرنده ایمیل مشخص نیست");
+    }
+
+    /* ---------- delete old codes ---------- */
     await VerificationCode.deleteMany({
         user: userId,
         purpose,
         consumedAt: null
     });
 
-    /* ---------- ساخت کد جدید ---------- */
+    /* ---------- generate ---------- */
     const { code, codeHash, salt } = (VerificationCode as any).generateCode();
     const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
@@ -62,7 +90,7 @@ export async function createVerificationCode(opts: CreateCodeOptions) {
         purpose,
         codeHash,
         salt,
-        targetEmail: targetEmail?.toLowerCase() || null,
+        targetEmail: toEmail,
         expiresAt,
         maxAttempts: MAX_ATTEMPTS,
         requestedAt: new Date(),
@@ -70,25 +98,35 @@ export async function createVerificationCode(opts: CreateCodeOptions) {
         userAgent: req?.headers["user-agent"] as string | undefined
     });
 
-    /* ==================================================================
-       📧 TODO: ارسال ایمیل
-       فعلاً فقط لاگ می‌کنیم
-       ================================================================== */
-    console.log("");
-    console.log("═══════════════════════════════════════════════════════");
-    console.log(`📧 [VERIFICATION CODE] purpose=${purpose}`);
-    console.log(`   to        : ${targetEmail || "(user email)"}`);
-    console.log(`   code      : \x1b[1;32m${code}\x1b[0m`);
-    console.log(`   expires   : ${expiresAt.toLocaleString("fa-IR")}`);
-    console.log(`   ttl       : ${ttlMinutes} دقیقه`);
-    console.log("═══════════════════════════════════════════════════════");
-    console.log("");
+    /* ---------- send via mailer ---------- */
+    try {
+        await sendOtpEmail({
+            to: toEmail,
+            code,
+            purpose,
+            expiresInMinutes: ttlMinutes,
+            userName: displayName,
+            ip: req ? getClientIp(req) : undefined
+        });
+    } 
+    
+    catch (err) {
+        // اگه ارسال شکست خورد، کد رو پاک کن (نمی‌خوایم یتیم بمونه)
+        await VerificationCode.deleteMany({
+            user: userId,
+            purpose,
+            targetEmail: toEmail,
+            consumedAt: null
+        }).catch(() => { });
 
-    return { code, expiresAt };
+        throw err;
+    }
+
+    return { code, expiresAt, sentTo: toEmail };
 }
 
 /* ==================================================================
-   تایید کد
+   Verify
    ================================================================== */
 export interface VerifyCodeOptions {
     userId: Types.ObjectId | string;
@@ -112,7 +150,6 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
         throw new AppError(400, ErrorCodes.INVALID_TOKEN, "کد نامعتبر یا منقضی شده است");
     }
 
-    /* ---------- چک تعداد تلاش ---------- */
     if (record.attempts >= record.maxAttempts) {
         await VerificationCode.deleteOne({ _id: record._id });
         throw new AppError(
@@ -122,13 +159,11 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
         );
     }
 
-    /* ---------- مقایسه hash ---------- */
     const incomingHash = (VerificationCode as any).hashCode(code, record.salt);
 
     if (incomingHash !== record.codeHash) {
         record.attempts += 1;
 
-        // اگه به حداکثر تلاش رسید، همون موقع پاک کن
         if (record.attempts >= record.maxAttempts) {
             await VerificationCode.deleteOne({ _id: record._id });
             throw new AppError(
@@ -140,6 +175,7 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
 
         await record.save();
         const remaining = record.maxAttempts - record.attempts;
+
         throw new AppError(
             400,
             ErrorCodes.INVALID_TOKEN,
@@ -147,11 +183,7 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
         );
     }
 
-    /* ==================================================================
-       ✅ موفق: حذف کامل رکورد (نه mark کردن)
-       ================================================================== */
     await VerificationCode.deleteOne({ _id: record._id });
-
     return true;
 }
 
@@ -160,12 +192,12 @@ export async function verifyCode(opts: VerifyCodeOptions): Promise<boolean> {
    ================================================================== */
 function getClientIp(req: Request): string {
     const fwd = req.headers["x-forwarded-for"];
-    if (typeof fwd === "string")
+    if (typeof fwd === "string") 
         return fwd.split(",")[0].trim();
 
     if (Array.isArray(fwd) && fwd.length)
-        return fwd[0];
-
+         return fwd[0];
+        
     return (
         req.socket?.remoteAddress ||
         (req as any).connection?.remoteAddress ||
