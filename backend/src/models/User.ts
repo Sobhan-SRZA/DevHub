@@ -30,14 +30,15 @@ export interface IUser {
     name: string;
     username: string;
     usernameLower: string;
-    email: string;
-    emailVerified: boolean;
     password: string;
+
+    email: string;
+    pendingEmail: IPendingEmail | null;
+    emailVerified: boolean;
+    emailVerifiedAt: Date | null;
 
     bio: string;                 // توضیحات پروفایل (Markdown)
     avatar: IUserAvatar | null;
-
-    pendingEmail: IPendingEmail | null;
 
     isBanned: boolean;
 
@@ -112,6 +113,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
         },
 
         emailVerified: { type: Boolean, default: false },
+        
+        emailVerifiedAt: { type: Date, default: null },
 
         password: {
             type: String,
