@@ -96,6 +96,25 @@ export const loginSchema = z.object({
         .optional()
 });
 
+/* ==================================================================
+   Verify Email (after register)
+   ================================================================== */
+export const verifyEmailSchema = z.object({
+    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10),
+    code: z
+        .string({ error: "کد تایید الزامی است" })
+        .trim()
+        .regex(/^\d{6}$/, "کد باید ۶ رقم باشد"),
+});
+
+/* ==================================================================
+   Resend Verification
+   ================================================================== */
+export const resendVerificationSchema = z.object({
+    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10),
+});
+
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 
