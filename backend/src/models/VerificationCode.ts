@@ -7,6 +7,7 @@ import {
 import crypto from "crypto";
 
 export type VerificationPurpose =
+    | "verify_email"
     | "change_password"
     | "change_email_old"   // تایید روی ایمیل قدیم
     | "change_email_new"   // تایید روی ایمیل جدید
@@ -49,7 +50,14 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
 
         purpose: {
             type: String,
-            enum: ["change_password", "change_email_old", "change_email_new", "login_2fa", "reset_password"],
+            enum: [
+                "verify_email",
+                "change_password",
+                "change_email_old",
+                "change_email_new",
+                "login_2fa",
+                "reset_password"
+            ],
             required: true,
             index: true
         },
@@ -64,7 +72,7 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
         expiresAt: { type: Date, required: true },
         consumedAt: { type: Date, default: null },
         requestedAt: { type: Date, default: () => new Date() },
-        
+
         ip: String,
         userAgent: String
     },
