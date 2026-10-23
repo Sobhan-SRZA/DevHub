@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initBioEditor();
         } catch (err) {
             if (err.status === 401) {
-                location.href = '/login';
+                location.href = '/auth/login';
             } else {
                 toast(err.message || 'خطا در بارگذاری', 'error');
             }
