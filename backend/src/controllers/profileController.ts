@@ -4,7 +4,8 @@ import {
     verifyEmailChangeSchema,
     requestPasswordChangeSchema,
     confirmPasswordChangeSchema,
-    changeUsernameSchema
+    changeUsernameSchema,
+    verifyOldEmailForChangeSchema
 } from "../validators/profileValidator";
 import {
     createVerificationCode,
@@ -26,6 +27,7 @@ import { publicUser } from "./authController";
 import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
+import { signEmailVerifyToken } from "../utils/token";
 
 /* ==================================================================
    GET /api/profile/me — اطلاعات کامل کاربر
@@ -151,23 +153,35 @@ export const deleteAvatar = asyncHandler(async (req: any, res: Response) => {
 
 /* ==================================================================
    POST /api/profile/email/request — درخواست تغییر ایمیل
+   REQUEST EMAIL CHANGE — Step 1: code to OLD email
    ================================================================== */
 export const requestEmailChange = asyncHandler(async (req: any, res: Response) => {
     const data = validate(requestEmailChangeSchema, req.body);
 
     const user = await User.findById(req.user._id).select("+password");
     if (!user)
-        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
-    /* ---------- تایید رمز فعلی ---------- */
+    /* ---------- already in transition? ---------- */
+    if (user.pendingEmail) {
+        throw new AppError(
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+            user.pendingEmail.oldVerified
+                ? "ایمیل شما در حال تغییر است. ابتدا ایمیل جدید را تایید یا لغو کنید"
+                : "درخواست تغییر ایمیل قبلی در جریان است. ابتدا آن را تکمیل یا لغو کنید"
+        );
+    }
+
+    /* ---------- password ---------- */
     const ok = await user.comparePassword(data.password);
     if (!ok) {
         throw new AppError(401, ErrorCodes.INVALID_CREDENTIALS, "رمز عبور اشتباه است", {
-            field: "password"
+            field: "password",
         });
     }
 
-    /* ---------- چک ایمیل جدید ---------- */
+    /* ---------- new email checks ---------- */
     if (data.newEmail === user.email.toLowerCase()) {
         throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "ایمیل جدید با ایمیل فعلی یکسان است");
     }
@@ -181,43 +195,168 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
         throw Conflict(ErrorCodes.EMAIL_TAKEN, undefined, { field: "newEmail" });
     }
 
-    /* ---------- ساخت کد ---------- */
+    /* ---------- send code to OLD email ---------- */
     await createVerificationCode({
         userId: user._id,
-        purpose: "change_email_new",
-        targetEmail: data.newEmail,
+        purpose: "change_email_old",
+        targetEmail: user.email, 
         userName: user.name,
-        req
+        req,
+        ttlMinutes: 10
     });
 
-    /* ---------- ذخیره pendingEmail روی کاربر ---------- */
+    /* ---------- save pending ---------- */
     user.pendingEmail = {
         newEmail: data.newEmail,
+        previousEmail: user.email,
+        oldVerified: false,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
         requestedAt: new Date()
     };
 
-    try {
-        await user.save();
-    }
-
-    catch (err) {
-        // ✅ rollback: اگه save شکست خورد، کد رو پاک کن
-        await VerificationCode.deleteMany({
-            user: user._id,
-            purpose: "change_email_new",
-            targetEmail: data.newEmail.toLowerCase(),
-            consumedAt: null
-        }).catch(() => { });
-
-        throw err;
-    }
+    await user.save();
 
     res.json({
         ok: true,
-        message: `کد تایید به ${data.newEmail} ارسال شد`,
-        pendingEmail: data.newEmail,
-        expiresIn: 600 // seconds
+        step: "old_email_code",
+        message: `کد تایید به ایمیل فعلی شما (${user.email}) ارسال شد`,
+        currentEmail: user.email,
+        newEmail: data.newEmail,
+        expiresIn: 600
+    });
+});
+
+/* ==================================================================
+   VERIFY OLD EMAIL — Step 2: verify code from OLD email,
+                                  change email, send code to NEW email
+   ================================================================== */
+export const verifyOldEmailForChange = asyncHandler(async (req: any, res: Response) => {
+    const data = validate(verifyOldEmailForChangeSchema, req.body);
+
+    const user = await User.findById(req.user._id);
+    if (!user) 
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+
+    if (!user.pendingEmail) {
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "درخواست تغییر ایمیل فعالی وجود ندارد");
+    }
+
+    if (user.pendingEmail.oldVerified) {
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "ایمیل قبلی قبلاً تایید شده");
+    }
+
+    const oldEmail = user.pendingEmail.previousEmail;
+    const newEmail = user.pendingEmail.newEmail;
+
+    /* ---------- verify code with purpose change_email_old ---------- */
+    await verifyCode({
+        userId: user._id,
+        purpose: "change_email_old",
+        code: data.code,
+        targetEmail: oldEmail
+    });
+
+    /* ---------- re-check newEmail uniqueness ---------- */
+    const dup = await User.findOne({
+        email: newEmail,
+        _id: { $ne: user._id }
+    }).lean();
+
+    if (dup) {
+        user.pendingEmail = null;
+        await user.save();
+
+        throw Conflict(ErrorCodes.EMAIL_TAKEN);
+    }
+
+    /* ============================================================
+       ✅ تغییر ایمیل — ولی ایمیل جدید UNVERIFIED
+       ============================================================ */
+    user.email = newEmail;
+    user.emailVerified = false;
+    user.emailVerifiedAt = null;
+
+    // pendingEmail رو نگه دار برای گزینه‌ی revert
+    user.pendingEmail.oldVerified = true;
+    user.pendingEmail.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    await user.save();
+
+    /* ---------- send code to NEW email for verification ---------- */
+    try {
+        await createVerificationCode({
+            userId: user._id,
+            purpose: "verify_email",
+            targetEmail: newEmail,
+            userName: user.name,
+            req,
+            ttlMinutes: 10
+        });
+    }
+    
+    catch (err) {
+        console.warn("[verifyOldEmailForChange] send verify failed:", (err as Error).message);
+    }
+
+    /* ---------- issue verifyToken for /verify-email page ---------- */
+    const verifyToken = signEmailVerifyToken(user._id.toString(), newEmail);
+
+    console.log(
+        `🔄 [EMAIL CHANGED] user=${user._id} ${oldEmail} → ${newEmail} (unverified)`
+    );
+
+    res.json({
+        ok: true,
+        step: "new_email_verify",
+        message: `ایمیل شما به ${newEmail} تغییر کرد. کد تایید به آن ارسال شد`,
+        previousEmail: oldEmail,
+        newEmail,
+        verifyToken,
+        expiresIn: 600
+    });
+});
+
+/* ==================================================================
+   DELETE /api/profile/email/pending — لغو درخواست
+   CANCEL EMAIL CHANGE — با revert اگه transition
+   ================================================================== */
+export const cancelEmailChange = asyncHandler(async (req: any, res: Response) => {
+    const user = await User.findById(req.user._id);
+    if (!user)
+         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+
+    if (!user.pendingEmail) {
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "درخواست تغییر ایمیل فعالی وجود ندارد");
+    }
+
+    const wasInTransition = user.pendingEmail.oldVerified;
+    const previousEmail = user.pendingEmail.previousEmail;
+
+    /* ---------- revert اگر transition بود ---------- */
+    if (wasInTransition) {
+        user.email = previousEmail;
+        user.emailVerified = true;
+        user.emailVerifiedAt = new Date();
+    }
+
+    user.pendingEmail = null;
+    await user.save();
+
+    /* ---------- حذف همه کدهای در جریان ---------- */
+    await VerificationCode.deleteMany({
+        user: user._id,
+        purpose: { $in: ["change_email_old", "verify_email"] },
+        consumedAt: null
+    });
+
+    res.json({
+        ok: true,
+        message: wasInTransition
+            ? `ایمیل شما به ${previousEmail} بازگشت`
+            : "درخواست تغییر ایمیل لغو شد",
+            
+        reverted: wasInTransition,
+        email: user.email
     });
 });
 
@@ -272,27 +411,6 @@ export const verifyEmailChange = asyncHandler(async (req: any, res: Response) =>
         message: "ایمیل با موفقیت تغییر کرد",
         user: publicUser(user),
     });
-});
-
-/* ==================================================================
-   DELETE /api/profile/email/pending — لغو درخواست
-   ================================================================== */
-export const cancelEmailChange = asyncHandler(async (req: any, res: Response) => {
-    const user = await User.findById(req.user._id);
-    if (!user)
-        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
-
-    user.pendingEmail = null;
-    await user.save();
-
-    // حذف کدهای مربوطه
-    await VerificationCode.deleteMany({
-        user: user._id,
-        purpose: "change_email_new",
-        consumedAt: null
-    });
-
-    res.json({ ok: true, message: "درخواست تغییر ایمیل لغو شد" });
 });
 
 /* ==================================================================
