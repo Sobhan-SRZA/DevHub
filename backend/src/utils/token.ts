@@ -55,6 +55,32 @@ export function verifyEmailVerifyToken(token: string): EmailVerifyPayload {
     return payload as EmailVerifyPayload;
 }
 
+/* ==================================================================
+   Password Reset Token — 15 دقیقه
+   ================================================================== */
+export interface PasswordResetPayload {
+    sub: string;        // userId
+    email: string;
+    typ: "password_reset";
+}
+
+export function signPasswordResetToken(userId: string, email: string): string {
+    return jwt.sign(
+        { sub: userId, email, typ: "password_reset" },
+        config.jwtSecret,
+        { expiresIn: "15m" } as SignOptions
+    );
+}
+
+export function verifyPasswordResetToken(token: string): PasswordResetPayload {
+    const payload = jwt.verify(token, config.jwtSecret) as any;
+    if (payload.typ !== "password_reset") {
+        throw new Error("wrong token type");
+    }
+
+    return payload as PasswordResetPayload;
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
