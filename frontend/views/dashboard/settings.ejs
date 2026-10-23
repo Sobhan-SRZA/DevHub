@@ -150,6 +150,8 @@
         <!-- TAB: EMAIL                                   -->
         <!-- ============================================ -->
         <section class="st-panel" data-panel="email">
+
+          <!-- current email -->
           <div class="st-card">
             <div class="st-card__head">
               <h3 class="st-card__title">آدرس ایمیل</h3>
@@ -165,52 +167,21 @@
               </div>
               <div class="email-current__info">
                 <strong id="currentEmail">—</strong>
-                <span class="email-current__badge" id="emailVerifiedBadge">
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  تایید شده
-                </span>
+                <span class="email-current__badge" id="emailVerifiedBadge">—</span>
               </div>
             </div>
           </div>
 
-          <!-- pending email state -->
-          <div class="st-card" id="pendingEmailCard" style="display:none;">
-            <div class="st-card__head">
-              <h3 class="st-card__title">⏳ در انتظار تایید</h3>
-              <p class="st-card__sub">کد تایید به ایمیل جدید ارسال شد</p>
-            </div>
-
-            <div class="email-pending">
-              <div class="email-pending__row">
-                <span class="email-pending__label">ایمیل جدید:</span>
-                <span class="email-pending__value" id="pendingEmailValue">—</span>
-              </div>
-              <div class="email-pending__row">
-                <span class="email-pending__label">زمان باقی‌مانده:</span>
-                <span class="email-pending__value" id="pendingEmailTimer">—</span>
-              </div>
-            </div>
-
-            <form id="verifyEmailForm" class="st-form" novalidate>
-              <div class="field">
-                <label for="emailCode">کد ۶ رقمی</label>
-                <input id="emailCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
-              </div>
-
-              <div class="st-form__actions">
-                <button type="button" class="btn-ghost" id="cancelEmailChange">لغو درخواست</button>
-                <button type="submit" class="btn-primary" id="verifyEmailBtn">تایید و تغییر</button>
-              </div>
-            </form>
-          </div>
-
-          <!-- request email change -->
-          <div class="st-card" id="changeEmailCard">
+          <!-- ============================================ -->
+          <!-- STATE A: Request (default)                   -->
+          <!-- ============================================ -->
+          <div class="st-card" id="emailStateRequest">
             <div class="st-card__head">
               <h3 class="st-card__title">تغییر ایمیل</h3>
-              <p class="st-card__sub">برای تغییر ایمیل، ابتدا رمز عبور خود را وارد کنید</p>
+              <p class="st-card__sub">
+                ابتدا باید کد ارسال‌شده به <strong>ایمیل فعلی</strong> را تایید کنید.
+                سپس ایمیل جدید ثبت می‌شود ولی باید دوباره تایید شود.
+              </p>
             </div>
 
             <form id="changeEmailForm" class="st-form" novalidate>
@@ -237,10 +208,91 @@
               </div>
 
               <div class="st-form__actions">
-                <button type="submit" class="btn-primary" id="requestEmailBtn">ارسال کد تایید</button>
+                <button type="submit" class="btn-primary" id="requestEmailBtn">
+                  ارسال کد به ایمیل فعلی
+                </button>
               </div>
             </form>
           </div>
+
+          <!-- ============================================ -->
+          <!-- STATE B: Awaiting OLD email code             -->
+          <!-- ============================================ -->
+          <div class="st-card" id="emailStateOldVerify" style="display:none;">
+            <div class="st-card__head">
+              <h3 class="st-card__title">🔐 تایید ایمیل فعلی</h3>
+              <p class="st-card__sub">
+                کد ۶ رقمی به ایمیل فعلی شما (<span id="oldEmailDisplay">—</span>) ارسال شد
+              </p>
+            </div>
+
+            <div class="email-pending" style="border-color:rgba(245,158,11,0.3);">
+              <div class="email-pending__row">
+                <span class="email-pending__label">ایمیل جدید پس از تایید:</span>
+                <span class="email-pending__value" id="newEmailDisplay">—</span>
+              </div>
+              <div class="email-pending__row">
+                <span class="email-pending__label">زمان باقی‌مانده:</span>
+                <span class="email-pending__value" id="oldVerifyTimer">—</span>
+              </div>
+            </div>
+
+            <form id="verifyOldEmailForm" class="st-form" novalidate>
+              <div class="field">
+                <label for="oldEmailCode">کد ارسال‌شده به ایمیل فعلی</label>
+                <input id="oldEmailCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
+              </div>
+
+              <div class="st-form__actions">
+                <button type="button" class="btn-ghost" id="cancelOldVerify">لغو درخواست</button>
+                <button type="submit" class="btn-primary" id="verifyOldEmailBtn">تایید و تغییر ایمیل</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ============================================ -->
+          <!-- STATE C: Email changed, awaiting NEW verify  -->
+          <!-- ============================================ -->
+          <div class="st-card" id="emailStateNewVerify" style="display:none;">
+            <div class="st-card__head">
+              <h3 class="st-card__title">✅ ایمیل تغییر کرد</h3>
+              <p class="st-card__sub">
+                ایمیل شما به <strong id="newEmailChanged">—</strong> تغییر کرد،
+                اما هنوز <strong>تایید نشده</strong> است.
+              </p>
+            </div>
+
+            <div class="email-pending" style="border-color:rgba(34,197,94,0.3);">
+              <div class="email-pending__row">
+                <span class="email-pending__label">ایمیل جدید:</span>
+                <span class="email-pending__value" style="color:#4ade80" id="newEmailChangedInline">—</span>
+              </div>
+              <div class="email-pending__row">
+                <span class="email-pending__label">وضعیت:</span>
+                <span class="email-pending__value" style="color:#fbbf24">⏳ در انتظار تایید</span>
+              </div>
+            </div>
+
+            <div class="email-note">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>تا زمانی که ایمیل جدید را تایید نکنید، نمی‌توانید پروژه بسازید</span>
+            </div>
+
+            <div class="st-form__actions">
+              <button type="button" class="btn-ghost" id="cancelNewVerify">لغو و بازگشت به ایمیل قبلی</button>
+              <button type="button" class="btn-primary" id="goToVerifyEmail">
+                تایید ایمیل جدید
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
         </section>
 
         <!-- ============================================ -->
