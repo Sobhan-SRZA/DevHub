@@ -335,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         catch (err) {
             if (err.status === 401) {
-                window.location.href = "/login";
+                window.location.href = "/auth/login";
 
                 return null;
             }
