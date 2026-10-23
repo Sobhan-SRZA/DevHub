@@ -1,4 +1,11 @@
 import {
+    registerSchema,
+    loginSchema,
+    resendPasswordResetSchema,
+    resetPasswordSchema,
+    forgotPasswordSchema
+} from "../validators/authValidator";
+import {
     startSession,
     endSession,
     endAllSessions
@@ -9,23 +16,25 @@ import {
     Unauthorized
 } from "../utils/AppError";
 import {
-    registerSchema,
-    loginSchema
-} from "../validators/authValidator";
-import {
     signAccessToken,
+    signPasswordResetToken,
+    verifyPasswordResetToken,
     verifyToken
 } from "../utils/token";
 import type {
     Request,
     Response
 } from "express";
+import {
+    createVerificationCode,
+    verifyCode
+} from "../services/verificationService";
+import { shouldBecomeDeveloper } from "../services/roleService";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
-import { shouldBecomeDeveloper } from "../services/roleService";
 
 /* ==================================================================
    Helpers
@@ -212,6 +221,180 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         message: reused ? "ورود موفق (سشن قبلی تمدید شد)" : "ورود موفق",
         user: publicUser(user),
         reused
+    });
+});
+
+/* ==================================================================
+   FORGOT PASSWORD — Step 1: request code
+   ================================================================== */
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+    const data = validate(forgotPasswordSchema, req.body);
+
+    const user = await User.findOne({ email: data.email }).select("email name");
+
+    /* ============================================================
+       Anti-enumeration: همیشه پاسخ یکسان
+       برای کاربر ناموجود، توکن fake با sub تصادفی صادر می‌شه
+       که هنگام verify با 400 رد می‌شه
+       ============================================================ */
+    let resetToken: string;
+    let expiresIn = 900;   // 15 min
+
+    if (user) {
+        try {
+            await createVerificationCode({
+                userId: user._id,
+                purpose: "reset_password",
+                targetEmail: user.email,
+                userName: user.name,
+                req,
+                ttlMinutes: 15
+            });
+        }
+
+        catch (err: any) {
+            // rate limit یا خطای ارسال — به کاربر نشون نده
+            console.warn("[forgotPassword] send failed:", err?.message);
+        }
+
+        resetToken = signPasswordResetToken(user._id.toString(), user.email);
+    }
+
+    else {
+        // کاربر ناموجود — توکن fake
+        // یک ObjectId تصادفی برای sub
+        const crypto = await import("crypto");
+        const fakeSub = crypto.randomBytes(12).toString("hex");
+
+        resetToken = signPasswordResetToken(fakeSub, data.email);
+
+        // تأخیر مصنوعی برای یکسان‌سازی زمان پاسخ
+        await new Promise((r) => setTimeout(r, 80 + Math.random() * 120));
+    }
+
+    res.json({
+        ok: true,
+        message: "اگر این ایمیل در سیستم موجود باشد، کد بازیابی ارسال می‌شود",
+        email: data.email,
+        resetToken,
+        expiresIn
+    });
+});
+
+/* ==================================================================
+   RESET PASSWORD — Step 2: verify + set new password
+   ================================================================== */
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const data = validate(resetPasswordSchema, req.body);
+
+    /* ---------- verify reset token ---------- */
+    let payload;
+    try {
+        payload = verifyPasswordResetToken(data.resetToken);
+    }
+
+    catch {
+        throw new AppError(
+            401,
+            ErrorCodes.INVALID_TOKEN,
+            "لینک بازیابی منقضی یا نامعتبر است. دوباره درخواست دهید"
+        );
+    }
+
+    const user = await User.findById(payload.sub).select("+password");
+    if (!user) {
+        // کاربر fake یا حذف‌شده — پیام یکسان با کد اشتباه
+        throw new AppError(
+            400,
+            ErrorCodes.INVALID_TOKEN,
+            "کد نامعتبر یا منقضی شده است"
+        );
+    }
+
+    /* ============================================================
+       ⚠️ چک رمز جدید ≠ رمز فعلی — قبل از consume کد
+       این‌طوری اگه رمز یکسان بود، کد مصرف نمی‌شه و کاربر می‌تونه دوباره امتحان کنه
+       ============================================================ */
+    const isSamePassword = await user.comparePassword(data.newPassword);
+    if (isSamePassword) {
+        throw new AppError(
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+            "رمز جدید نباید با رمز فعلی یکسان باشد",
+            { field: "newPassword" }
+        );
+    }
+
+    /* ---------- verify OTP (این کد رو consume می‌کنه) ---------- */
+    await verifyCode({
+        userId: user._id,
+        purpose: "reset_password",
+        code: data.code,
+        targetEmail: user.email
+    });
+
+    /* ---------- set new password ---------- */
+    user.password = data.newPassword;
+    await user.save();
+
+    /* ---------- revoke ALL sessions ---------- */
+    const result = await Session.deleteMany({ user: user._id });
+
+    console.log(
+        `🔐 [PASSWORD RESET] user=${user._id} email=${user.email} — revoked ${result.deletedCount} sessions`
+    );
+
+    res.json({
+        ok: true,
+        message: "رمز عبور با موفقیت بازیابی شد. اکنون می‌توانید وارد شوید",
+        revokedSessions: result.deletedCount || 0
+    });
+});
+
+/* ==================================================================
+   RESEND PASSWORD RESET — کد جدید
+   ================================================================== */
+export const resendPasswordReset = asyncHandler(async (req: Request, res: Response) => {
+    const data = validate(resendPasswordResetSchema, req.body);
+
+    let payload;
+    try {
+        payload = verifyPasswordResetToken(data.resetToken);
+    }
+
+    catch {
+        throw new AppError(
+            401,
+            ErrorCodes.INVALID_TOKEN,
+            "لینک بازیابی منقضی شده. دوباره درخواست دهید"
+        );
+    }
+
+    const user = await User.findById(payload.sub).select("email name");
+    if (!user) {
+        // کاربر fake — پیام یکسان
+        throw new AppError(
+            400,
+            ErrorCodes.INVALID_TOKEN,
+            "کد نامعتبر یا منقضی شده است"
+        );
+    }
+
+    /* ---------- ارسال کد جدید (cooldown در سرویس) ---------- */
+    await createVerificationCode({
+        userId: user._id,
+        purpose: "reset_password",
+        targetEmail: user.email,
+        userName: user.name,
+        req,
+        ttlMinutes: 15
+    });
+
+    res.json({
+        ok: true,
+        message: `کد بازیابی جدید به ${user.email} ارسال شد`,
+        email: user.email,
+        expiresIn: 900
     });
 });
 
