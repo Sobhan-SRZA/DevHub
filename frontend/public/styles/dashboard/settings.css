@@ -627,6 +627,31 @@
     }
 }
 
+/* ---------- Email state notes ---------- */
+.email-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    color: #fbbf24;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 16px 0;
+    text-align: right;
+}
+
+.email-note svg {
+    color: #fbbf24;
+    flex-shrink: 0;
+}
+
+.st-form__actions .btn-primary svg {
+    margin-right: 4px;
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
