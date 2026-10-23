@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /* ----------------------------------------------------------------
    Username rules:
@@ -29,52 +29,52 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const registerSchema = z
     .object({
         name: z
-            .string({ error: 'نام الزامی است' })
+            .string({ error: "نام الزامی است" })
             .trim()
-            .min(2, 'نام باید حداقل ۲ حرف باشد')
-            .max(60, 'نام بیش از حد طولانی است'),
+            .min(2, "نام باید حداقل ۲ حرف باشد")
+            .max(60, "نام بیش از حد طولانی است"),
 
         username: z
-            .string({ error: 'نام کاربری الزامی است' })
+            .string({ error: "نام کاربری الزامی است" })
             .trim()
-            .min(3, 'نام کاربری باید حداقل ۳ کاراکتر باشد')
-            .max(20, 'نام کاربری باید حداکثر ۲۰ کاراکتر باشد')
-            .refine((v) => !v.includes('@'), 'نام کاربری نمی‌تواند شامل @ باشد')
-            .refine((v) => !/\s/.test(v), 'نام کاربری نمی‌تواند شامل فاصله باشد')
+            .min(3, "نام کاربری باید حداقل ۳ کاراکتر باشد")
+            .max(20, "نام کاربری باید حداکثر ۲۰ کاراکتر باشد")
+            .refine((v) => !v.includes("@"), "نام کاربری نمی‌تواند شامل @ باشد")
+            .refine((v) => !/\s/.test(v), "نام کاربری نمی‌تواند شامل فاصله باشد")
             .refine(
                 (v) => USERNAME_REGEX.test(v),
-                'نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، _ ، . یا - باشد'
+                "نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، _ ، . یا - باشد"
             ),
 
         email: z
-            .string({ error: 'ایمیل الزامی است' })
+            .string({ error: "ایمیل الزامی است" })
             .trim()
             .toLowerCase()
-            .max(254, 'ایمیل بیش از حد طولانی است')
-            .refine((v) => EMAIL_REGEX.test(v), 'ایمیل نامعتبر است'),
+            .max(254, "ایمیل بیش از حد طولانی است")
+            .refine((v) => EMAIL_REGEX.test(v), "ایمیل نامعتبر است"),
 
         password: z
-            .string({ error: 'رمز عبور الزامی است' })
-            .min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد')
-            .max(128, 'رمز عبور بیش از حد طولانی است')
+            .string({ error: "رمز عبور الزامی است" })
+            .min(6, "رمز عبور باید حداقل ۶ کاراکتر باشد")
+            .max(128, "رمز عبور بیش از حد طولانی است")
             .refine(
                 (v) => PASSWORD_REGEX.test(v),
-                'رمز عبور باید شامل حرف و عدد باشد'
+                "رمز عبور باید شامل حرف و عدد باشد"
             ),
 
-        confirmPassword: z.string({ error: 'تکرار رمز عبور الزامی است' }),
+        confirmPassword: z.string({ error: "تکرار رمز عبور الزامی است" }),
 
         terms: z
-            .union([z.boolean(), z.literal('on'), z.literal('true'), z.literal('1')])
+            .union([z.boolean(), z.literal("on"), z.literal("true"), z.literal("1")])
             .optional()
     })
     .refine((d) => d.password === d.confirmPassword, {
-        message: 'رمز عبور و تکرار آن یکسان نیستند',
-        path: ['confirmPassword']
+        message: "رمز عبور و تکرار آن یکسان نیستند",
+        path: ["confirmPassword"]
     })
     .refine((d) => !!d.terms, {
-        message: 'پذیرش قوانین الزامی است',
-        path: ['terms']
+        message: "پذیرش قوانین الزامی است",
+        path: ["terms"]
     });
 
 /* ==================================================================
@@ -82,17 +82,17 @@ export const registerSchema = z
    ================================================================== */
 export const loginSchema = z.object({
     identifier: z
-        .string({ error: 'ایمیل یا نام کاربری الزامی است' })
+        .string({ error: "ایمیل یا نام کاربری الزامی است" })
         .trim()
-        .min(1, 'ایمیل یا نام کاربری الزامی است')
-        .max(254, 'مقدار وارد شده خیلی طولانی است'),
+        .min(1, "ایمیل یا نام کاربری الزامی است")
+        .max(254, "مقدار وارد شده خیلی طولانی است"),
 
     password: z
-        .string({ error: 'رمز عبور الزامی است' })
-        .min(1, 'رمز عبور الزامی است'),
+        .string({ error: "رمز عبور الزامی است" })
+        .min(1, "رمز عبور الزامی است"),
 
     remember: z
-        .union([z.boolean(), z.literal('on'), z.literal('true'), z.literal('1')])
+        .union([z.boolean(), z.literal("on"), z.literal("true"), z.literal("1")])
         .optional()
 });
 
