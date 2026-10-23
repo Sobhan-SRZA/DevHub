@@ -1,20 +1,21 @@
+import { VerificationPurpose } from "../../../models/VerificationCode";
 import { escapeHtml } from "../utils";
 
 /* ==================================================================
    Purpose map
    ================================================================== */
-type OtpPurpose =
-    | "change_password"
-    | "change_email_old"
-    | "change_email_new"
-    | "login_2fa"
-    | "reset_password";
+type OtpPurpose = VerificationPurpose;
 
 const PURPOSE_META: Record<OtpPurpose, {
     title: string;
     desc: string;
     emoji: string;
 }> = {
+    verify_email: {
+        title: "تایید ایمیل",
+        desc: "برای ادامه فرایند ثبت نام، ابتدا ایمیل شما باید تایید شود.",
+        emoji: "📧"
+    },
     change_password: {
         title: "تغییر رمز عبور",
         desc: "درخواست تغییر رمز عبور حساب شما ثبت شده است. برای اعمال رمز جدید، کد زیر را در صفحه تنظیمات وارد کنید.",
