@@ -20,6 +20,7 @@ router.delete("/avatar", ctrl.deleteAvatar);
 /* ---------- Email change ---------- */
 router.post("/email/request", ctrl.requestEmailChange);
 router.post("/email/verify", ctrl.verifyEmailChange);
+router.post('/email/verify-old', ctrl.verifyOldEmailForChange);
 router.delete("/email/pending", ctrl.cancelEmailChange);
 
 /* ---------- Password change ---------- */
