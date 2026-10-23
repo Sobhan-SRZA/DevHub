@@ -105,27 +105,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* ---------- Email ---------- */
         $('#currentEmail').textContent = u.email || '—';
+
         const badge = $('#emailVerifiedBadge');
         if (u.emailVerified) {
             badge.className = 'email-current__badge';
             badge.innerHTML = `
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                تایید شده
-            `;
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            تایید شده
+        `;
         } else {
             badge.className = 'email-current__badge email-current__badge--unverified';
-            badge.innerHTML = `تایید نشده`;
+            badge.innerHTML = `⚠️ تایید نشده`;
         }
 
-        /* ---------- Pending email ---------- */
-        if (u.pendingEmail && u.pendingEmail.newEmail) {
-            state.pendingEmail = u.pendingEmail;
-            showPendingEmailState(u.pendingEmail.newEmail);
-        } else {
-            hidePendingEmailState();
-        }
+        renderEmailState();
     }
 
     /* ============================================================
@@ -277,27 +272,100 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
-       Email change — Step 1: Request
+   Ref — email state cards
+   ============================================================ */
+    const emailStateRequest = $('#emailStateRequest');
+    const emailStateOldVerify = $('#emailStateOldVerify');
+    const emailStateNewVerify = $('#emailStateNewVerify');
+
+    /* ============================================================
+       State machine helpers
+       ============================================================ */
+    function setEmailState(state, data = {}) {
+        emailStateRequest.style.display = state === 'request' ? '' : 'none';
+        emailStateOldVerify.style.display = state === 'oldVerify' ? '' : 'none';
+        emailStateNewVerify.style.display = state === 'newVerify' ? '' : 'none';
+
+        if (state === 'oldVerify') {
+            $('#oldEmailDisplay').textContent = data.previousEmail || '—';
+            $('#newEmailDisplay').textContent = data.newEmail || '—';
+            startOldVerifyTimer(data.expiresIn || 600);
+            setTimeout(() => $('#oldEmailCode').focus(), 200);
+        }
+
+        if (state === 'newVerify') {
+            $('#newEmailChanged').textContent = data.newEmail || '—';
+            $('#newEmailChangedInline').textContent = data.newEmail || '—';
+        }
+    }
+
+    let oldVerifyTimerId = null;
+
+    function startOldVerifyTimer(seconds) {
+        clearInterval(oldVerifyTimerId);
+        const el = $('#oldVerifyTimer');
+        let remaining = seconds;
+
+        const tick = () => {
+            if (remaining <= 0) {
+                clearInterval(oldVerifyTimerId);
+                el.textContent = 'منقضی شد';
+                return;
+            }
+            const min = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const sec = String(remaining % 60).padStart(2, '0');
+            el.textContent = `${min}:${sec}`;
+            remaining--;
+        };
+        tick();
+        oldVerifyTimerId = setInterval(tick, 1000);
+    }
+
+    /* ============================================================
+       Render user — determine email state
+       ============================================================ */
+    function renderEmailState() {
+        const u = state.user;
+        if (!u) return;
+
+        const pe = u.pendingEmail;
+
+        if (!pe) {
+            // حالت عادی — امکان درخواست
+            setEmailState('request');
+            return;
+        }
+
+        if (!pe.oldVerified) {
+            // مرحله ۱ در جریان — منتظر کد ایمیل قبلی
+            setEmailState('oldVerify', {
+                previousEmail: pe.previousEmail || u.email,
+                newEmail: pe.newEmail,
+                expiresIn: 600,
+            });
+            return;
+        }
+
+        // مرحله ۲ — ایمیل عوض شده، منتظر تایید جدید
+        setEmailState('newVerify', { newEmail: u.email });
+    }
+
+    /* ============================================================
+       State A: Request change
        ============================================================ */
     $('#changeEmailForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const newEmail = $('#newEmail').value.trim();
+        const newEmail = $('#newEmail').value.trim().toLowerCase();
         const password = $('#confirmPasswordForEmail').value;
 
         FormKit.clearAllErrors($('#changeEmailForm'));
 
-        if (!newEmail) {
-            return FormKit.showFieldError($('#newEmail'), 'ایمیل جدید الزامی است');
-        }
-
+        if (!newEmail) return FormKit.showFieldError($('#newEmail'), 'ایمیل جدید الزامی است');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail)) {
             return FormKit.showFieldError($('#newEmail'), 'ایمیل نامعتبر است');
         }
-
-        if (!password) {
-            return FormKit.showFieldError($('#confirmPasswordForEmail'), 'رمز عبور الزامی است');
-        }
+        if (!password) return FormKit.showFieldError($('#confirmPasswordForEmail'), 'رمز عبور الزامی است');
 
         const btn = $('#requestEmailBtn');
         btn.disabled = true;
@@ -305,129 +373,129 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'در حال ارسال…';
 
         try {
-            console.log('🟦 [requestEmailChange] sending:', { newEmail });
-
             const data = await api('/api/profile/email/request', {
                 method: 'POST',
                 body: JSON.stringify({ newEmail, password }),
             });
 
-            console.log('🟩 [requestEmailChange] response:', data);
+            // موفق — مرحله ۱ شروع شد
+            state.user.pendingEmail = {
+                newEmail: data.newEmail,
+                previousEmail: data.currentEmail,
+                oldVerified: false,
+            };
 
-            if (!data?.pendingEmail) {
-                console.error('❌ response missing pendingEmail:', data);
-                toast('خطا در پردازش پاسخ سرور', 'error');
-                return;
-            }
+            setEmailState('oldVerify', {
+                previousEmail: data.currentEmail,
+                newEmail: data.newEmail,
+                expiresIn: data.expiresIn || 600,
+            });
 
-            state.pendingEmail = { newEmail: data.pendingEmail };
-            showPendingEmailState(data.pendingEmail);
-
-            toast(`کد تایید به ${data.pendingEmail} ارسال شد`, 'success');
-
-            // Reset form
+            // پاک کردن فرم
             $('#newEmail').value = '';
             $('#confirmPasswordForEmail').value = '';
 
-            // Focus OTP
-            setTimeout(() => $('#emailCode').focus(), 300);
-        }
-
-        catch (err) {
-            console.error('❌ [requestEmailChange] failed:', err);
-            console.error('   status :', err.status);
-            console.error('   message:', err.message);
-            console.error('   details:', err.details);
-
-            if (err.details) {
-                for (const [field, messages] of Object.entries(err.details)) {
-                    const input = document.querySelector(`[name="${field}"]`);
-                    if (input && Array.isArray(messages) && messages.length) {
-                        FormKit.showFieldError(input, messages[0]);
-                    }
-                }
-            }
-            
-            else if (err.field) {
-                const input = document.querySelector(`[name="${err.field}"]`);
-                if (input) 
-                    FormKit.showFieldError(input, err.message);
-            }
-
-            toast(err.message || 'خطا در ارسال کد', 'error');
-        }
-
-        finally {
-            btn.disabled = false;
-            btn.textContent = original;
-        }
-    });
-
-    function showPendingEmailState(newEmail) {
-        $('#pendingEmailValue').textContent = newEmail;
-        $('#pendingEmailCard').style.display = '';
-        $('#changeEmailCard').style.display = 'none';
-
-        // countdown 10 minutes
-        const expiresAt = Date.now() + 10 * 60 * 1000;
-        clearInterval(state.pendingEmailTimer);
-        state.pendingEmailTimer = setInterval(() => {
-            const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
-            const min = String(Math.floor(remaining / 60)).padStart(2, '0');
-            const sec = String(remaining % 60).padStart(2, '0');
-            $('#pendingEmailTimer').textContent = `${min}:${sec}`;
-            if (remaining === 0) {
-                clearInterval(state.pendingEmailTimer);
-                toast('کد منقضی شد، دوباره درخواست کنید', 'warn');
-            }
-        }, 1000);
-    }
-
-    function hidePendingEmailState() {
-        $('#pendingEmailCard').style.display = 'none';
-        $('#changeEmailCard').style.display = '';
-        clearInterval(state.pendingEmailTimer);
-    }
-
-    /* ============================================================
-       Email change — Step 2: Verify
-       ============================================================ */
-    $('#verifyEmailForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const code = $('#emailCode').value.trim();
-        if (!/^\d{6}$/.test(code)) {
-            return FormKit.showFieldError($('#emailCode'), 'کد باید ۶ رقم باشد');
-        }
-
-        FormKit.clearAllErrors($('#verifyEmailForm'));
-
-        const btn = $('#verifyEmailBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال تایید…';
-
-        try {
-            const data = await api('/api/profile/email/verify', {
-                method: 'POST',
-                body: JSON.stringify({ code }),
-            });
-
-            state.user.email = data.user.email;
-            state.user.emailVerified = true;
-            state.user.pendingEmail = null;
-            hidePendingEmailState();
-            renderUser();
-            toast('ایمیل با موفقیت تغییر کرد', 'success');
+            toast(data.message || 'کد به ایمیل فعلی شما ارسال شد', 'success');
         } catch (err) {
-            FormKit.showFieldError($('#emailCode'), err.message);
+            if (err.field) {
+                const el = $(`[name="${err.field}"]`);
+                if (el) FormKit.showFieldError(el, err.message);
+            }
+            toast(err.message || 'خطا', 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = original;
         }
     });
 
-    $('#cancelEmailChange').addEventListener('click', async () => {
+    /* ============================================================
+       State B: Verify OLD email
+       ============================================================ */
+    $('#verifyOldEmailForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const code = $('#oldEmailCode').value.trim();
+
+        FormKit.clearAllErrors($('#verifyOldEmailForm'));
+
+        if (!/^\d{6}$/.test(code)) {
+            return FormKit.showFieldError($('#oldEmailCode'), 'کد باید ۶ رقم باشد');
+        }
+
+        const btn = $('#verifyOldEmailBtn');
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = 'در حال تایید…';
+
+        try {
+            const data = await api('/api/profile/email/verify-old', {
+                method: 'POST',
+                body: JSON.stringify({ code }),
+            });
+
+            // ایمیل عوض شد ولی unverified
+            state.user.email = data.newEmail;
+            state.user.emailVerified = false;
+            state.user.pendingEmail = {
+                newEmail: data.newEmail,
+                previousEmail: data.previousEmail,
+                oldVerified: true,
+            };
+
+            // ذخیره verifyToken برای /verify-email
+            sessionStorage.setItem('verify_email_state', JSON.stringify({
+                verifyToken: data.verifyToken,
+                email: data.newEmail,
+            }));
+
+            // به حالت ۳ برو
+            setEmailState('newVerify', { newEmail: data.newEmail });
+            renderUser();
+
+            toast(`ایمیل شما تغییر کرد. کد تایید به ${data.newEmail} ارسال شد`, 'success');
+        } catch (err) {
+            FormKit.showFieldError($('#oldEmailCode'), err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+        }
+    });
+
+    /* ============================================================
+       State C: Go to /verify-email OR cancel & revert
+       ============================================================ */
+    $('#goToVerifyEmail').addEventListener('click', () => {
+        location.href = '/auth/verify-email';
+    });
+
+    $('#cancelNewVerify').addEventListener('click', async () => {
+        const ok = await confirmDialog({
+            title: 'لغو تغییر ایمیل',
+            message: 'ایمیل شما به ایمیل قبلی بازمی‌گردد. مطمئنید؟',
+            confirmText: 'بله، بازگردان',
+            danger: true,
+        });
+        if (!ok) return;
+
+        try {
+            const data = await api('/api/profile/email/pending', { method: 'DELETE' });
+
+            state.user.email = data.email;
+            state.user.emailVerified = true;
+            state.user.pendingEmail = null;
+
+            renderUser();
+            setEmailState('request');
+            toast(data.message || 'ایمیل به حالت قبل بازگشت', 'success');
+        } catch (err) {
+            toast(err.message || 'خطا', 'error');
+        }
+    });
+
+    /* ============================================================
+       Cancel from state B (before old verified)
+       ============================================================ */
+    $('#cancelOldVerify').addEventListener('click', async () => {
         const ok = await confirmDialog({
             title: 'لغو تغییر ایمیل',
             message: 'درخواست تغییر ایمیل لغو شود؟',
@@ -439,8 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await api('/api/profile/email/pending', { method: 'DELETE' });
             state.user.pendingEmail = null;
-            state.pendingEmail = null;
-            hidePendingEmailState();
+            setEmailState('request');
             toast('درخواست لغو شد', 'success');
         } catch (err) {
             toast(err.message || 'خطا', 'error');
