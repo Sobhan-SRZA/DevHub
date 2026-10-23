@@ -80,7 +80,7 @@ export const confirmPasswordChangeSchema = z
             .min(8, "رمز جدید باید حداقل ۸ کاراکتر باشد")
             .max(128)
             .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد"),
-            
+
         confirmPassword: z.string()
     })
     .refine((d) => d.newPassword === d.confirmPassword, {
@@ -105,6 +105,16 @@ export const changeUsernameSchema = z.object({
             (v) => USERNAME_REGEX.test(v),
             "فقط حروف انگلیسی، عدد، _ ، . یا -"
         )
+});
+
+/* ==================================================================
+   Verify OLD email (step 2 of email change)
+   ================================================================== */
+export const verifyOldEmailForChangeSchema = z.object({
+    code: z
+        .string({ error: "کد تایید الزامی است" })
+        .trim()
+        .regex(/^\d{6}$/, "کد باید ۶ رقم باشد")
 });
 
 /**
