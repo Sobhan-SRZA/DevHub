@@ -84,7 +84,7 @@ function getDeviceHints(req: Request) {
 }
 
 /* ==================================================================
-   REGISTER
+   REGISTER — creates user + sends OTP, does NOT issue session
    ================================================================== */
 export const register = asyncHandler(async (req: Request, res: Response) => {
     const data = validate(registerSchema, req.body);
@@ -101,11 +101,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     if (existingUsername) {
         throw Conflict(ErrorCodes.USERNAME_TAKEN, undefined, { field: "username" });
     }
+
     if (existingEmail) {
         throw Conflict(ErrorCodes.EMAIL_TAKEN, undefined, { field: "email" });
     }
 
-    /* -------- ساخت کاربر -------- */
+    /* ---------- ایجاد کاربر (unverified) ---------- */
     let user;
     try {
         /* ---------- نقش اولیه ---------- */
@@ -117,6 +118,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
             username: data.username,
             usernameLower,
             email: emailLower,
+            emailVerified: false,
             password: data.password,
             role: isFirstDeveloper ? "developer" : "user",
             ...(isFirstDeveloper && {
