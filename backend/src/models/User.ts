@@ -21,6 +21,8 @@ export interface IUserAvatar {
 /* ---------------- pending email change ---------------- */
 export interface IPendingEmail {
     newEmail: string;
+    previousEmail: string;       // ✅ برای بازگشت
+    oldVerified: boolean;         // ✅ آیا مرحله ۱ تمام شد؟
     expiresAt: Date;
     requestedAt: Date;
 }
@@ -75,11 +77,14 @@ const avatarSchema = new Schema<IUserAvatar>(
 const pendingEmailSchema = new Schema<IPendingEmail>(
     {
         newEmail: { type: String, required: true, lowercase: true, trim: true },
+        previousEmail: { type: String, required: true, lowercase: true, trim: true },
+        oldVerified: { type: Boolean, default: false },
         expiresAt: { type: Date, required: true },
         requestedAt: { type: Date, default: () => new Date() }
     },
     { _id: false }
 );
+
 
 /* ---------------- main schema ---------------- */
 const userSchema = new Schema<IUser, UserModel, IUserMethods>(
@@ -113,7 +118,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
         },
 
         emailVerified: { type: Boolean, default: false },
-        
+
         emailVerifiedAt: { type: Date, default: null },
 
         password: {
