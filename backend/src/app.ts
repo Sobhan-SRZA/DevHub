@@ -2,10 +2,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import cookieParser from "cookie-parser";
 import loadRoutes from "./lib/loader";
 import express from "express";
-import dotenv from "dotenv";
 import path from "path";
-
-dotenv.config();
 
 const app = express();
 
