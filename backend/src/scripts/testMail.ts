@@ -1,16 +1,20 @@
 /**
  * تست ارسال ایمیل
  *
- * npx tsx src/scripts/testMail.ts you@example.com
+ * npx tsx backend/src/scripts/testMail.ts you@example.com
  */
 import {
     mailer,
     getMailConfig
 } from "../services/mail";
-import { sendOtpEmail } from "../services/mail";
-import { connectDB } from "../config/db";
-import mongoose from "mongoose";
 import { VerificationCode } from "../models/VerificationCode";
+import { sendOtpEmail } from "../services/mail";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env file from the project root
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 async function main() {
     const to = process.argv[2];
