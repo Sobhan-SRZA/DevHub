@@ -410,13 +410,77 @@ document.addEventListener("DOMContentLoaded", () => {
             closeModal();
     });
 
-    btnNew.addEventListener("click", () => {
-        resetModal();
-        modalTitle.textContent = "پروژه جدید";
-        modalSubtitle.textContent = "اطلاعات پروژه را در ۵ مرحله وارد کنید";
-        modalSubmit.textContent = "ساخت پروژه";
-        openModal();
+    /* ============================================================
+    EMAIL VERIFIED GUARD
+    ============================================================ */
+    let _cachedUser = null;
+    let _userCacheTime = 0;
 
+    async function ensureEmailVerified() {
+        // cache 30s
+        if (_cachedUser && Date.now() - _userCacheTime < 30_000) {
+            return _cachedUser.emailVerified;
+        }
+
+        try {
+            const res = await fetch('/api/auth/me', { credentials: 'include' });
+            if (!res.ok) {
+                location.href = '/login';
+                return false;
+            }
+            const data = await res.json();
+            _cachedUser = data.user;
+            _userCacheTime = Date.now();
+            return !!data.user?.emailVerified;
+        } catch {
+            return false;
+        }
+    }
+
+    async function showVerifyEmailGate() {
+        if (typeof openDialogError === 'function') {
+            openDialogError(
+                'ایمیل تایید نشده',
+                'برای ساخت پروژه ابتدا باید ایمیل خود را تایید کنید'
+            );
+        } else {
+            alert('برای ساخت پروژه ابتدا باید ایمیل خود را تایید کنید');
+        }
+
+        // تلاش برای گرفتن verifyToken جدید
+        try {
+            const res = await fetch('/api/auth/resend-verification-for-me', {
+                method: 'POST',
+                credentials: 'include',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                sessionStorage.setItem('verify_email_state', JSON.stringify({
+                    verifyToken: data.verifyToken,
+                    email: data.email,
+                }));
+            }
+        } catch { }
+
+        setTimeout(() => {
+            location.href = '/auth/verify-email';
+        }, 2000);
+    }
+
+    /* ============================================================
+       btnNew — با guard
+       ============================================================ */
+    btnNew.addEventListener('click', async () => {
+        const verified = await ensureEmailVerified();
+        if (!verified) {
+            return showVerifyEmailGate();
+        }
+
+        resetModal();
+        modalTitle.textContent = 'پروژه جدید';
+        modalSubtitle.textContent = 'اطلاعات پروژه را در ۵ مرحله وارد کنید';
+        modalSubmit.textContent = 'ساخت پروژه';
+        openModal();
         setTimeout(() => form.elements.title.focus(), 200);
     });
 
@@ -461,7 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const tagIds = (p.tags || [])
                     .map((t) => (t && typeof t === 'object' ? t._id : t))
                     .filter((id) => id && OBJECT_ID_RE.test(String(id)));
-                    
+
                 state.tagPicker.setSelected(tagIds);
             }
             /* settings */
