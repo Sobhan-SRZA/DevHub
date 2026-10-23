@@ -104,16 +104,68 @@ export const verifyEmailSchema = z.object({
     code: z
         .string({ error: "کد تایید الزامی است" })
         .trim()
-        .regex(/^\d{6}$/, "کد باید ۶ رقم باشد"),
+        .regex(/^\d{6}$/, "کد باید ۶ رقم باشد")
 });
 
 /* ==================================================================
    Resend Verification
    ================================================================== */
 export const resendVerificationSchema = z.object({
-    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10),
+    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10)
 });
 
+/* ==================================================================
+   Forgot Password — Step 1
+   ================================================================== */
+export const forgotPasswordSchema = z.object({
+    email: z
+        .string({ error: "ایمیل الزامی است" })
+        .trim()
+        .toLowerCase()
+        .email("ایمیل نامعتبر است")
+        .max(254)
+});
+
+/* ==================================================================
+   Reset Password — Step 2
+   ================================================================== */
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+export const resetPasswordSchema = z
+    .object({
+        resetToken: z
+            .string({ error: "توکن بازیابی الزامی است" })
+            .min(10),
+
+        code: z
+            .string({ error: "کد تایید الزامی است" })
+            .trim()
+            .regex(/^\d{6}$/, "کد باید ۶ رقم باشد"),
+
+        newPassword: z
+            .string({ error: "رمز جدید الزامی است" })
+            .min(8, "رمز جدید باید حداقل ۸ کاراکتر باشد")
+            .max(128)
+            .regex(
+                strongPasswordRegex,
+                "رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد"
+            ),
+
+        confirmPassword: z.string({ error: "تکرار رمز الزامی است" })
+    })
+    .refine((d) => d.newPassword === d.confirmPassword, {
+        message: "رمز جدید و تکرار آن یکسان نیستند",
+        path: ["confirmPassword"]
+    });
+
+/* ==================================================================
+   Resend Password Reset
+   ================================================================== */
+export const resendPasswordResetSchema = z.object({
+    resetToken: z
+        .string({ error: "توکن بازیابی الزامی است" })
+        .min(10),
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
