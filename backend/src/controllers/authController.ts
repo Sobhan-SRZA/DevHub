@@ -3,7 +3,8 @@ import {
     loginSchema,
     resendPasswordResetSchema,
     resetPasswordSchema,
-    forgotPasswordSchema
+    forgotPasswordSchema,
+    verifyEmailSchema
 } from "../validators/authValidator";
 import {
     startSession,
@@ -17,7 +18,9 @@ import {
 } from "../utils/AppError";
 import {
     signAccessToken,
+    signEmailVerifyToken,
     signPasswordResetToken,
+    verifyEmailVerifyToken,
     verifyPasswordResetToken,
     verifyToken
 } from "../utils/token";
@@ -74,6 +77,8 @@ export function publicUser(u: any) {
         pendingEmail: u.pendingEmail
             ? {
                 newEmail: u.pendingEmail.newEmail,
+                previousEmail: u.pendingEmail.previousEmail,
+                oldVerified: !!u.pendingEmail.oldVerified,
                 expiresAt: u.pendingEmail.expiresAt,
                 requestedAt: u.pendingEmail.requestedAt
             }
@@ -91,6 +96,101 @@ function getDeviceHints(req: Request) {
         deviceId: typeof body.deviceId === "string" ? body.deviceId : undefined
     };
 }
+
+/* ==================================================================
+   RESEND VERIFICATION FOR ME — for logged-in unverified user
+   ================================================================== */
+export const resendVerificationForMe = asyncHandler(async (req: any, res: Response) => {
+    if (!req.user) {
+        throw new AppError(401, ErrorCodes.UNAUTHENTICATED);
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+
+    if (user.emailVerified) {
+        throw new AppError(
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+            "ایمیل شما قبلاً تایید شده است"
+        );
+    }
+
+    /* ---------- ارسال کد جدید ---------- */
+    await createVerificationCode({
+        userId: user._id,
+        purpose: "verify_email",
+        targetEmail: user.email,
+        userName: user.name,
+        req,
+        ttlMinutes: 10
+    });
+
+    const verifyToken = signEmailVerifyToken(user._id.toString(), user.email);
+
+    res.json({
+        ok: true,
+        message: `کد تایید به ${user.email} ارسال شد`,
+        email: user.email,
+        verifyToken,
+        expiresIn: 600
+    });
+});
+
+/* ==================================================================
+   VERIFY EMAIL — clear pendingEmail on success
+   ================================================================== */
+export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+    const data = validate(verifyEmailSchema, req.body);
+
+    let payload;
+    try {
+        payload = verifyEmailVerifyToken(data.verifyToken);
+    }
+
+    catch {
+        throw new AppError(401, ErrorCodes.INVALID_TOKEN, "توکن تایید منقضی شده");
+    }
+
+    const user = await User.findById(payload.sub);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+
+    if (user.emailVerified) {
+        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "ایمیل شما قبلاً تایید شده است");
+    }
+
+    await verifyCode({
+        userId: user._id,
+        purpose: "verify_email",
+        code: data.code,
+        targetEmail: user.email
+    });
+
+    /* ---------- mark verified ---------- */
+    user.emailVerified = true;
+    user.emailVerifiedAt = new Date();
+    user.pendingEmail = null;    // ✅ پاک کردن (اگه در حال تغییر بود)
+    await user.save();
+
+    /* ---------- session ---------- */
+    const hints = getDeviceHints(req);
+    const { access, refresh } = await startSession(user._id, req, {
+        ...hints,
+        ttlDays: 7
+    });
+
+    setAuthCookies(res, access, refresh, true);
+
+    console.log(`✅ [EMAIL VERIFIED] user=${user._id} email=${user.email}`);
+
+    res.json({
+        ok: true,
+        message: "ایمیل شما با موفقیت تایید شد",
+        user: publicUser(user)
+    });
+});
 
 /* ==================================================================
    REGISTER — creates user + sends OTP, does NOT issue session
