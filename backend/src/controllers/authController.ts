@@ -186,7 +186,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         $or: [
             { email: identifierLower },
             { usernameLower: identifierLower }
-        ],
+        ]
     }).select("+password");
 
     if (!user) {
