@@ -1,6 +1,6 @@
-import { ErrorCodes } from './errorCodes';
-import { ZodSchema } from 'zod';
-import { AppError } from './AppError';
+import { ErrorCodes } from "./errorCodes";
+import { ZodSchema } from "zod";
+import { AppError } from "./AppError";
 
 export function validate<T>(schema: ZodSchema<T>, data: unknown): T {
     const result = schema.safeParse(data);
@@ -21,14 +21,14 @@ export function validate<T>(schema: ZodSchema<T>, data: unknown): T {
             details._form = flat.formErrors;
         }
 
-        if (process.env.NODE_ENV !== 'production') {
-            console.warn('❌ [VALIDATION FAILED]', data, details);
+        if (process.env.NODE_ENV !== "production") {
+            console.warn("❌ [VALIDATION FAILED]", data, details);
         }
 
         throw new AppError(
             400,
             ErrorCodes.VALIDATION_ERROR,
-            'داده‌های ورودی نامعتبر است',
+            "داده‌های ورودی نامعتبر است",
             { details }
         );
     }
