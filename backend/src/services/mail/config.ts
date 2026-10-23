@@ -1,9 +1,4 @@
 import type { MailConfig } from "./types";
-import dotenv from "dotenv";
-import path from "path";
-
-// Load .env file from the project root
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 /* ==================================================================
    خواندن و اعتبارسنجی env
@@ -45,12 +40,12 @@ function loadMailConfig(): MailConfig {
         const port = parseInt(portRaw, 10);
 
         if (!host)
-             throw new Error("SMTP_HOST الزامی است (MAIL_MODE=smtp)");
+            throw new Error("SMTP_HOST الزامی است (MAIL_MODE=smtp)");
 
         if (!user)
-             throw new Error("SMTP_USER الزامی است (MAIL_MODE=smtp)");
+            throw new Error("SMTP_USER الزامی است (MAIL_MODE=smtp)");
 
-        if (!pass) 
+        if (!pass)
             throw new Error("SMTP_PASS الزامی است (MAIL_MODE=smtp)");
 
         if (!Number.isFinite(port) || port < 1 || port > 65535) {
@@ -93,7 +88,7 @@ function loadMailConfig(): MailConfig {
             `(${secure ? "SMTPS" : "STARTTLS"}) as ${user}`
         );
     }
-    
+
     else {
         console.log(
             `📧 [MAIL] log mode — ایمیل‌ها در کنسول چاپ می‌شوند ` +
@@ -110,7 +105,7 @@ function loadMailConfig(): MailConfig {
 let _cached: MailConfig | null = null;
 
 export function getMailConfig(): MailConfig {
-    if (!_cached) 
+    if (!_cached)
         _cached = loadMailConfig();
 
     return _cached;
