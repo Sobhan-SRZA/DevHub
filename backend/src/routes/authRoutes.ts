@@ -9,6 +9,9 @@ router.post("/register", ctrl.register);
 router.post("/login", ctrl.login);
 router.post("/refresh", ctrl.refresh);
 router.post("/logout", ctrl.logout);            // logout works without auth (just clears cookies)
+router.post('/forgot-password', ctrl.forgotPassword);
+router.post('/reset-password', ctrl.resetPassword);
+router.post('/resend-password-reset', ctrl.resendPasswordReset);
 
 // ---------- protected ----------
 router.get("/me", requireAuth, ctrl.me);
