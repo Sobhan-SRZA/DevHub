@@ -225,6 +225,17 @@ export const getProject = asyncHandler(async (req: any, res: Response) => {
    CREATE
    ================================================================== */
 export const createProject = asyncHandler(async (req: any, res: Response) => {
+    /* ============================================================
+        🚫 EMAIL VERIFICATION GUARD
+    ============================================================ */
+    if (!req.user?.emailVerified) {
+        throw new AppError(
+            403,
+            ErrorCodes.EMAIL_NOT_VERIFIED,
+            "برای ساخت پروژه ابتدا ایمیل خود را تایید کنید"
+        );
+    }
+
     const data = validate(createProjectSchema, req.body);
 
     const slug = data.slug || slugify(data.title);
