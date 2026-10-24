@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/dashboard/home.css">
+  <title>داشبورد</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <%
+        /* ---------- منبع واحد ---------- */
+        const cu          = (locals && locals.currentUser) || null;
+        const role        = (locals && locals.userRole) || cu?.role || 'user';
+        const isAdmin     = (locals && typeof locals.isAdmin === 'boolean') ? locals.isAdmin : ['admin', 'developer'].includes(role);
+        const isDeveloper = (locals && typeof locals.isDeveloper === 'boolean') ? locals.isDeveloper : role === 'developer';
+        const firstName   = (cu?.name || cu?.username || 'کاربر').split(' ')[0];
+        const emailVerified = !!cu?.emailVerified;
+        const roleLabel   = { user: 'کاربر', admin: 'ادمین', developer: 'دولوپر' }[role];
+    %>
+
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+
+    <main class="dash-main">
+
+      <!-- Mobile topbar -->
+      <div class="dash-topbar">
+        <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()" aria-label="منو">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <h1 class="dash-topbar__title">نمای کلی</h1>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- EMAIL VERIFY BANNER                          -->
+      <!-- ============================================ -->
+      <% if (!emailVerified) { %>
+      <div class="home-alert home-alert--warn" id="emailVerifyBanner">
+        <div class="home-alert__icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="home-alert__body">
+          <strong>ایمیل شما تایید نشده است</strong>
+          <small>برای ساخت پروژه باید ابتدا ایمیل خود را تایید کنید</small>
+        </div>
+        <a href="/auth/verify-email" class="home-alert__action">
+          تایید ایمیل
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+      </div>
+      <% } %>
+
+      <!-- ============================================ -->
+      <!-- WELCOME HERO                                 -->
+      <!-- ============================================ -->
+      <section class="home-welcome" data-role="<%= role %>">
+        <div class="home-welcome__glow"></div>
+        <div class="home-welcome__content">
+          <div class="home-welcome__text">
+            <h1 class="home-welcome__title">
+              سلام، <span class="home-welcome__name"><%= firstName %></span> 👋
+            </h1>
+            <p class="home-welcome__sub" id="welcomeGreeting">به داشبورد خودت خوش آمدی</p>
+            <div class="home-welcome__role-badge" data-role="<%= role %>">
+              <%= roleLabel %>
+            </div>
+          </div>
+
+          <div class="home-welcome__actions">
+            <a href="/dashboard/projects" class="btn-primary home-welcome__btn" id="newProjectBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              پروژه جدید
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- PRIMARY STATS                                -->
+      <!-- ============================================ -->
+      <section class="home-stats" id="primaryStats">
+        <div class="home-stat-card home-stat-card--skeleton"></div>
+        <div class="home-stat-card home-stat-card--skeleton"></div>
+        <div class="home-stat-card home-stat-card--skeleton"></div>
+        <div class="home-stat-card home-stat-card--skeleton"></div>
+      </section>
+
+      <!-- ============================================ -->
+      <!-- ADMIN QUICK PANEL                            -->
+      <!-- ============================================ -->
+      <% if (isAdmin) { %>
+      <section class="home-section">
+        <div class="home-section__head">
+          <h2 class="home-section__title">
+            <span class="home-section__icon" style="--c:#fbbf24">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </span>
+            پنل مدیریت
+          </h2>
+          <p class="home-section__sub">دسترسی سریع به بخش‌های مدیریتی</p>
+        </div>
+
+        <div class="home-admin-grid">
+          <a href="/dashboard/users" class="home-admin-card">
+            <div class="home-admin-card__icon" style="--c:#6ebbff">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="home-admin-card__body">
+              <strong>کاربران</strong>
+              <small id="adminUsersCount">—</small>
+            </div>
+          </a>
+
+          <a href="/dashboard/tags" class="home-admin-card">
+            <div class="home-admin-card__icon" style="--c:#a78bfa">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            </div>
+            <div class="home-admin-card__body">
+              <strong>تگ‌ها</strong>
+              <small id="adminTagsCount">—</small>
+            </div>
+          </a>
+
+          <a href="/dashboard/tag-types" class="home-admin-card">
+            <div class="home-admin-card__icon" style="--c:#34d399">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </div>
+            <div class="home-admin-card__body">
+              <strong>نوع تگ‌ها</strong>
+              <small id="adminTypesCount">—</small>
+            </div>
+          </a>
+
+          <div class="home-admin-card home-admin-card--alert" id="pendingCard" style="display:none;">
+            <div class="home-admin-card__icon" style="--c:#fbbf24">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="home-admin-card__body">
+              <strong>در انتظار تایید</strong>
+              <small id="adminPendingCount">—</small>
+            </div>
+          </div>
+        </div>
+      </section>
+      <% } %>
+
+      <!-- ============================================ -->
+      <!-- DEV HEALTH                                   -->
+      <!-- ============================================ -->
+      <% if (isDeveloper) { %>
+      <section class="home-section">
+        <div class="home-section__head">
+          <h2 class="home-section__title">
+            <span class="home-section__icon" style="--c:#ec4899">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </span>
+            وضعیت سیستم
+          </h2>
+          <p class="home-section__sub">اطلاعات فنی و منابع سرور</p>
+        </div>
+
+        <div class="dev-health-grid" id="devHealth">
+          <div class="dev-health-card">
+            <span class="dev-health-card__label">وضعیت دیتابیس</span>
+            <span class="dev-health-card__value dev-health-card__value--loading" id="devDbStatus">—</span>
+          </div>
+          <div class="dev-health-card">
+            <span class="dev-health-card__label">Uptime</span>
+            <span class="dev-health-card__value dev-health-card__value--loading" id="devUptime">—</span>
+          </div>
+          <div class="dev-health-card">
+            <span class="dev-health-card__label">حافظه</span>
+            <span class="dev-health-card__value dev-health-card__value--loading" id="devMemory">—</span>
+          </div>
+          <div class="dev-health-card">
+            <span class="dev-health-card__label">Node.js</span>
+            <span class="dev-health-card__value dev-health-card__value--loading" id="devNode">—</span>
+          </div>
+        </div>
+      </section>
+      <% } %>
+
+      <!-- ============================================ -->
+      <!-- RECENT PROJECTS                              -->
+      <!-- ============================================ -->
+      <section class="home-section">
+        <div class="home-section__head">
+          <h2 class="home-section__title">
+            <span class="home-section__icon" style="--c:#6ebbff">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+            </span>
+            پروژه‌های اخیر
+          </h2>
+          <a href="/dashboard/projects" class="home-section__link">
+            مشاهده همه
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </a>
+        </div>
+
+        <div class="home-recent-list" id="recentProjects">
+          <div class="home-loading">
+            <div class="home-loading__spinner"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    /* ✅ JSON.stringify برای Boolean — جلوگیری از "undefined" string */
+    window.__USER_ROLE__ = <%- JSON.stringify(role) %>;
+    window.__IS_ADMIN__ = <%- JSON.stringify(!!isAdmin) %>;
+    window.__IS_DEVELOPER__ = <%- JSON.stringify(!!isDeveloper) %>;
+    window.__EMAIL_VERIFIED__ = <%- JSON.stringify(emailVerified) %>;
+  </script>
+  <script src="/js/dashboard/home.js"></script>
+</body>
+
+</html>
