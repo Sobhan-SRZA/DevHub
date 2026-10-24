@@ -7,8 +7,9 @@ import { ensureDeveloperExists } from "./services/roleService";
 import { seedDefaultTags } from "./scripts/seedDefaultData";
 import { connectDB } from "./config/db";
 import { config } from "./config/env";
-import app from "./app";
 import { mailer } from "./services/mail";
+import { logger } from "./services/logger";
+import app from "./app";
 
 /* ============================================================
    Process-level guards
@@ -47,6 +48,8 @@ process.on("SIGTERM", () => {
    Start
    ============================================================ */
 const startServer = async () => {
+    logger.info("🚀 Server starting...");
+
     try {
         await connectDB();
 
