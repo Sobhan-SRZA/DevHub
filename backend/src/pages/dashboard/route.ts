@@ -1,12 +1,6 @@
-import { pageAuth } from "../../middleware/pageAuth";
-import { Router } from "express";
+import dashboardRoutes from "../../routes/dashboardRoutes";
 
-const router = Router();
-
-router.get("/tags", pageAuth, (req, res) => res.render("dashboard/tags"));
-
-
-export default router;
+export default dashboardRoutes;
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
