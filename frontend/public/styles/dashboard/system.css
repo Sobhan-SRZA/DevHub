@@ -1,0 +1,362 @@
+/* ============================================================
+   SYSTEM PAGE
+   ============================================================ */
+
+.sys-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 24px;
+}
+
+.sys-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sys-auto-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    color: #aaa;
+    font-size: 0.82rem;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s ease;
+}
+
+.sys-auto-refresh:hover {
+    border-color: #3a3a3a;
+}
+
+.sys-auto-refresh input {
+    accent-color: #007bff;
+    cursor: pointer;
+}
+
+/* ============================================================
+   HEALTH BANNER
+   ============================================================ */
+.sys-health {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    border-right-width: 4px;
+    transition: all 0.3s ease;
+}
+
+.sys-health[data-status="ok"] {
+    border-right-color: #22c55e;
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.06), transparent 40%);
+}
+
+.sys-health[data-status="warn"] {
+    border-right-color: #fbbf24;
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.06), transparent 40%);
+}
+
+.sys-health[data-status="danger"] {
+    border-right-color: #ef4444;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.06), transparent 40%);
+}
+
+.sys-health[data-status="loading"] {
+    border-right-color: #666;
+}
+
+.sys-health__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.sys-health[data-status="ok"] .sys-health__icon {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.sys-health[data-status="warn"] .sys-health__icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.sys-health[data-status="danger"] .sys-health__icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ff6b6b;
+}
+
+.sys-health[data-status="loading"] .sys-health__icon {
+    background: #1f1f1f;
+    color: #888;
+}
+
+.sys-health__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: right;
+}
+
+.sys-health__body strong {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sys-health__body small {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+.sys-health__last-update {
+    color: #666;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   GRID + CARD
+   ============================================================ */
+.sys-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.sys-grid--2 {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.sys-card {
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.sys-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #161616;
+    margin-bottom: 14px;
+}
+
+.sys-card__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    color: var(--c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sys-card__title {
+    flex: 1;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: right;
+}
+
+.sys-card__badge {
+    padding: 3px 10px;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 6px;
+    color: #888;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.sys-card__badge--ok {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+.sys-card__badge--danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ff6b6b;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ============================================================
+   INFO LIST
+   ============================================================ */
+.sys-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sys-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.85rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #141414;
+}
+
+.sys-info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.sys-info-row__label {
+    color: #777;
+    flex-shrink: 0;
+}
+
+.sys-info-row__value {
+    color: #ddd;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    text-align: left;
+    word-break: break-word;
+}
+
+.sys-info-row__value--ok {
+    color: #4ade80;
+}
+
+.sys-info-row__value--warn {
+    color: #fbbf24;
+}
+
+.sys-info-row__value--danger {
+    color: #ff6b6b;
+}
+
+.sys-info-row__value--mono {
+    font-family: ui-monospace, monospace;
+    font-size: 0.82rem;
+}
+
+.sys-loading {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-size: 0.85rem;
+}
+
+/* ============================================================
+   MEMORY
+   ============================================================ */
+.sys-memory {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sys-mem-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sys-mem-bar__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.sys-mem-bar__label {
+    color: #999;
+}
+
+.sys-mem-bar__value {
+    color: #ddd;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sys-mem-bar__track {
+    height: 8px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sys-mem-bar__fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    transition: width 0.4s ease, background 0.3s ease;
+}
+
+.sys-mem-bar__fill[data-level="warn"] {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.sys-mem-bar__fill[data-level="danger"] {
+    background: linear-gradient(90deg, #dc2626, #ff6b6b);
+}
+
+.sys-mem-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #141414;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .sys-grid--2 {
+        grid-template-columns: 1fr;
+    }
+
+    .sys-health {
+        padding: 14px;
+    }
+
+    .sys-health__last-update {
+        display: none;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
