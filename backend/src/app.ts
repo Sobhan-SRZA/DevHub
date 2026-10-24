@@ -25,9 +25,9 @@ app.use(
 );
 
 /* ==================================================================
-   Static — uploads
+Static — uploads
    ================================================================== */
-const UPLOAD_DIR = path.resolve(process.cwd(), "backend/uploads");
+   const UPLOAD_DIR = path.resolve(process.cwd(), "backend/uploads");
 app.use(
     "/uploads",
     express.static(UPLOAD_DIR, {
@@ -59,7 +59,7 @@ Promise.all(
             route.prefix
         );
     })
-)
+);
 
 // Redirect all invalid URLs to /404
 setTimeout(() => {
