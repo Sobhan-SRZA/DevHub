@@ -14,14 +14,32 @@ export async function pageAuth(req: any, res: Response, next: NextFunction) {
         }
 
         const payload = verifyToken(token);
-        const session = await Session.findOne({ sessionId: payload.sid });
-        if (!session || session.expiresAt < new Date()) {
+        if (payload.typ !== "access") {
             return res.redirect("/auth/login");
         }
 
-        const user = await User.findById(payload.sub).lean();
+        const session = await Session.findOne({
+            sessionId: payload.sid,
+            expiresAt: { $gt: new Date() }
+        });
+        if (!session) {
+            return res.redirect("/auth/login");
+        }
+
+        const user = await User
+            .findById(payload.sub)
+            .select("name username email emailVerified emailVerifiedAt avatar bio role createdAt pendingEmail")
+            .lean();
+
         if (!user) {
             return res.redirect("/auth/login");
+        }
+
+        if (user.isBanned) {
+            res.clearCookie('access_token');
+            res.clearCookie('refresh_token');
+            
+            return res.redirect('/auth/login');
         }
 
         req.user = user;
