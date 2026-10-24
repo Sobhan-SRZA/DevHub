@@ -15,19 +15,16 @@ export async function attachUserLocals(req: any, res: Response, next: NextFuncti
         // اگه req.user از قبل هست (توسط requireAuth/optionalAuth)، از همون id استفاده کن
         const userId = req.user?._id || req.user?.id;
 
-        console.log("🚀 ~ attachUserLocals ~ userId:", userId)
         if (userId) {
             const user = await User.findById(userId)
                 .select("name username email emailVerified emailVerifiedAt avatar bio role createdAt pendingEmail")
                 .lean();
-            console.log("🚀 ~ attachUserLocals ~ user:", user)
 
             if (user) {
                 res.locals.currentUser = user;
                 res.locals.userRole = user.role || "user";
                 res.locals.isAdmin = ["admin", "developer"].includes(user.role);
                 res.locals.isDeveloper = user.role === "developer";
-                console.log("🚀 ~ attachUserLocals ~ res.locals:", res.locals)
             }
         }
     } catch (err) {
