@@ -1,20 +1,26 @@
 /* ============================================================
-   DASHBOARD SIDEBAR — Redesigned
+   DASHBOARD SIDEBAR — Desktop Only + Collapsible
    ============================================================ */
 
-/* ---------- Layout (بدون تغییر) ---------- */
+/* ---------- Layout ---------- */
 .dash-layout {
+    --sidebar-width: 260px;
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: var(--sidebar-width) 1fr;
     gap: 24px;
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px 60px;
     width: 100%;
     direction: rtl;
+    transition: grid-template-columns 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-/* ---------- Sidebar base ---------- */
+.dash-layout.is-collapsed {
+    --sidebar-width: 76px;
+}
+
+/* ---------- Sidebar ---------- */
 .dash-sidebar {
     position: sticky;
     top: 90px;
@@ -26,6 +32,7 @@
     flex-direction: column;
     max-height: calc(100vh - 110px);
     overflow: hidden;
+    transition: width 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 /* ---------- Brand ---------- */
@@ -33,50 +40,61 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 16px 16px 14px;
+    padding: 16px;
     border-bottom: 1px solid #161616;
     position: relative;
+    transition: padding 0.25s ease;
 }
 
 .dash-brand__icon {
     width: 32px;
     height: 32px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, #007bff, #6ebbff);
+    /* border-radius: 9px; */
+    /* background: linear-gradient(135deg, #007bff, #6ebbff); */
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1rem;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    /* box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3); */
 }
 
 .dash-brand__name {
     color: #fff;
     font-weight: 700;
     font-size: 0.95rem;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
 }
 
-.dash-sidebar__close {
-    display: none;
+/* ---------- Collapse button ---------- */
+.dash-collapse-btn {
     margin-right: auto;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
-    border: none;
+    border: 1px solid #262626;
+    border-radius: 6px;
     color: #888;
     cursor: pointer;
-    padding: 6px;
-    border-radius: 6px;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
-.dash-sidebar__close:hover {
+.dash-collapse-btn:hover {
     background: #1a1a1a;
     color: #fff;
+    border-color: #3a3a3a;
 }
 
-/* ============================================================
-   USER CARD
-   ============================================================ */
+.dash-collapse-btn svg {
+    transition: transform 0.3s ease;
+}
+
+/* ---------- User card ---------- */
 .dash-user-card {
     display: flex;
     align-items: center;
@@ -88,6 +106,7 @@
     border-radius: 12px;
     position: relative;
     overflow: hidden;
+    transition: padding 0.25s ease, margin 0.25s ease;
 }
 
 .dash-user-card::before {
@@ -124,6 +143,8 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
 }
 
 .dash-user-card__name {
@@ -155,12 +176,11 @@
     font-size: 0.75rem;
 }
 
-/* ============================================================
-   NAV SECTIONS
-   ============================================================ */
+/* ---------- Nav ---------- */
 .dash-nav {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0 10px 10px;
     display: flex;
     flex-direction: column;
@@ -196,6 +216,9 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
 }
 
 .dash-nav__section-emoji {
@@ -207,6 +230,7 @@
     height: 1px;
     background: #161616;
     margin: 8px 12px;
+    transition: margin 0.25s ease;
 }
 
 /* ---------- Nav item ---------- */
@@ -222,6 +246,7 @@
     text-decoration: none;
     transition: all 0.2s ease;
     position: relative;
+    overflow: hidden;
 }
 
 .dash-nav__item::after {
@@ -265,12 +290,13 @@
     border-radius: 3px 0 0 3px;
 }
 
-.dash-nav__item span {
+.dash-nav__item span:not(.dash-nav__badge) {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: right;
+    transition: opacity 0.2s ease;
 }
 
 /* ---------- Badge ---------- */
@@ -287,6 +313,7 @@
     font-size: 0.65rem;
     font-weight: 700;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .dash-nav__badge.visible {
@@ -294,7 +321,87 @@
 }
 
 /* ============================================================
-   FOOTER — Logout
+   COLLAPSED STATE
+   ============================================================ */
+.dash-layout.is-collapsed .dash-sidebar {
+    width: 76px;
+}
+
+.dash-layout.is-collapsed .dash-brand {
+    padding: 16px 0;
+    justify-content: center;
+}
+
+.dash-layout.is-collapsed .dash-brand__name,
+.dash-layout.is-collapsed .dash-user-card__info,
+.dash-layout.is-collapsed .dash-nav__section-label,
+.dash-layout.is-collapsed .dash-nav__item span:not(.dash-nav__badge),
+.dash-layout.is-collapsed .dash-logout-btn span {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+.dash-layout.is-collapsed .dash-collapse-btn {
+    position: absolute;
+    top: 50%;
+    left: -13px;
+    transform: translateY(-50%);
+    background: #1a1a1a;
+    z-index: 10;
+    width: 24px;
+    height: 24px;
+}
+
+.dash-layout.is-collapsed .dash-collapse-btn svg {
+    transform: rotate(180deg);
+}
+
+.dash-layout.is-collapsed .dash-user-card {
+    padding: 8px;
+    margin: 12px 6px;
+    justify-content: center;
+}
+
+.dash-layout.is-collapsed .dash-user-card::before {
+    display: none;
+}
+
+.dash-layout.is-collapsed .dash-nav__item {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+}
+
+.dash-layout.is-collapsed .dash-nav__item.active::before {
+    right: 0;
+}
+
+.dash-layout.is-collapsed .dash-nav__badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.58rem;
+    padding: 0 3px;
+}
+
+.dash-layout.is-collapsed .dash-nav__divider {
+    margin: 8px 6px;
+}
+
+.dash-layout.is-collapsed .dash-sidebar__footer {
+    padding: 10px 6px;
+}
+
+.dash-layout.is-collapsed .dash-logout-btn {
+    padding: 9px 6px;
+    gap: 0;
+}
+
+/* ============================================================
+   FOOTER
    ============================================================ */
 .dash-sidebar__footer {
     padding: 10px;
@@ -318,6 +425,8 @@
     font-family: inherit;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .dash-logout-btn:hover {
@@ -328,29 +437,50 @@
 
 .dash-logout-btn svg {
     opacity: 0.8;
+    flex-shrink: 0;
 }
 
-/* ============================================================
-   BACKDROP (mobile)
-   ============================================================ */
-.dash-backdrop {
+.dash-logout-btn span {
+    transition: opacity 0.2s ease;
+}
+
+.dash-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #777;
+    flex-wrap: wrap;
+}
+
+.dash-breadcrumb a {
+    color: #6ebbff;
+    padding-bottom: 0;
+}
+
+.dash-breadcrumb a::after {
     display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-    z-index: 900;
-    opacity: 0;
-    transition: opacity 0.25s ease;
 }
 
-.dash-backdrop.open {
-    display: block;
-    opacity: 1;
+.dash-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.dash-breadcrumb span:last-child {
+    color: #ddd;
+    font-weight: 600;
+}
+
+/* Show topbar on mobile too — but without hamburger */
+.dash-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
 }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — HIDE SIDEBAR ON MOBILE (header drawer handles it)
    ============================================================ */
 @media (max-width: 900px) {
     .dash-layout {
@@ -359,35 +489,57 @@
         padding-right: 14px;
     }
 
+    /* ✅ Hide sidebar completely on mobile — header's drawer takes over */
     .dash-sidebar {
-        position: fixed;
-        top: 0;
-        right: -280px;
-        bottom: 0;
-        width: 260px;
-        border-radius: 0;
-        border: none;
-        border-left: 1px solid #1a1a1a;
-        max-height: 100vh;
-        z-index: 950;
-        transition: right 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
-    }
-
-    .dash-sidebar.open {
-        right: 0;
-    }
-
-    .dash-sidebar__close {
-        display: flex;
+        display: none !important;
     }
 
     .dash-main {
         padding-top: 0;
     }
+}
 
-    .dash-topbar {
-        display: flex;
-    }
+/* ============================================================
+   TOOLTIP ON HOVER WHEN COLLAPSED
+   ============================================================ */
+.dash-layout.is-collapsed .dash-nav__item {
+    position: relative;
+}
+
+.dash-layout.is-collapsed .dash-nav__item::before {
+    content: attr(title);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f1f1f;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.15s ease;
+    z-index: 100;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.dash-layout.is-collapsed .dash-nav__item:hover::before {
+    opacity: 1;
+    visibility: visible;
+    right: calc(100% + 12px);
+}
+
+.dash-layout.is-collapsed .dash-nav__item.active::before {
+    content: none;
+}
+
+.dash-layout.is-collapsed .dash-nav__item:hover {
+    overflow: visible;
 }
 
 /**
