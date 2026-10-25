@@ -77,7 +77,7 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
 async function ghFetch<T>(path: string): Promise<T> {
     const headers: Record<string, string> = {
         Accept: "application/vnd.github+json",
-        "User-Agent": "manage-projects-app",
+        "User-Agent": "devhub-app",
     };
 
     if (process.env.GITHUB_TOKEN) {
