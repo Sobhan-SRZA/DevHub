@@ -22,72 +22,72 @@ const router = Router();
 /* ==================================================================
    Public
    ================================================================== */
-router.get('/', optionalAuth, ctrl.listProjects);
-router.get('/explore', ctrl.explore);
-router.get('/home-feed', ctrl.homeFeeds);
-router.get('/:idOrSlug', optionalAuth, ctrl.getProject);
+router.get("/", optionalAuth, ctrl.listProjects);
+router.get("/explore", ctrl.explore);
+router.get("/home-feed", ctrl.homeFeeds);
+router.get("/:idOrSlug", optionalAuth, ctrl.getProject);
 
 /* ==================================================================
    Nested routes — reviews و comments
    ================================================================== */
-router.use('/:idOrSlug/reviews', reviewRoutes);
-router.use('/:idOrSlug/comments', commentRoutes);
+router.use("/:idOrSlug/reviews", reviewRoutes);
+router.use("/:idOrSlug/comments", commentRoutes);
 
 /* ==================================================================
    Protected — CRUD پروژه
    ================================================================== */
-router.post('/', requireAuth, ctrl.createProject);
-router.put('/:id', requireAuth, requireProjectOwnership, ctrl.updateProject);
-router.delete('/:id', requireAuth, requireProjectOwnership, ctrl.deleteProject);
-router.post('/:id/sync-github', requireAuth, requireProjectOwnership, ctrl.syncGithub);
-router.patch('/:id/status', requireAuth, requireProjectOwnership, ctrl.toggleStatus);
+router.post("/", requireAuth, ctrl.createProject);
+router.put("/:id", requireAuth, requireProjectOwnership, ctrl.updateProject);
+router.delete("/:id", requireAuth, requireProjectOwnership, ctrl.deleteProject);
+router.post("/:id/sync-github", requireAuth, requireProjectOwnership, ctrl.syncGithub);
+router.patch("/:id/status", requireAuth, requireProjectOwnership, ctrl.toggleStatus);
 
 /* ==================================================================
    Uploads
    ================================================================== */
 router.post(
-    '/:id/images',
+    "/:id/images",
     requireAuth,
     requireProjectOwnership,
     mwUploadImages,
     ctrl.uploadProjectImages
 );
 router.delete(
-    '/:id/images/:imageId',
+    "/:id/images/:imageId",
     requireAuth,
     requireProjectOwnership,
     ctrl.deleteProjectImage
 );
 router.patch(
-    '/:id/images/order',
+    "/:id/images/order",
     requireAuth,
     requireProjectOwnership,
     ctrl.reorderImages
 );
 
 router.post(
-    '/:id/video',
+    "/:id/video",
     requireAuth,
     requireProjectOwnership,
     mwUploadVideo,
     ctrl.uploadProjectVideo
 );
 router.delete(
-    '/:id/video',
+    "/:id/video",
     requireAuth,
     requireProjectOwnership,
     ctrl.deleteProjectVideo
 );
 
 router.post(
-    '/:id/file',
+    "/:id/file",
     requireAuth,
     requireProjectOwnership,
     mwUploadZip,
     ctrl.uploadProjectZip
 );
 router.delete(
-    '/:id/file',
+    "/:id/file",
     requireAuth,
     requireProjectOwnership,
     ctrl.deleteProjectZip
@@ -96,7 +96,7 @@ router.delete(
 /* ==================================================================
    Download
    ================================================================== */
-router.get('/:idOrSlug/download', optionalAuth, loadProject, ctrl.downloadProject);
+router.get("/:idOrSlug/download", optionalAuth, loadProject, ctrl.downloadProject);
 
 export default router;
 
