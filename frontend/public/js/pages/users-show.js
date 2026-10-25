@@ -155,12 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* ---------- stats ---------- */
         $('#statProjects').textContent = formatNumber(u.stats.projects);
-        $('#statReviews').textContent = formatNumber(u.stats.reviews);
+        $('#statReviews').textContent = formatNumber(u.stats.reviewsReceived);   // ← changed
         $('#statDownloads').textContent = formatNumber(u.stats.downloads);
         $('#statRating').textContent = (u.stats.rating || 0).toFixed(1);
 
         $('#tabProjectsCount').textContent = formatNumber(u.stats.projects);
-        $('#tabReviewsCount').textContent = formatNumber(u.stats.reviews);
+        $('#tabReviewsCount').textContent = formatNumber(u.stats.reviewsReceived); // ← changed
 
         /* ---------- actions (own profile) ---------- */
         if (state.isOwn) {
@@ -279,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams({
                 page: state.reviews.page,
                 limit: 10,
+                sort: 'recent'
             });
 
             const data = await api(`/api/users/${encodeURIComponent(idOrUsername)}/reviews?${params}`);
@@ -286,10 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
             state.reviews.totalPages = data.pagination?.pages || 1;
 
             if (!data.reviews.length) {
-                list.innerHTML = `<div class="pp-empty">
-                    این کاربر هنوز ریویویی ثبت نکرده است
-                </div>`;
+                list.innerHTML = `
+                    <div class="pp-empty">
+                        هنوز ریویویی برای پروژه‌های این کاربر ثبت نشده
+                    </div>
+                `;
+
                 renderPagination('reviews');
+
                 return;
             }
 
@@ -301,36 +306,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderReviewCard(r) {
+        const reviewer = r.user || {};
         const p = r.project || {};
-        const cover = p.images?.[0]?.url;
-        const initial = !cover ? escapeHtml((p.title || '?')[0].toUpperCase()) : '';
-        const thumbStyle = cover ? `background-image:url('${escapeHtml(cover)}')` : '';
 
+        /* ---------- reviewer (نویسنده ریویو) ---------- */
+        const reviewerName = reviewer.name || reviewer.username || 'کاربر';
+        const reviewerInitial = reviewerName.trim().charAt(0).toUpperCase();
+        const reviewerAvatarStyle = reviewer.avatar?.url
+            ? `background-image:url('${escapeHtml(reviewer.avatar.url)}');background-size:cover;background-position:center;`
+            : '';
+        const reviewerLink = reviewer.username
+            ? `/users/${encodeURIComponent(reviewer.username)}`
+            : null;
+
+        /* ---------- project (پروژه‌ای که ریویو روشه) ---------- */
+        const cover = p.images?.[0]?.url;
+        const projectInitial = !cover ? escapeHtml((p.title || '?')[0].toUpperCase()) : '';
+        const thumbStyle = cover ? `background-image:url('${escapeHtml(cover)}')` : '';
+        const projectLink = p.slug
+            ? `/projects/${encodeURIComponent(p.slug)}`
+            : p._id
+                ? `/projects/${p._id}`
+                : '#';
+
+        /* ---------- stars ---------- */
         const stars = Array.from({ length: 5 }, (_, i) =>
             i < Math.round(r.rating || 0)
                 ? '<span style="color:#fbbf24">★</span>'
                 : '<span style="color:#2a2a2a">★</span>'
         ).join('');
 
+        /* ---------- avatar element ---------- */
+        const avatarHtml = reviewerLink
+            ? `<a href="${reviewerLink}" class="pp-review-card__reviewer-avatar" style="${reviewerAvatarStyle}" onclick="event.stopPropagation();">
+                ${!reviewer.avatar?.url ? escapeHtml(reviewerInitial) : ''}
+           </a>`
+            : `<div class="pp-review-card__reviewer-avatar" style="${reviewerAvatarStyle}">
+                ${!reviewer.avatar?.url ? escapeHtml(reviewerInitial) : ''}
+           </div>`;
+
+        /* ---------- name element ---------- */
+        const nameHtml = reviewerLink
+            ? `<a href="${reviewerLink}" class="pp-review-card__reviewer-name" onclick="event.stopPropagation();">${escapeHtml(reviewerName)}</a>`
+            : `<span class="pp-review-card__reviewer-name">${escapeHtml(reviewerName)}</span>`;
+
         return `
             <article class="pp-review-card">
+
+                <!-- reviewer -->
                 <div class="pp-review-card__head">
+                    ${avatarHtml}
+                    <div class="pp-review-card__reviewer-info">
+                        ${nameHtml}
+                        <span class="pp-review-card__date">${relativeTime(r.createdAt)}</span>
+                    </div>
                     <div class="pp-review-card__stars">${stars}</div>
-                    <span class="pp-review-card__date">${relativeTime(r.createdAt)}</span>
                 </div>
 
-                <a class="pp-review-card__project" href="/projects/${escapeHtml(p.slug || p._id)}">
-                    <div class="pp-review-card__project-thumb" style="${thumbStyle}">${initial}</div>
+                <!-- project -->
+                <a class="pp-review-card__project" href="${projectLink}" onclick="event.stopPropagation();">
+                    <div class="pp-review-card__project-thumb" style="${thumbStyle}">${projectInitial}</div>
                     <div class="pp-review-card__project-info">
+                        <span class="pp-review-card__project-label">درباره پروژه</span>
                         <div class="pp-review-card__project-title">${escapeHtml(p.title || '—')}</div>
-                        <div class="pp-review-card__project-meta">${escapeHtml(p.shortDescription || '')}</div>
                     </div>
                     <div class="pp-review-card__project-arrow">‹</div>
                 </a>
 
+                <!-- content -->
                 ${r.title ? `<h4 class="pp-review-card__title">${escapeHtml(r.title)}</h4>` : ''}
                 ${r.body ? `<p class="pp-review-card__body">${escapeHtml(r.body)}</p>` : ''}
 
+                <!-- satisfaction -->
                 <div class="pp-review-card__satisfaction">
                     <span>رضایت</span>
                     <div class="pp-review-card__satisfaction-bar">
@@ -339,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${r.satisfaction || 0}%</span>
                 </div>
             </article>
-        `;
+         `;
     }
 
     /* ============================================================
