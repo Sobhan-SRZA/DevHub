@@ -35,15 +35,20 @@ export const getPublicProfile = asyncHandler(async (req: Request, res: Response)
     }
 
     /* ---------- stats ---------- */
-    const [projectsCount, reviewsCount, downloadsAgg, ratingAgg] = await Promise.all([
+    const [projectsCount, reviewsWritten, downloadsAgg, reviewStatsAgg] = await Promise.all([
+        // تعداد پروژه‌های منتشرشده
         Project.countDocuments({ owner: user._id, status: "published", isPublic: true }),
+
+        // تعداد ریویوهایی که این کاربر داده (برای آمار در صورت نیاز)
         Review.countDocuments({ user: user._id }),
 
+        // مجموع دانلودها
         Project.aggregate([
             { $match: { owner: user._id, status: "published", isPublic: true } },
             { $group: { _id: null, total: { $sum: "$downloads" } } }
         ]),
 
+        // آمار ریویوهای دریافتی از aggregate Project
         Project.aggregate([
             { $match: { owner: user._id, status: "published", isPublic: true } },
             {
@@ -55,6 +60,9 @@ export const getPublicProfile = asyncHandler(async (req: Request, res: Response)
             }
         ])
     ]);
+
+    const avgRating = reviewStatsAgg[0]?.avgRating ? Math.round(reviewStatsAgg[0].avgRating * 10) / 10 : 0;
+    const reviewsReceived = reviewStatsAgg[0]?.totalReviews || 0;
 
     res.json({
         ok: true,
@@ -69,10 +77,10 @@ export const getPublicProfile = asyncHandler(async (req: Request, res: Response)
             emailVerified: !!user.emailVerified,
             stats: {
                 projects: projectsCount,
-                reviews: reviewsCount,
+                reviewsReceived,      // ✅ ریویوهای دریافتی (روی پروژه‌های این کاربر)
+                reviewsGiven: reviewsWritten, // ✅ (اختیاری) ریویوهایی که داده
                 downloads: downloadsAgg[0]?.total || 0,
-                rating: ratingAgg[0]?.avgRating ? Math.round(ratingAgg[0].avgRating * 10) / 10 : 0,
-                totalProjectReviews: ratingAgg[0]?.totalReviews || 0
+                rating: avgRating
             }
         }
     });
@@ -132,34 +140,62 @@ export const getUserProjects = asyncHandler(async (req: Request, res: Response) 
 export const getUserReviews = asyncHandler(async (req: Request, res: Response) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(50, Number(req.query.limit) || 10);
+    const sort = String(req.query.sort || "recent");
 
     const user = await User.findOne(buildUserQuery((req.params as any).idOrUsername))
         .select("_id")
         .lean();
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED, "کاربر یافت نشد");
+
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED, "کاربر یافت نشد");
+
+    /* ---------- پیدا کردن همه‌ی پروژه‌های منتشرشده‌ی این کاربر ---------- */
+    const projectIds = await Project.find({
+        owner: user._id,
+        status: "published",
+        isPublic: true
+    }).distinct("_id");
+
+    if (!projectIds.length) {
+        return res.json({
+            ok: true,
+            reviews: [],
+            pagination: { page, limit, total: 0, pages: 0 }
+        });
+    }
+
+    /* ---------- مرتب‌سازی ---------- */
+    const sortMap: Record<string, any> = {
+        recent: { createdAt: -1 },
+        oldest: { createdAt: 1 },
+        highest: { rating: -1, createdAt: -1 },
+        lowest: { rating: 1, createdAt: -1 }
+    };
+
+    /* ---------- ریویوهای روی این پروژه‌ها ---------- */
+    const filter = { project: { $in: projectIds } };
 
     const [reviews, total] = await Promise.all([
-        Review.find({ user: user._id })
+        Review.find(filter)
             .populate({
                 path: "project",
-                select: "title slug shortDescription images status isPublic",
+                select: "title slug shortDescription images rating reviewCount"
             })
-            .sort({ createdAt: -1 })
+            .populate("user", "name username avatar")   // ← نویسنده‌ی ریویو
+            .sort(sortMap[sort] || sortMap.recent)
             .skip((page - 1) * limit)
             .limit(limit)
             .lean(),
 
-        Review.countDocuments({ user: user._id })
+        Review.countDocuments(filter)
     ]);
 
-    // فیلتر ریویوهایی که پروژه‌شون دیگه در دسترس نیست
-    const filtered = (reviews as any[]).filter(
-        (r) => r.project && r.project.status === "published" && r.project.isPublic !== false
-    );
+    /* ---------- فیلتر پروژه‌هایی که user هنوز داره ---------- */
+    const valid = (reviews as any[]).filter((r) => r.project);
 
     res.json({
         ok: true,
-        reviews: filtered,
+        reviews: valid,
         pagination: {
             page,
             limit,
