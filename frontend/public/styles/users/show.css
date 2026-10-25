@@ -1,0 +1,727 @@
+/* ============================================================
+   PUBLIC PROFILE PAGE
+   ============================================================ */
+
+.pub-profile {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 80px;
+}
+
+/* ============================================================
+   LOADING / ERROR
+   ============================================================ */
+.pp-loading,
+.pp-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 60vh;
+    color: #888;
+    text-align: center;
+}
+
+.pp-loading__spinner {
+    width: 42px;
+    height: 42px;
+    border: 3px solid #1f1f1f;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: pp-spin 0.8s linear infinite;
+}
+
+@keyframes pp-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.pp-error__icon {
+    font-size: 3rem;
+}
+
+.pp-error__title {
+    color: #fff;
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.pp-error__sub {
+    color: #777;
+    margin: 0 0 20px;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.pp-hero {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 28px;
+    background: linear-gradient(135deg, #0f0f0f, #141414);
+    border: 1px solid #1a1a1a;
+    border-radius: 18px;
+    overflow: hidden;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.pp-hero__glow {
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0, 123, 255, 0.15), transparent 70%);
+    filter: blur(50px);
+    pointer-events: none;
+}
+
+.pp-hero__avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    color: #fff;
+    font-size: 2.8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 12px 36px rgba(0, 123, 255, 0.35);
+    background-size: cover;
+    background-position: center;
+    border: 4px solid rgba(255, 255, 255, 0.04);
+    position: relative;
+    z-index: 1;
+}
+
+.pp-hero__info {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+    z-index: 1;
+}
+
+.pp-hero__name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.pp-hero__name {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.pp-hero__role {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: rgba(110, 187, 255, 0.12);
+    color: #6ebbff;
+    border: 1px solid rgba(110, 187, 255, 0.25);
+}
+
+.pp-hero__role[data-role="admin"] {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.pp-hero__role[data-role="developer"] {
+    background: rgba(236, 72, 153, 0.12);
+    color: #ec4899;
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+.pp-hero__verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.pp-hero__username {
+    color: #6ebbff;
+    font-size: 0.95rem;
+    margin: 0 0 4px;
+    direction: ltr;
+    text-align: right;
+    font-weight: 600;
+}
+
+.pp-hero__joined {
+    color: #777;
+    font-size: 0.82rem;
+    margin: 0 0 12px;
+}
+
+.pp-hero__bio {
+    color: #b0b0b0;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    margin-bottom: 16px;
+    max-height: 100px;
+    overflow: hidden;
+    position: relative;
+}
+
+.pp-hero__bio.md-preview-content {
+    direction: rtl;
+    text-align: right;
+}
+
+.pp-hero__bio.md-preview-content>*:first-child {
+    margin-top: 0 !important;
+}
+
+.pp-hero__bio.md-preview-content>*:last-child {
+    margin-bottom: 0 !important;
+}
+
+.pp-hero__bio.md-preview-content p {
+    margin: 0 0 8px;
+}
+
+.pp-hero__bio.md-preview-content h1,
+.pp-hero__bio.md-preview-content h2,
+.pp-hero__bio.md-preview-content h3 {
+    font-size: 1rem;
+    margin: 8px 0 4px;
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+.pp-hero__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #1a1a1a;
+}
+
+.pp-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 6px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.pp-stat__value {
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.pp-stat__label {
+    color: #777;
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+/* ============================================================
+   ACTIONS (own profile)
+   ============================================================ */
+.pp-hero__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.pp-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #0e0e0e;
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+    width: fit-content;
+    margin-bottom: 18px;
+}
+
+.pp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.pp-tab:hover {
+    background: #171717;
+    color: #ccc;
+}
+
+.pp-tab.active {
+    background: #1e1e1e;
+    color: #fff;
+}
+
+.pp-tab.active svg {
+    color: #6ebbff;
+}
+
+.pp-tab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #2a2a2a;
+    color: #aaa;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.pp-tab.active .pp-tab__badge {
+    background: rgba(0, 123, 255, 0.2);
+    color: #6ebbff;
+}
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+.pp-panel {
+    display: none;
+}
+
+.pp-panel.active {
+    display: block;
+}
+
+.pp-empty {
+    padding: 60px 20px;
+    text-align: center;
+    color: #666;
+    background: #0e0e0e;
+    border: 1px dashed #1f1f1f;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    grid-column: 1 / -1;
+}
+
+/* ============================================================
+   PROJECTS
+   ============================================================ */
+.pp-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.pp-proj-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: #0b0b0b;
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+    text-align: right;
+    cursor: pointer;
+}
+
+.pp-proj-card::after {
+    display: none;
+}
+
+.pp-proj-card:hover {
+    border-color: #2a2a2a;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    background: #0f0f0f;
+}
+
+.pp-proj-card__cover {
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, #101010, #1a1a1a);
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.pp-proj-card__initial {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: rgba(110, 187, 255, 0.15);
+}
+
+.pp-proj-card__body {
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pp-proj-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pp-proj-card__desc {
+    color: #888;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pp-proj-card__stats {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #161616;
+    flex-wrap: wrap;
+}
+
+.pp-proj-card__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #888;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.pp-proj-card__stat--star {
+    color: #fbbf24;
+}
+
+.pp-proj-card__stat--download {
+    color: #34d399;
+}
+
+/* ============================================================
+   REVIEWS
+   ============================================================ */
+.pp-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pp-review-card {
+    background: #0e0e0e;
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.pp-review-card:hover {
+    border-color: #262626;
+}
+
+.pp-review-card__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.pp-review-card__stars {
+    display: flex;
+    gap: 2px;
+    color: #fbbf24;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.pp-review-card__date {
+    color: #666;
+    font-size: 0.75rem;
+    margin-right: auto;
+}
+
+.pp-review-card__project {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: #141414;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.pp-review-card__project::after {
+    display: none;
+}
+
+.pp-review-card__project:hover {
+    border-color: #2a2a2a;
+}
+
+.pp-review-card__project-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #1a1a1a center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6ebbff;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.pp-review-card__project-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: right;
+}
+
+.pp-review-card__project-title {
+    color: #ddd;
+    font-weight: 600;
+    font-size: 0.88rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pp-review-card__project-meta {
+    color: #666;
+    font-size: 0.72rem;
+}
+
+.pp-review-card__project-arrow {
+    color: #555;
+    flex-shrink: 0;
+}
+
+.pp-review-card__title {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 6px;
+    text-align: right;
+}
+
+.pp-review-card__body {
+    color: #bbb;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    margin: 0;
+    white-space: pre-wrap;
+    text-align: right;
+}
+
+.pp-review-card__satisfaction {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #161616;
+    color: #888;
+    font-size: 0.78rem;
+}
+
+.pp-review-card__satisfaction-bar {
+    flex: 1;
+    max-width: 120px;
+    height: 5px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.pp-review-card__satisfaction-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pp-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px 0;
+    flex-wrap: wrap;
+}
+
+.pp-page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    background: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #bbb;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pp-page-btn:hover:not(:disabled) {
+    background: #1e1e1e;
+    color: #fff;
+    border-color: #333;
+}
+
+.pp-page-btn.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    font-weight: 700;
+}
+
+.pp-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .pub-profile {
+        padding: 20px 14px 60px;
+    }
+
+    .pp-hero {
+        padding: 20px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .pp-hero__info {
+        text-align: center;
+        min-width: 100%;
+    }
+
+    .pp-hero__name-row {
+        justify-content: center;
+    }
+
+    .pp-hero__username,
+    .pp-hero__joined {
+        text-align: center;
+    }
+
+    .pp-hero__bio {
+        text-align: center;
+    }
+
+    .pp-hero__stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pp-hero__actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .pp-hero__avatar {
+        width: 88px;
+        height: 88px;
+        font-size: 2.2rem;
+    }
+
+    .pp-hero__name {
+        font-size: 1.4rem;
+    }
+
+    .pp-projects-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pp-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .pp-tab {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */

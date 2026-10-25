@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCard(p) {
         const owner = p.owner || {};
         const ownerName = owner.name || owner.username || 'کاربر';
-        const ownerInitial = ownerName.charAt(0).toUpperCase();
         const cover = p.images?.[0]?.url || '';
         const tags = (p.tags || []).slice(0, 3);
         const moreTags = (p.tags || []).length - tags.length;
@@ -77,82 +76,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const isNew = ageHours < 72;
         const isHot = (p.githubData?.stars || 0) > 50 || (p.downloads || 0) > 100;
 
-        /* owner avatar */
-        const ownerAvatarStyle = owner.avatar?.url
-            ? `background-image:url('${escapeHtml(owner.avatar.url)}');background-size:cover;background-position:center;`
-            : '';
-
-        /* cover */
-        const coverStyle = cover
-            ? `background-image:url('${escapeHtml(cover)}');`
-            : '';
+        const coverStyle = cover ? `background-image:url('${escapeHtml(cover)}');` : '';
         const initial = !cover ? `<span class="pc__cover-initial">${escapeHtml((p.title || '?')[0])}</span>` : '';
 
-        /* badges */
         const badges = [];
         if (p.featured) badges.push('<span class="pc__badge pc__badge--featured">★ ویژه</span>');
         if (isHot) badges.push('<span class="pc__badge pc__badge--hot">🔥 داغ</span>');
         if (isNew && !isHot) badges.push('<span class="pc__badge pc__badge--new">جدید</span>');
 
-        /* tags */
         const tagsHtml = tags.map((t) => `
-            <span class="pc__tag" style="background:${hexA(t.color, 0.1)}; color:${t.color}; border-color:${hexA(t.color, 0.25)}">
-                ${escapeHtml(t.name)}
-            </span>
-        `).join('');
+        <span class="pc__tag" style="background:${hexA(t.color, 0.1)}; color:${t.color}; border-color:${hexA(t.color, 0.25)}">
+            ${escapeHtml(t.name)}
+        </span>
+    `).join('');
 
-        /* stats */
         const stats = [];
-        if (p.githubData?.stars) {
-            stats.push(`<span class="pc__stat pc__stat--star">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                ${formatNumber(p.githubData.stars)}
-            </span>`);
-        }
-        if (p.downloads) {
-            stats.push(`<span class="pc__stat pc__stat--download">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                ${formatNumber(p.downloads)}
-            </span>`);
-        }
-        if (p.rating) {
-            stats.push(`<span class="pc__stat pc__stat--rating">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                ${p.rating.toFixed(1)}
-            </span>`);
-        }
+        if (p.githubData?.stars) stats.push(`<span class="pc__stat pc__stat--star">⭐ ${formatNumber(p.githubData.stars)}</span>`);
+        if (p.downloads) stats.push(`<span class="pc__stat pc__stat--download">⬇ ${formatNumber(p.downloads)}</span>`);
+        if (p.rating) stats.push(`<span class="pc__stat pc__stat--rating">★ ${p.rating.toFixed(1)}</span>`);
+
+        /* ✅ کاربر به‌عنوان link */
+        const ownerChip = window.userChip
+            ? window.userChip(owner, { size: 26, showName: true, className: 'pc__owner-chip' })
+            : `<span class="pc__owner-name">${escapeHtml(ownerName)}</span>`;
 
         return `
-            <a class="pc" href="/projects/${p.slug}">
-                <div class="pc__cover" style="${coverStyle}">
-                    ${initial}
-                    ${badges.length ? `<div class="pc__badges">${badges.join('')}</div>` : ''}
-                </div>
+        <article class="pc" data-href="/projects/${escapeHtml(p.slug)}">
+            <div class="pc__cover" style="${coverStyle}">
+                ${initial}
+                ${badges.length ? `<div class="pc__badges">${badges.join('')}</div>` : ''}
+            </div>
+            <div class="pc__body">
+                <h3 class="pc__title">${escapeHtml(p.title)}</h3>
+                <p class="pc__desc">${escapeHtml(p.shortDescription || '')}</p>
 
-                <div class="pc__body">
-                    <h3 class="pc__title">${escapeHtml(p.title)}</h3>
-                    <p class="pc__desc">${escapeHtml(p.shortDescription || '')}</p>
-
-                    ${tags.length ? `
-                        <div class="pc__tags">
-                            ${tagsHtml}
-                            ${moreTags > 0 ? `<span class="pc__tag pc__tag--more">+${moreTags}</span>` : ''}
-                        </div>
-                    ` : ''}
-
-                    <div class="pc__footer">
-                        <div class="pc__owner" title="ساخته شده توسط ${escapeHtml(ownerName)}">
-                            <div class="pc__owner-avatar" style="${ownerAvatarStyle}">
-                                ${!owner.avatar?.url ? ownerInitial : ''}
-                            </div>
-                            <span class="pc__owner-name">${escapeHtml(ownerName)}</span>
-                        </div>
-
-                        ${stats.length ? `<div class="pc__stats">${stats.join('')}</div>` : ''}
+                ${tags.length ? `
+                    <div class="pc__tags">
+                        ${tagsHtml}
+                        ${moreTags > 0 ? `<span class="pc__tag pc__tag--more">+${moreTags}</span>` : ''}
                     </div>
+                ` : ''}
+
+                <div class="pc__footer">
+                    <div class="pc__owner">
+                        ${ownerChip}
+                    </div>
+                    ${stats.length ? `<div class="pc__stats">${stats.join('')}</div>` : ''}
                 </div>
-            </a>
-        `;
+            </div>
+        </article>
+    `;
     }
 
     /* ---------------- Render page ---------------- */
@@ -184,6 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="explore-empty__sub">اولین نفری باشید که پروژه‌اش را به اشتراک می‌گذارد</p>
                 </div>
             `;
+            
+            main.querySelectorAll('.pc[data-href]').forEach((card) => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('a, button')) return;
+                    location.href = card.dataset.href;
+                });
+                card.style.cursor = 'pointer';
+            });
         } catch (err) {
             main.innerHTML = `
                 <div class="explore-empty">

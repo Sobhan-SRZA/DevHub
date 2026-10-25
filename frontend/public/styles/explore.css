@@ -701,6 +701,23 @@
     }
 }
 
+.pc {
+    cursor: pointer;
+}
+
+.pc__owner-chip {
+    gap: 6px;
+}
+
+.pc__owner-chip .user-chip__name {
+    font-size: 0.78rem;
+    color: #999;
+}
+
+.pc__owner-chip:hover .user-chip__name {
+    color: #6ebbff;
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *

@@ -105,6 +105,8 @@ export interface IProject {
     updatedAt: Date;
 }
 
+export type FilterProject = Partial<IProject>;
+
 type ProjectModel = Model<IProject>;
 
 /* ---------------- sub-schemas ---------------- */

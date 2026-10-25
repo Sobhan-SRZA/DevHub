@@ -152,7 +152,7 @@ export const listProjects = asyncHandler(async (req: any, res: Response) => {
 
     const [projects, total] = await Promise.all([
         Project.find(filter)
-            .populate("owner", "name username")
+            .populate("owner", "name username avatar")
             .populate("tags", "name slug color type")
             .sort(sort)
             .skip(skip)
@@ -184,7 +184,7 @@ export const getProject = asyncHandler(async (req: any, res: Response) => {
     const query = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
 
     const project = await Project.findOne(query)
-        .populate("owner", "name username")
+        .populate("owner", "name username avatar")
         .populate("tags", "name slug color type")
         .lean();
 

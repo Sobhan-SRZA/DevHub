@@ -88,6 +88,7 @@
 
         if (!data.users.length) {
           $('#usersTable').innerHTML = `<div class="dash-empty">کاربری یافت نشد</div>`;
+
           return;
         }
 
@@ -102,18 +103,22 @@
                     const name = u.name || u.username;
                     const isMe = String(u._id) === String(state.user.id);
                     const canChangeDeveloper = state.isDeveloper;
-
+                    const userLink = u.username ?
+                              `/users/${encodeURIComponent(u.username)}` :
+                              '#';
+                              
                     return `
                         <div class="users-table__row" data-id="${u._id}">
                             <div class="users-table__user">
-                                <div class="users-table__avatar" ${u.avatar?.url ? `style="background-image:url('${u.avatar.url}')"` : ''}>
+                                <a href="${userLink}" class="users-table__avatar" ${u.avatar?.url ? `style="background-image:url('${u.avatar.url}')"` : ''}>
                                     ${!u.avatar?.url ? name.charAt(0).toUpperCase() : ''}
-                                </div>
+                                </a>
                                 <div>
-                                    <div class="users-table__name">${escapeHtml(name)}</div>
+                                    <a href="${userLink}" class="users-table__name">${escapeHtml(name)}</a>
                                     <div class="users-table__email">${escapeHtml(u.email)}</div>
                                 </div>
                             </div>
+
 
                             <select class="dash-select" data-role-select ${isMe ? 'disabled' : ''}>
                                 <option value="user" ${u.role === 'user' ? 'selected' : ''}>کاربر</option>

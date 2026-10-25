@@ -41,6 +41,21 @@
     min-width: 0;
 }
 
+.users-table__avatar,
+.users-table__name {
+    text-decoration: none;
+    padding-bottom: 0;
+}
+
+.users-table__avatar::after,
+.users-table__name::after {
+    display: none;
+}
+
+.users-table__name:hover {
+    color: #6ebbff;
+}
+
 .users-table__avatar {
     width: 36px;
     height: 36px;

@@ -192,6 +192,29 @@ document.addEventListener('DOMContentLoaded', () => {
         /* ---------- Owner ---------- */
         $('#ownerName').textContent = owner.name || owner.username || 'کاربر';
 
+        // link
+        const ownerLink = document.getElementById('ownerLink');
+        if (ownerLink && owner.username) {
+            ownerLink.href = `/users/${encodeURIComponent(owner.username)}`;
+        }
+
+        else if (ownerLink) {
+            ownerLink.removeAttribute('href');
+            ownerLink.style.pointerEvents = 'none';
+        }
+
+        // avatar
+        const ownerAvatar = document.getElementById('ownerAvatar');
+        if (owner.avatar?.url) {
+            ownerAvatar.style.backgroundImage = `url('${owner.avatar.url}')`;
+            ownerAvatar.textContent = '';
+        }
+
+        else {
+            ownerAvatar.textContent = (owner.name || '?').charAt(0).toUpperCase();
+        }
+
+
         /* ---------- Actions ---------- */
         if (p.githubUrl) {
             const ghBtn = $('#btnGithub');
@@ -504,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderReviews(reviews) {
         if (!reviews.length) {
             $('#reviewsList').innerHTML = `<div class="panel-empty">هنوز ریویویی ثبت نشده — اولین نفر باشید!</div>`;
+
             return;
         }
 
@@ -514,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!filtered.length) {
             $('#reviewsList').innerHTML = `<div class="panel-empty">فقط ریویوی شما ثبت شده است</div>`;
+
             return;
         }
 
@@ -528,12 +553,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '<span style="color:#2a2a2a">★</span>'
             ).join('');
 
+            const avatarStyle = u.avatar?.url
+                ? `background-image:url('${escapeHtml(u.avatar.url)}')`
+                : '';
+
+            const userLink = u.username
+                ? `<a href="/users/${encodeURIComponent(u.username)}" class="review-item__avatar-link" onclick="event.stopPropagation();">
+                   <div class="review-item__avatar" style="${avatarStyle}">${!u.avatar?.url ? escapeHtml(initial) : ''}</div>
+               </a>`
+                : `<div class="review-item__avatar">${escapeHtml(initial)}</div>`;
+
+            const nameHtml = u.username
+                ? `<a href="/users/${encodeURIComponent(u.username)}" class="review-item__name-link">${escapeHtml(name)}</a>`
+                : `<span>${escapeHtml(name)}</span>`;
+
             return `
                 <article class="review-item" data-id="${r._id}">
                     <div class="review-item__head">
-                        <div class="review-item__avatar">${escapeHtml(initial)}</div>
+                        ${userLink}
                         <div class="review-item__author">
-                            <span class="review-item__name">${escapeHtml(name)}</span>
+                            <span class="review-item__name">${nameHtml}</span>
                             <span class="review-item__date">${relativeTime(r.createdAt)}</span>
                         </div>
                         <div class="review-item__stars">${starsHtml}</div>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/index.css">
+    <link rel="stylesheet" href="/styles/dialog.css">
+    <link rel="stylesheet" href="/styles/markdown-editor.css">
+    <link rel="stylesheet" href="/styles/users/show.css">
+    <title>پروفایل</title>
+</head>
+
+<body>
+    <%- include("../components/header") %>
+    <%- include("../components/dialogError") %>
+
+    <main class="pub-profile" id="pubProfile" data-id-or-username="<%= idOrUsername %>">
+
+        <!-- loading -->
+        <div class="pp-loading" id="ppLoading">
+            <div class="pp-loading__spinner"></div>
+            <p>در حال بارگذاری پروفایل…</p>
+        </div>
+
+        <!-- not found -->
+        <div class="pp-error" id="ppError" style="display:none;">
+            <div class="pp-error__icon">👤</div>
+            <h2 class="pp-error__title" id="ppErrorTitle">کاربر یافت نشد</h2>
+            <p class="pp-error__sub" id="ppErrorSub">—</p>
+            <a href="/" class="btn-primary">بازگشت به خانه</a>
+        </div>
+
+        <!-- content -->
+        <div class="pp-content" id="ppContent" style="display:none;">
+
+            <!-- ============ HERO ============ -->
+            <section class="pp-hero" id="ppHero">
+                <div class="pp-hero__glow"></div>
+
+                <div class="pp-hero__avatar" id="ppAvatar">?</div>
+
+                <div class="pp-hero__info">
+                    <div class="pp-hero__name-row">
+                        <h1 class="pp-hero__name" id="ppName">—</h1>
+                        <span class="pp-hero__role" id="ppRole">کاربر</span>
+                        <span class="pp-hero__verified" id="ppVerified" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            تایید شده
+                        </span>
+                    </div>
+
+                    <p class="pp-hero__username" id="ppUsername">@—</p>
+                    <p class="pp-hero__joined" id="ppJoined">عضو از —</p>
+
+                    <div class="pp-hero__bio" id="ppBio"></div>
+
+                    <!-- stats -->
+                    <div class="pp-hero__stats" id="ppStats">
+                        <div class="pp-stat">
+                            <span class="pp-stat__value" id="statProjects">0</span>
+                            <span class="pp-stat__label">پروژه</span>
+                        </div>
+                        <div class="pp-stat">
+                            <span class="pp-stat__value" id="statReviews">0</span>
+                            <span class="pp-stat__label">ریویو</span>
+                        </div>
+                        <div class="pp-stat">
+                            <span class="pp-stat__value" id="statDownloads">0</span>
+                            <span class="pp-stat__label">دانلود</span>
+                        </div>
+                        <div class="pp-stat">
+                            <span class="pp-stat__value" id="statRating">0.0</span>
+                            <span class="pp-stat__label">میانگین امتیاز</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pp-hero__actions" id="ppActions" style="display:none;">
+                    <a href="/dashboard/profile/settings" class="btn-secondary">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        ویرایش پروفایل
+                    </a>
+                    <a href="/dashboard" class="btn-ghost">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        داشبورد
+                    </a>
+                </div>
+            </section>
+
+            <!-- ============ TABS ============ -->
+            <div class="pp-tabs" id="ppTabs">
+                <button type="button" class="pp-tab active" data-tab="projects">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    پروژه‌ها
+                    <span class="pp-tab__badge" id="tabProjectsCount">0</span>
+                </button>
+                <button type="button" class="pp-tab" data-tab="reviews">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    ریویوها
+                    <span class="pp-tab__badge" id="tabReviewsCount">0</span>
+                </button>
+            </div>
+
+            <!-- ============ PROJECTS PANEL ============ -->
+            <section class="pp-panel active" data-panel="projects">
+                <div class="pp-projects-grid" id="ppProjectsGrid">
+                    <div class="pp-empty">در حال بارگذاری…</div>
+                </div>
+                <div class="pp-pagination" id="ppProjectsPagination"></div>
+            </section>
+
+            <!-- ============ REVIEWS PANEL ============ -->
+            <section class="pp-panel" data-panel="reviews">
+                <div class="pp-reviews-list" id="ppReviewsList">
+                    <div class="pp-empty">در حال بارگذاری…</div>
+                </div>
+                <div class="pp-pagination" id="ppReviewsPagination"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="/js/form-errors.js"></script>
+    <script src="/js/components/markdown-editor.js"></script>
+    <script src="/js/pages/users-show.js"></script>
+</body>
+
+</html>

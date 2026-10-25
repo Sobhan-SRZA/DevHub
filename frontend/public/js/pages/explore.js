@@ -79,6 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderGrid(data.projects || []);
             renderPagination(data.pagination);
             renderMeta(data);
+
+            grid.querySelectorAll('.pc[data-href]').forEach((card) => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('a, button')) return;
+                    location.href = card.dataset.href;
+                });
+                card.style.cursor = 'pointer';
+            });
         } catch (err) {
             grid.innerHTML = `
                 <div class="explore-empty">

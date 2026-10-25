@@ -65,7 +65,7 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
             project: project._id,
             parent: null
         })
-            .populate("user", "name username")
+            .populate("user", "name username avatar")
             .sort(sort)
             .skip(skip)
             .limit(q.limit)
@@ -80,7 +80,7 @@ export const listComments = asyncHandler(async (req: any, res: Response) => {
         project: project._id,
         parent: { $in: rootIds }
     })
-        .populate("user", "name username")
+        .populate("user", "name username avatar")
         .sort({ createdAt: 1 })
         .lean();
 
