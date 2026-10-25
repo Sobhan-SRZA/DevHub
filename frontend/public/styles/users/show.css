@@ -457,60 +457,120 @@
 }
 
 /* ============================================================
-   REVIEWS
+   REVIEW CARDS (reviews received on user's projects)
    ============================================================ */
 .pp-reviews-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 
 .pp-review-card {
     background: #0e0e0e;
     border: 1px solid #1a1a1a;
-    border-radius: 12px;
-    padding: 16px;
-    transition: border-color 0.2s ease;
+    border-radius: 14px;
+    padding: 16px 18px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    text-align: right;
 }
 
 .pp-review-card:hover {
     border-color: #262626;
+    background: #101010;
 }
 
+/* ---------- head: reviewer ---------- */
 .pp-review-card__head {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #161616;
 }
 
-.pp-review-card__stars {
-    display: flex;
-    gap: 2px;
-    color: #fbbf24;
-    font-size: 1rem;
+.pp-review-card__reviewer-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
     flex-shrink: 0;
+    text-decoration: none;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.15s ease;
+    line-height: 1;
+}
+
+.pp-review-card__reviewer-avatar::after {
+    display: none;
+}
+
+.pp-review-card__reviewer-avatar:hover {
+    transform: scale(1.05);
+}
+
+.pp-review-card__reviewer-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: right;
+}
+
+.pp-review-card__reviewer-name {
+    color: #e0e0e0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding-bottom: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+}
+
+.pp-review-card__reviewer-name::after {
+    display: none;
+}
+
+.pp-review-card__reviewer-name:hover {
+    color: #6ebbff;
 }
 
 .pp-review-card__date {
     color: #666;
     font-size: 0.75rem;
-    margin-right: auto;
 }
 
+.pp-review-card__stars {
+    display: flex;
+    gap: 2px;
+    font-size: 1rem;
+    flex-shrink: 0;
+    direction: ltr;
+}
+
+/* ---------- project link ---------- */
 .pp-review-card__project {
     display: flex;
-    gap: 10px;
     align-items: center;
-    padding: 10px;
+    gap: 10px;
+    padding: 10px 12px;
     background: #141414;
     border: 1px solid #1f1f1f;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 12px;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .pp-review-card__project::after {
@@ -518,12 +578,13 @@
 }
 
 .pp-review-card__project:hover {
-    border-color: #2a2a2a;
+    border-color: rgba(110, 187, 255, 0.3);
+    background: #161616;
 }
 
 .pp-review-card__project-thumb {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 8px;
     background: #1a1a1a center/cover;
     display: flex;
@@ -544,6 +605,15 @@
     text-align: right;
 }
 
+.pp-review-card__project-label {
+    color: #6ebbff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    opacity: 0.9;
+}
+
 .pp-review-card__project-title {
     color: #ddd;
     font-weight: 600;
@@ -551,49 +621,61 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: color 0.15s ease;
 }
 
-.pp-review-card__project-meta {
-    color: #666;
-    font-size: 0.72rem;
+.pp-review-card__project:hover .pp-review-card__project-title {
+    color: #6ebbff;
 }
 
 .pp-review-card__project-arrow {
     color: #555;
     flex-shrink: 0;
+    font-size: 1.2rem;
+    transition: transform 0.15s ease;
 }
 
+.pp-review-card__project:hover .pp-review-card__project-arrow {
+    color: #6ebbff;
+    transform: translateX(-2px);
+}
+
+/* ---------- content ---------- */
 .pp-review-card__title {
     color: #fff;
     font-size: 0.95rem;
     font-weight: 700;
     margin: 0 0 6px;
     text-align: right;
+    line-height: 1.5;
 }
 
 .pp-review-card__body {
-    color: #bbb;
+    color: #b0b0b0;
     font-size: 0.88rem;
     line-height: 1.75;
     margin: 0;
     white-space: pre-wrap;
     text-align: right;
+    word-break: break-word;
 }
 
+/* ---------- satisfaction ---------- */
 .pp-review-card__satisfaction {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 12px;
     padding-top: 10px;
     border-top: 1px solid #161616;
     color: #888;
     font-size: 0.78rem;
+    font-weight: 500;
 }
 
 .pp-review-card__satisfaction-bar {
     flex: 1;
-    max-width: 120px;
+    max-width: 140px;
     height: 5px;
     background: #1a1a1a;
     border-radius: 3px;
@@ -603,6 +685,29 @@
 .pp-review-card__satisfaction-fill {
     height: 100%;
     background: linear-gradient(90deg, #22c55e, #4ade80);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+    .pp-review-card {
+        padding: 14px;
+    }
+
+    .pp-review-card__head {
+        flex-wrap: wrap;
+    }
+
+    .pp-review-card__stars {
+        width: 100%;
+        order: 3;
+        margin-top: 4px;
+    }
+
+    .pp-review-card__satisfaction-bar {
+        max-width: 80px;
+    }
 }
 
 /* ============================================================
