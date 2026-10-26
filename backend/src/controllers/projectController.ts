@@ -242,15 +242,15 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
     /* ---------------- Spam check ---------------- */
     await assertNotSpam(data.shortDescription, {
         minLength: 10,
-        maxLinks: 2,
+        maxLinks: 1,
         checkHashDuplicate: true,
         userId: String(req.user._id),
-        field: 'shortDescription',
+        field: 'project.shortDescription',
     });
 
     await assertNotSpam(data.fullDescription, {
         minLength: 20,
-        maxLinks: 10,
+        maxLinks: 40,
         checkHashDuplicate: true,
         userId: String(req.user._id),
         field: 'fullDescription',
@@ -341,7 +341,7 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
         { path: "owner", select: "name username" },
         { path: "tags", select: "name slug color type" }
     ]);
-    
+
     const descCheck = data.fullDescription
         ? await checkSpam(data.fullDescription, { minLength: 20, maxLinks: 10 })
         : null;
@@ -381,18 +381,20 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
     if (data.shortDescription !== undefined) {
         await assertNotSpam(data.shortDescription, {
             minLength: 10,
-            maxLinks: 2,
+            maxLinks: 1,
             userId: String(req.user._id),
-            field: 'shortDescription',
+            allowTables: true,
+            field: 'project.shortDescription',
         });
     }
 
     if (data.fullDescription !== undefined) {
         await assertNotSpam(data.fullDescription, {
             minLength: 20,
-            maxLinks: 10,
+            maxLinks: 40,
             userId: String(req.user._id),
-            field: 'fullDescription',
+            allowTables: true,
+            field: 'project.fullDescription',
         });
     }
 
