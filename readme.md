@@ -116,7 +116,7 @@
 
 ```bash
 # 1. کلون
-git clone https://github.com/<your-user>/devhub.git
+git clone https://github.com/Sobhan-SRZA/DevHub.git
 cd devhub
 
 # 2. نصب پکیج‌ها
@@ -379,78 +379,3 @@ All rights reserved.
 **⭐ اگه این پروژه رو دوست داشتی، ستاره بده!**
 
 </div>
-```
-
----
-
-## 3️⃣ فایل‌های تکمیلی پیشنهادی
-
-### `CONTRIBUTING.md` (خلاصه)
-
-```markdown
-# Contributing to DevHub
-
-## Setup
-1. Fork & clone
-2. `npm install`
-3. `cp .env.example .env`
-4. `npm run dev`
-
-## Commit Convention
-- `feat:` — قابلیت جدید
-- `fix:` — رفع باگ
-- `docs:` — مستندات
-- `style:` — ظاهر (بدون تغییر منطق)
-- `refactor:` — بازنویسی
-- `test:` — تست
-- `chore:` — کارهای جانبی
-
-## PR Checklist
-- [ ] TypeScript بدون خطا
-- [ ] Validation سمت سرور اضافه شد
-- [ ] Error handling کامل
-- [ ] Responsive تست شد
-- [ ] RTL درست
-```
-
-### `.github/ISSUE_TEMPLATE/bug_report.md`
-
-```markdown
----
-name: Bug report
-about: گزارش باگ
-title: '[BUG] '
-labels: bug
----
-
-**توضیح باگ**
-...
-
-**مراحل بازتولید**
-1. ...
-2. ...
-
-**انتظار**
-...
-
-**واقعیت**
-...
-
-**محیط**
-- OS: 
-- Node: 
-- MongoDB: 
-- Browser: 
-```
-
----
-
-## 📊 خلاصه
-
-| مورد                | مقصد                        |
-| ------------------- | --------------------------- |
-| **GitHub About**    | بخش "About" پروژه در گیت‌هاب |
-| **Topics**          | تگ‌های پروژه                 |
-| **README.md**       | فایل اصلی ریشه              |
-| **CONTRIBUTING.md** | راهنمای مشارکت              |
-| **LICENSE**         | BSD-3-Clause                |
