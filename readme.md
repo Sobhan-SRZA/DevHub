@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/assets/logo.svg" alt="DevHub Logo" width="80" height="80" />
+<img src="./frontend/public/assets/logo.svg" alt="DevHub Logo" width="80" height="80" />
 
 # DevHub
 
