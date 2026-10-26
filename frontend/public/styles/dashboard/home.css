@@ -1,42 +1,4 @@
 /* ============================================================
-   DASHBOARD HOME
-   ============================================================ */
-
-.dash-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding-top: 24px;
-}
-
-.dash-topbar {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.dash-menu-btn {
-    background: #141414;
-    border: 1px solid #262626;
-    border-radius: 8px;
-    padding: 8px;
-    color: #ccc;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dash-topbar__title {
-    font-size: 1.05rem;
-    color: #fff;
-    margin: 0;
-    font-weight: 700;
-}
-
-/* ============================================================
    WELCOME HERO
    ============================================================ */
 .home-welcome {
@@ -46,6 +8,7 @@
     border: 1px solid #1a1a1a;
     border-radius: 18px;
     overflow: hidden;
+    width: 100%;
 }
 
 .home-welcome::before {
@@ -192,6 +155,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px;
+    width: 100%;
 }
 
 .home-stat-card {
@@ -278,6 +242,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    width: 100%;
 }
 
 .home-section__head {
@@ -477,8 +442,9 @@
    ============================================================ */
 .home-recent-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
     gap: 10px;
+    width: 100%;
 }
 
 .recent-proj {
@@ -600,16 +566,6 @@
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 900px) {
-    .dash-main {
-        padding-top: 0;
-    }
-
-    .dash-topbar {
-        display: flex;
-    }
-}
-
 @media (max-width: 640px) {
     .home-welcome__title {
         font-size: 1.25rem;

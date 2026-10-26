@@ -2,161 +2,150 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles/index.css">
-    <link rel="stylesheet" href="/styles/dialog.css">
-    <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
-    <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
-    <link rel="stylesheet" href="/styles/dashboard/logs.css">
-    <title>لاگ‌ها</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/dashboard/logs.css">
+  <title>لاگ‌ها</title>
 </head>
 
 <body>
-    <%- include("../components/header") %>
-    <%- include("../components/dialogError") %>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
 
-    <div class="dash-layout">
-        <%- include("../components/dashboard-nav") %>
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: 	"لاگ‌ها" }) %>
 
-        <main class="dash-main logs-main">
+    <main class="dash-main logs-main">
+      <!-- ============ HEAD ============ -->
+      <div class="dash-head">
+        <div>
+          <h2 class="dash-title">لاگ‌های سیستم</h2>
+          <p class="dash-sub">مشاهده و فیلتر لاگ‌های سرور</p>
+        </div>
+        <div class="logs-head-actions">
+          <button type="button" class="btn-ghost" id="clearBtn" title="پاک کردن buffer حافظه">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+            </svg>
+            پاک‌سازی
+          </button>
+          <button type="button" class="btn-ghost" id="downloadBtn" title="دانلود فایل">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            دانلود
+          </button>
+          <button type="button" class="btn-primary" id="refreshBtn">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            رفرش
+          </button>
+        </div>
+      </div>
 
-            <!-- Mobile topbar -->
-            <div class="dash-topbar">
-                <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()" aria-label="منو">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-                <h1 class="dash-topbar__title">لاگ‌ها</h1>
-            </div>
+      <!-- ============ STATS ============ -->
+      <div class="logs-stats" id="logsStats">
+        <div class="log-stat-card" data-level="all">
+          <span class="log-stat-card__dot" style="--c:#6ebbff"></span>
+          <div>
+            <span class="log-stat-card__label">همه</span>
+            <span class="log-stat-card__value" id="statTotal">0</span>
+          </div>
+        </div>
+        <div class="log-stat-card" data-level="info">
+          <span class="log-stat-card__dot" style="--c:#3b82f6"></span>
+          <div>
+            <span class="log-stat-card__label">Info</span>
+            <span class="log-stat-card__value" id="statInfo">0</span>
+          </div>
+        </div>
+        <div class="log-stat-card" data-level="warn">
+          <span class="log-stat-card__dot" style="--c:#fbbf24"></span>
+          <div>
+            <span class="log-stat-card__label">Warn</span>
+            <span class="log-stat-card__value" id="statWarn">0</span>
+          </div>
+        </div>
+        <div class="log-stat-card" data-level="error">
+          <span class="log-stat-card__dot" style="--c:#ef4444"></span>
+          <div>
+            <span class="log-stat-card__label">Error</span>
+            <span class="log-stat-card__value" id="statError">0</span>
+          </div>
+        </div>
+        <div class="log-stat-card" data-level="debug">
+          <span class="log-stat-card__dot" style="--c:#a78bfa"></span>
+          <div>
+            <span class="log-stat-card__label">Debug</span>
+            <span class="log-stat-card__value" id="statDebug">0</span>
+          </div>
+        </div>
+      </div>
 
-            <!-- ============ HEAD ============ -->
-            <div class="dash-head">
-                <div>
-                    <h2 class="dash-title">لاگ‌های سیستم</h2>
-                    <p class="dash-sub">مشاهده و فیلتر لاگ‌های سرور</p>
-                </div>
-                <div class="logs-head-actions">
-                    <button type="button" class="btn-ghost" id="clearBtn" title="پاک کردن buffer حافظه">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                        </svg>
-                        پاک‌سازی
-                    </button>
-                    <button type="button" class="btn-ghost" id="downloadBtn" title="دانلود فایل">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        دانلود
-                    </button>
-                    <button type="button" class="btn-primary" id="refreshBtn">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <polyline points="1 20 1 14 7 14"></polyline>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                        رفرش
-                    </button>
-                </div>
-            </div>
+      <!-- ============ FILTERS ============ -->
+      <div class="logs-filters">
+        <div class="logs-search">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="جستجو در لاگ‌ها…">
+        </div>
 
-            <!-- ============ STATS ============ -->
-            <div class="logs-stats" id="logsStats">
-                <div class="log-stat-card" data-level="all">
-                    <span class="log-stat-card__dot" style="--c:#6ebbff"></span>
-                    <div>
-                        <span class="log-stat-card__label">همه</span>
-                        <span class="log-stat-card__value" id="statTotal">0</span>
-                    </div>
-                </div>
-                <div class="log-stat-card" data-level="info">
-                    <span class="log-stat-card__dot" style="--c:#3b82f6"></span>
-                    <div>
-                        <span class="log-stat-card__label">Info</span>
-                        <span class="log-stat-card__value" id="statInfo">0</span>
-                    </div>
-                </div>
-                <div class="log-stat-card" data-level="warn">
-                    <span class="log-stat-card__dot" style="--c:#fbbf24"></span>
-                    <div>
-                        <span class="log-stat-card__label">Warn</span>
-                        <span class="log-stat-card__value" id="statWarn">0</span>
-                    </div>
-                </div>
-                <div class="log-stat-card" data-level="error">
-                    <span class="log-stat-card__dot" style="--c:#ef4444"></span>
-                    <div>
-                        <span class="log-stat-card__label">Error</span>
-                        <span class="log-stat-card__value" id="statError">0</span>
-                    </div>
-                </div>
-                <div class="log-stat-card" data-level="debug">
-                    <span class="log-stat-card__dot" style="--c:#a78bfa"></span>
-                    <div>
-                        <span class="log-stat-card__label">Debug</span>
-                        <span class="log-stat-card__value" id="statDebug">0</span>
-                    </div>
-                </div>
-            </div>
+        <select id="levelFilter" class="dash-select">
+          <option value="all">همه سطوح</option>
+          <option value="info">Info</option>
+          <option value="warn">Warn</option>
+          <option value="error">Error</option>
+          <option value="debug">Debug</option>
+        </select>
 
-            <!-- ============ FILTERS ============ -->
-            <div class="logs-filters">
-                <div class="logs-search">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" id="searchInput" placeholder="جستجو در لاگ‌ها…">
-                </div>
+        <select id="fileFilter" class="dash-select">
+          <option value="live">زنده (حافظه)</option>
+        </select>
 
-                <select id="levelFilter" class="dash-select">
-                    <option value="all">همه سطوح</option>
-                    <option value="info">Info</option>
-                    <option value="warn">Warn</option>
-                    <option value="error">Error</option>
-                    <option value="debug">Debug</option>
-                </select>
+        <label class="logs-auto-refresh">
+          <input type="checkbox" id="autoRefreshToggle" checked>
+          <span>به‌روزرسانی خودکار (۳s)</span>
+        </label>
 
-                <select id="fileFilter" class="dash-select">
-                    <option value="live">زنده (حافظه)</option>
-                </select>
+        <label class="logs-auto-refresh">
+          <input type="checkbox" id="followToggle" checked>
+          <span>اسکرول خودکار</span>
+        </label>
+      </div>
 
-                <label class="logs-auto-refresh">
-                    <input type="checkbox" id="autoRefreshToggle" checked>
-                    <span>به‌روزرسانی خودکار (۳s)</span>
-                </label>
+      <!-- ============ LOG LIST ============ -->
+      <div class="logs-terminal" id="logsTerminal">
+        <div class="logs-loading">
+          <div class="logs-loading__spinner"></div>
+          <span>در حال بارگذاری…</span>
+        </div>
+      </div>
 
-                <label class="logs-auto-refresh">
-                    <input type="checkbox" id="followToggle" checked>
-                    <span>اسکرول خودکار</span>
-                </label>
-            </div>
+      <!-- ============ FOOTER ============ -->
+      <div class="logs-footer">
+        <span id="logsCount">۰ لاگ</span>
+        <span id="logsSource">منبع: حافظه</span>
+        <span id="logsLastUpdate">—</span>
+      </div>
 
-            <!-- ============ LOG LIST ============ -->
-            <div class="logs-terminal" id="logsTerminal">
-                <div class="logs-loading">
-                    <div class="logs-loading__spinner"></div>
-                    <span>در حال بارگذاری…</span>
-                </div>
-            </div>
+    </main>
+  </div>
 
-            <!-- ============ FOOTER ============ -->
-            <div class="logs-footer">
-                <span id="logsCount">۰ لاگ</span>
-                <span id="logsSource">منبع: حافظه</span>
-                <span id="logsLastUpdate">—</span>
-            </div>
-
-        </main>
-    </div>
-
-    <script src="/js/dashboard/logs.js"></script>
+  <script src="/js/dashboard-nav.js"></script>
+  <script src="/js/dashboard/logs.js"></script>
 </body>
 
 </html>

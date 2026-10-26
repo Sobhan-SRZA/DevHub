@@ -5,6 +5,7 @@
 /* ---------- HOME HERO ---------- */
 .home-hero {
     position: relative;
+    width: 100%;
     padding: 70px 30px 60px;
     overflow: hidden;
     text-align: center;
@@ -108,9 +109,12 @@
 
 /* ---------- HOME MAIN ---------- */
 .home-main {
+    width: 100%;
     max-width: 1240px;
     margin: 0 auto;
     padding: 0 30px 80px;
+    flex-shrink: 0;
+    /* ✅ داخل body flex */
 }
 
 .home-loading {
@@ -454,9 +458,11 @@
    EXPLORE PAGE
    ============================================================ */
 .explore-page {
+    width: 100%;
     max-width: 1240px;
     margin: 0 auto;
     padding: 30px 30px 80px;
+    flex-shrink: 0;
 }
 
 .explore-hero {

@@ -1,35 +1,38 @@
 /* ============================================================
-   HEADER — Unified Mobile Drawer + Auth + Search
+   HEADER — Search, Drawer, Profile, Auth
    ============================================================ */
 
 (function () {
     'use strict';
 
-    const state = {
-        user: null,
-        currentPath: window.__CURRENT_PATH__ || location.pathname,
-        inDashboard: (window.__CURRENT_PATH__ || location.pathname).startsWith('/dashboard'),
-    };
-
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => Array.from(document.querySelectorAll(s));
 
+    const state = { user: null };
+
     const els = {
+        // auth
         authGuests: $('#authGuests'),
         authProfile: $('#authProfile'),
         profileBtn: $('#profileBtn'),
         profileMenu: $('#profileMenu'),
         profileName: $('#profileName'),
         profileAvatar: $('#profileAvatar'),
-        profileInitial: $('#profileInitial'),
         menuAvatar: $('#menuAvatar'),
         menuName: $('#menuName'),
         menuUsername: $('#menuUsername'),
         menuProfileLink: $('#menuProfileLink'),
         logoutBtn: $('#logoutBtn'),
+
+        // dashboard shortcut
+        dashShortcut: $('#dashShortcut'),
+
+        // search
         searchBtn: $('#searchBtn'),
         searchOverlay: $('#searchOverlay'),
         searchInput: $('#searchInput'),
+
+        // drawer
         mobileMenuBtn: $('#mobileMenuBtn'),
         mobileDrawer: $('#mobileDrawer'),
         drawerGuests: $('#drawerGuests'),
@@ -39,17 +42,19 @@
         drawerUsername: $('#drawerUsername'),
         drawerLogout: $('#drawerLogout'),
         drawerDashboardSection: $('#drawerDashboardSection'),
-        drawerNav: $('#drawerNav'),
     };
 
     /* ============================================================
-       Helpers
+       Utils
        ============================================================ */
     function escapeHtml(s) {
         if (s == null) return '';
         return String(s)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function setAvatar(el, user) {
@@ -66,29 +71,49 @@
     }
 
     /* ============================================================
-       Active nav
+       Active link detection
        ============================================================ */
     function highlightActive() {
-        const path = location.pathname;
+        const current = location.pathname;
 
-        $$('.h-nav__link, .h-drawer__link').forEach((link) => {
+        // main site nav
+        $$('.h-nav__link').forEach((link) => {
             const href = link.getAttribute('href');
             if (!href) return;
-            const isActive = href === '/' ? path === '/' : (path === href || path.startsWith(href + '/'));
+            const isActive = href === '/'
+                ? current === '/'
+                : (current === href || current.startsWith(href + '/'));
+            link.classList.toggle('active', isActive);
+        });
+
+        // drawer links (data-nav)
+        $$('.h-drawer__link[data-nav]').forEach((link) => {
+            const target = link.dataset.nav;
+            const exact = link.hasAttribute('data-exact');
+            let isActive = false;
+
+            if (exact) {
+                isActive = current === target;
+            } else {
+                isActive = current === target || current.startsWith(target + '/');
+            }
+
             link.classList.toggle('active', isActive);
         });
     }
 
     /* ============================================================
-       Render user + drawer sections
+       Render user
        ============================================================ */
     function renderUser() {
         const u = state.user;
 
         if (u) {
+            /* desktop header */
             els.authGuests.style.display = 'none';
             els.authGuests.style.visibility = 'visible';
             els.authProfile.style.display = 'flex';
+            if (els.dashShortcut) els.dashShortcut.style.display = '';
 
             const displayName = u.name || u.username || 'کاربر';
             els.profileName.textContent = displayName;
@@ -106,20 +131,21 @@
                 els.menuProfileLink.href = `/users/${encodeURIComponent(u.username)}`;
             }
 
-            // Drawer profile
+            /* drawer */
             els.drawerGuests.style.display = 'none';
             els.drawerGuests.style.visibility = 'visible';
             els.drawerProfile.style.display = 'flex';
             els.drawerLogout.style.display = 'flex';
 
-            // ✅ Show dashboard section only when in dashboard
+            /* ✅ show dashboard section always when logged in */
             if (els.drawerDashboardSection) {
-                els.drawerDashboardSection.style.display = state.inDashboard ? 'block' : 'none';
+                els.drawerDashboardSection.style.display = 'block';
             }
         } else {
             els.authGuests.style.display = 'flex';
             els.authGuests.style.visibility = 'visible';
             els.authProfile.style.display = 'none';
+            if (els.dashShortcut) els.dashShortcut.style.display = 'none';
 
             els.drawerGuests.style.display = 'flex';
             els.drawerGuests.style.visibility = 'visible';
@@ -128,15 +154,6 @@
 
             if (els.drawerDashboardSection) {
                 els.drawerDashboardSection.style.display = 'none';
-            }
-        }
-
-        // ✅ Reorder: dashboard section first if in dashboard
-        if (els.drawerNav && els.drawerDashboardSection) {
-            if (state.inDashboard && els.drawerDashboardSection.style.display !== 'none') {
-                els.drawerNav.prepend(els.drawerDashboardSection);
-            } else {
-                els.drawerNav.appendChild(els.drawerDashboardSection);
             }
         }
     }
@@ -230,6 +247,11 @@
 
     $$('[data-close-drawer]').forEach((el) => el.addEventListener('click', closeDrawer));
 
+    // بستن روی کلیک لینک
+    $$('.h-drawer__link').forEach((link) => {
+        link.addEventListener('click', () => setTimeout(closeDrawer, 100));
+    });
+
     /* ============================================================
        Logout
        ============================================================ */
@@ -256,12 +278,24 @@
             openSearch();
             return;
         }
+        if (e.key === '/' && !isTyping()) {
+            e.preventDefault();
+            openSearch();
+            return;
+        }
         if (e.key === 'Escape') {
             if (els.searchOverlay.classList.contains('open')) closeSearch();
             if (els.mobileDrawer.classList.contains('open')) closeDrawer();
             if (els.profileMenu.classList.contains('open')) closeMenu();
         }
     });
+
+    function isTyping() {
+        const el = document.activeElement;
+        if (!el) return false;
+        const tag = el.tagName.toLowerCase();
+        return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+    }
 
     /* ============================================================
        Init

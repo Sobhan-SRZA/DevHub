@@ -1,3 +1,11 @@
+.dash-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 0;
+}
+
 /* ---------- Head ---------- */
 .dash-head {
     display: flex;
@@ -5,6 +13,7 @@
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    margin-bottom: 8px;
 }
 
 .dash-title {
@@ -142,7 +151,7 @@
 /* ---------- Grid of project cards ---------- */
 .dash-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
     gap: 16px;
 }
 
@@ -810,7 +819,7 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
     .dash-layout {
-        grid-template-columns: 1fr;
+        /* grid-template-columns: 1fr; */
     }
 
     .dash-sidebar {
@@ -838,10 +847,6 @@
 
     .dash-main {
         padding-top: 0;
-    }
-
-    .dash-topbar {
-        display: flex;
     }
 
     .dash-title {
@@ -904,6 +909,344 @@
 @media (max-width: 640px) {
     .modal--lg .modal__body {
         padding: 16px;
+    }
+}
+
+/* ============================================================
+   DASHBOARD BREADCRUMB
+   ============================================================ */
+.dash-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #777;
+    flex-wrap: wrap;
+    text-align: right;
+}
+
+.dash-breadcrumb a {
+    color: #6ebbff;
+    padding-bottom: 0;
+    text-decoration: none;
+}
+
+.dash-breadcrumb a::after {
+    display: none;
+}
+
+.dash-breadcrumb a:hover {
+    text-decoration: underline;
+    color: #8ed0ff;
+}
+
+.dash-breadcrumb span:last-child {
+    color: #ddd;
+    font-weight: 600;
+}
+
+.dash-breadcrumb span:not(:last-child):not(:first-child) {
+    color: #444;
+}
+
+/* ============================================================
+   DASHBOARD BREADCRUMB — Interactive with dropdown
+   ============================================================ */
+.dash-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #777;
+    flex-wrap: wrap;
+    text-align: right;
+    min-width: 0;
+}
+
+.dash-breadcrumb__nav {
+    position: relative;
+}
+
+.dash-breadcrumb__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    color: #6ebbff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1.2;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dash-breadcrumb__btn:hover {
+    background: #1a1a1a;
+    border-color: #3a3a3a;
+    color: #8ed0ff;
+}
+
+.dash-breadcrumb__btn[aria-expanded="true"] {
+    background: rgba(0, 123, 255, 0.12);
+    border-color: rgba(0, 123, 255, 0.4);
+    color: #8ed0ff;
+}
+
+.dash-breadcrumb__icon {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.dash-breadcrumb__caret {
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.dash-breadcrumb__btn[aria-expanded="true"] .dash-breadcrumb__caret {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+.dash-breadcrumb__sep {
+    color: #444;
+    user-select: none;
+    font-weight: 400;
+}
+
+.dash-breadcrumb__current {
+    color: #ddd;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 260px;
+}
+
+/* ---------- Dropdown menu ---------- */
+.dash-breadcrumb__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 240px;
+    max-width: 300px;
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.98);
+    transform-origin: top right;
+    transition: all 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+    z-index: 200;
+}
+
+.dash-breadcrumb__menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* ---------- Mobile: bottom sheet ---------- */
+@media (max-width: 640px) {
+    .dash-breadcrumb__menu {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+        max-height: 65vh;
+        border-radius: 18px 18px 0 0;
+        border-bottom: none;
+        transform: translateY(100%);
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        z-index: 300;
+    }
+
+    .dash-breadcrumb__menu.open {
+        transform: translateY(0);
+    }
+
+    .dash-breadcrumb__menu::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: #333;
+        border-radius: 2px;
+        margin: 0 auto 8px;
+    }
+
+    .dash-breadcrumb__current {
+        max-width: 160px;
+    }
+}
+
+/* ---------- Backdrop ---------- */
+.dash-breadcrumb__backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.dash-breadcrumb__backdrop.open {
+    display: block;
+    opacity: 1;
+}
+
+/* ---------- Menu items (variant: menu) ---------- */
+.dash-menu__section {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.dash-menu__section+.dash-menu__section {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #1a1a1a;
+}
+
+.dash-menu__section-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 4px;
+    color: #555;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+}
+
+.dash-menu__section-emoji {
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.dash-menu__divider {
+    height: 1px;
+    background: #1a1a1a;
+    margin: 6px 4px;
+}
+
+.dash-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    color: #bbb;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.dash-menu__item::after {
+    display: none !important;
+}
+
+.dash-menu__item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.dash-menu__item:hover {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.dash-menu__item:hover svg {
+    opacity: 1;
+}
+
+.dash-menu__item.active {
+    background: rgba(0, 123, 255, 0.12);
+    color: #6ebbff;
+}
+
+.dash-menu__item.active svg {
+    opacity: 1;
+    color: #6ebbff;
+}
+
+.dash-menu__item>span {
+    flex: 1;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Backdrop (mobile) ---------- */
+.dash-breadcrumb__backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.dash-breadcrumb__backdrop.open {
+    display: block;
+    opacity: 1;
+}
+
+/* ============================================================
+   RESPONSIVE — mobile bottom sheet
+   ============================================================ */
+@media (max-width: 640px) {
+    .dash-breadcrumb__menu {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+        max-height: 65vh;
+        border-radius: 18px 18px 0 0;
+        border-bottom: none;
+        transform: translateY(100%);
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        z-index: 300;
+    }
+
+    .dash-breadcrumb__menu.open {
+        transform: translateY(0);
+    }
+
+    /* drag handle */
+    .dash-breadcrumb__menu::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: #333;
+        border-radius: 2px;
+        margin: 0 auto 8px;
     }
 }
 

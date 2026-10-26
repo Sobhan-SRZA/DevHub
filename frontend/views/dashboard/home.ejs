@@ -29,21 +29,9 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: 	"نمای کلی" }) %>
 
     <main class="dash-main">
-
-      <!-- Mobile topbar -->
-      <div class="dash-topbar">
-        <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()" aria-label="منو">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <h1 class="dash-topbar__title">نمای کلی</h1>
-      </div>
-
       <!-- ============================================ -->
       <!-- EMAIL VERIFY BANNER                          -->
       <!-- ============================================ -->
@@ -265,6 +253,7 @@
     window.__IS_DEVELOPER__ = <%- JSON.stringify(!!isDeveloper) %>;
     window.__EMAIL_VERIFIED__ = <%- JSON.stringify(emailVerified) %>;
   </script>
+  <script src="/js/dashboard-nav.js"></script>
   <script src="/js/dashboard/home.js"></script>
 </body>
 

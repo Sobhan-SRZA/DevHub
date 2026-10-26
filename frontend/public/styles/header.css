@@ -15,6 +15,8 @@
     --h-surface: #1a1a1a;
     --h-surface-hover: #242424;
     --h-elevated: #151515;
+    --page-max-width: 1400px;
+    --page-gutter: 24px;
 
     position: sticky;
     top: 0;
@@ -28,13 +30,14 @@
 }
 
 .header__inner {
-    max-width: 1400px;
+    max-width: var(--page-max-width);
     margin: 0 auto;
     height: var(--h-height);
-    padding: 0 24px;
+    padding: 0 var(--page-gutter);
     display: flex;
     align-items: center;
     gap: 20px;
+    width: 100%;
 }
 
 /* ============================================================
@@ -1003,6 +1006,181 @@
     .profile-menu {
         animation: none !important;
         transition: none !important;
+    }
+}
+
+/* ============================================================
+   BRAND LOGO — SVG-based
+   ============================================================ */
+.h-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #fff;
+    padding-bottom: 0;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+}
+
+.h-logo::after {
+    display: none;
+}
+
+.h-logo:hover {
+    opacity: 0.85;
+    color: #fff;
+}
+
+.h-logo__icon-svg {
+    display: block;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.h-logo:hover .h-logo__icon-svg {
+    transform: scale(1.05) rotate(-3deg);
+}
+
+.h-logo__text {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+    background: linear-gradient(135deg, #fff, #b8d4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   DRAWER — Section labels
+   ============================================================ */
+.h-drawer__section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.h-drawer__section+.h-drawer__section {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #1a1a1a;
+}
+
+.h-drawer__section-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 8px;
+    color: #666;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-align: right;
+}
+
+/* ============================================================
+   DRAWER — Link active state
+   ============================================================ */
+.h-drawer__link.active {
+    background: rgba(0, 123, 255, 0.12);
+    color: var(--h-accent-light);
+}
+
+.h-drawer__link.active svg {
+    color: var(--h-accent-light);
+    opacity: 1;
+}
+
+/* ============================================================
+   RESPONSIVE — hide brand text on very small screens
+   ============================================================ */
+@media (max-width: 420px) {
+    .header__inner .h-logo__text {
+        display: none;
+    }
+}
+
+/* ============================================================
+   DASHBOARD SHORTCUT (header — desktop only)
+   ============================================================ */
+.h-dash-btn {
+    color: var(--h-accent-light, #6ebbff) !important;
+    background: rgba(0, 123, 255, 0.08);
+}
+
+.h-dash-btn:hover {
+    background: rgba(0, 123, 255, 0.18) !important;
+    color: var(--h-accent-light, #6ebbff) !important;
+}
+
+@media (max-width: 768px) {
+    .h-dash-btn {
+        display: none !important;
+    }
+}
+
+/* ============================================================
+   DASHBOARD SECTION IN DRAWER — visual distinction
+   ============================================================ */
+.h-drawer__section--dashboard {
+    padding-bottom: 4px;
+}
+
+.h-drawer__section--dashboard .h-drawer__section-label {
+    color: var(--h-accent-light, #6ebbff);
+    opacity: 0.9;
+}
+
+.h-drawer__section--dashboard .h-drawer__link {
+    border-right: 2px solid transparent;
+}
+
+.h-drawer__section--dashboard .h-drawer__link:hover {
+    border-right-color: rgba(110, 187, 255, 0.3);
+}
+
+.h-drawer__section--dashboard .h-drawer__link.active {
+    border-right-color: var(--h-accent, #007bff);
+    background: rgba(0, 123, 255, 0.15);
+}
+
+/* ============================================================
+   PROFILE MENU — primary item (dashboard)
+   ============================================================ */
+.profile-menu-item--primary {
+    color: var(--h-accent-light, #6ebbff);
+    background: rgba(0, 123, 255, 0.06);
+    font-weight: 600;
+}
+
+.profile-menu-item--primary svg {
+    color: var(--h-accent-light, #6ebbff);
+}
+
+.profile-menu-item--primary:hover {
+    background: rgba(0, 123, 255, 0.15);
+    color: var(--h-accent-light, #6ebbff);
+}
+
+/* ============================================================
+   DRAWER — section emojis
+   ============================================================ */
+.h-drawer__section-emoji {
+    display: inline-flex;
+    font-size: 0.85rem;
+    margin-left: 4px;
+}
+
+/* ============================================================
+   RESPONSIVE — small screen tweaks
+   ============================================================ */
+@media (max-width: 420px) {
+    .header__inner .h-logo__text {
+        display: none;
     }
 }
 

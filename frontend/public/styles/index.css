@@ -7,16 +7,33 @@
     box-sizing: border-box;
 }
 
+html {
+    /* overflow-y: scroll; */
+    scroll-behavior: smooth;
+}
+
 body {
     position: relative;
     font-family: 'Tahoma', sans-serif;
     display: flex;
     flex-direction: column;
-    justify-items: center;
-    align-items: center;
+    /* ✅ FIX: align-items: center → stretch  */
+    align-items: stretch;
+    /* justify-items در flex کاری نمی‌کنه */
+    min-height: 100vh;
     background-color: rgb(0, 0, 0);
     color: white;
     text-align: center;
+    overflow-x: hidden;
+    /* ✅ جلوگیری از اسکرول افقی */
+}
+
+/* ✅ همه‌ی main‌ها و wrapperهای صفحه full width */
+body>main,
+body>section,
+body>div.page-wrapper {
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .container {
@@ -24,6 +41,8 @@ body {
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 100%;
 }
 
 h2 {

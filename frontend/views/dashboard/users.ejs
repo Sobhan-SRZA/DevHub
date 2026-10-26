@@ -17,6 +17,7 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "کاربران" }) %>
 
     <main class="dash-main">
       <div class="dash-head">
@@ -219,5 +220,7 @@
     });
   </script>
 </body>
+
+<script src="/js/dashboard-nav.js"></script>
 
 </html>

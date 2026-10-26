@@ -2,17 +2,31 @@
    DASHBOARD SIDEBAR — Desktop Only + Collapsible
    ============================================================ */
 
+/* ✅ تعریف یک متغیر مشترک برای هم‌ترازی هدر/محتوا */
+:root {
+    --page-max-width: 1400px;
+    --page-gutter: 24px;
+    --header-height: 68px;
+}
+
 /* ---------- Layout ---------- */
 .dash-layout {
     --sidebar-width: 260px;
     display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    gap: 24px;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 20px 60px;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+        "sidebar breadcrumb"
+        "sidebar main";
+    column-gap: 24px;
+    row-gap: 16px;
     width: 100%;
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    /* ✅ padding-top = 24px تا sticky sidebar پرش نکنه */
+    padding: 24px var(--page-gutter) 60px;
     direction: rtl;
+    align-items: start;
     transition: grid-template-columns 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
@@ -20,56 +34,72 @@
     --sidebar-width: 76px;
 }
 
+/* ✅ ستون محتوا باید min-width:0 داشته باشه */
+.dash-main {
+    grid-area: main;
+    /* ✅ سطر ۲، ستون ۲ */
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 0;
+    /* breadcrumb بالاست */
+}
+
+
 /* ---------- Sidebar ---------- */
 .dash-sidebar {
+    grid-area: sidebar;
+    /* ✅ سطر ۱+۲، ستون ۱ */
     position: sticky;
-    top: 90px;
+    top: calc(var(--header-height) + 22px);
     align-self: start;
+    width: 100%;
     background: #0a0a0a;
     border: 1px solid #1a1a1a;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 110px);
-    overflow: hidden;
+    max-height: calc(100vh - var(--header-height) - 44px);
+    /* ✅ overflow visible برای نمایش tooltipها در حالت collapse */
+    overflow: visible;
     transition: width 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* ✅ wrapper داخلی برای حفظ border-radius + اسکرول داخلی */
+.dash-sidebar__inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: inherit;
+    overflow: hidden;
+    border-radius: 16px;
 }
 
 /* ---------- Brand ---------- */
 .dash-brand {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     padding: 16px;
     border-bottom: 1px solid #161616;
     position: relative;
+    flex-shrink: 0;
     transition: padding 0.25s ease;
 }
 
-.dash-brand__icon {
-    width: 32px;
-    height: 32px;
-    /* border-radius: 9px; */
-    /* background: linear-gradient(135deg, #007bff, #6ebbff); */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-    /* box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3); */
+.dash-brand__logo {
+    text-decoration: none;
 }
 
-.dash-brand__name {
-    color: #fff;
-    font-weight: 700;
+.dash-brand__logo .h-logo__text {
     font-size: 0.95rem;
-    white-space: nowrap;
-    transition: opacity 0.2s ease;
 }
 
 /* ---------- Collapse button ---------- */
 .dash-collapse-btn {
-    margin-right: auto;
     width: 26px;
     height: 26px;
     display: flex;
@@ -94,6 +124,19 @@
     transition: transform 0.3s ease;
 }
 
+/* ---------- Breadcrumb row ---------- */
+.dash-topbar {
+    grid-area: breadcrumb;
+    /* ✅ سطر ۱، ستون ۲ */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 0 4px;
+    min-width: 0;
+    width: 100%;
+}
+
 /* ---------- User card ---------- */
 .dash-user-card {
     display: flex;
@@ -106,6 +149,7 @@
     border-radius: 12px;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
     transition: padding 0.25s ease, margin 0.25s ease;
 }
 
@@ -185,6 +229,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-height: 0;
     scrollbar-width: thin;
     scrollbar-color: #222 transparent;
 }
@@ -290,7 +335,7 @@
     border-radius: 3px 0 0 3px;
 }
 
-.dash-nav__item span:not(.dash-nav__badge) {
+.dash-nav__item>span:not(.dash-nav__badge) {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -323,34 +368,28 @@
 /* ============================================================
    COLLAPSED STATE
    ============================================================ */
-.dash-layout.is-collapsed .dash-sidebar {
-    width: 76px;
-}
-
 .dash-layout.is-collapsed .dash-brand {
-    padding: 16px 0;
+    flex-direction: column;
+    gap: 1.25rem;
     justify-content: center;
 }
 
-.dash-layout.is-collapsed .dash-brand__name,
+.dash-layout.is-collapsed .dash-brand__logo .h-logo__text {
+    display: none;
+}
+
+.dash-layout.is-collapsed .dash-brand__logo .h-logo__icon-svg {
+    width: 32px;
+    height: 32px;
+}
+
 .dash-layout.is-collapsed .dash-user-card__info,
 .dash-layout.is-collapsed .dash-nav__section-label,
-.dash-layout.is-collapsed .dash-nav__item span:not(.dash-nav__badge),
+.dash-layout.is-collapsed .dash-nav__item>span:not(.dash-nav__badge),
 .dash-layout.is-collapsed .dash-logout-btn span {
     opacity: 0;
     pointer-events: none;
     display: none;
-}
-
-.dash-layout.is-collapsed .dash-collapse-btn {
-    position: absolute;
-    top: 50%;
-    left: -13px;
-    transform: translateY(-50%);
-    background: #1a1a1a;
-    z-index: 10;
-    width: 24px;
-    height: 24px;
 }
 
 .dash-layout.is-collapsed .dash-collapse-btn svg {
@@ -371,10 +410,6 @@
     justify-content: center;
     padding: 10px;
     gap: 0;
-}
-
-.dash-layout.is-collapsed .dash-nav__item.active::before {
-    right: 0;
 }
 
 .dash-layout.is-collapsed .dash-nav__badge {
@@ -401,12 +436,54 @@
 }
 
 /* ============================================================
+   TOOLTIP (collapsed mode) — ✅ حالا clip نمی‌شه چون sidebar overflow: visible
+   ============================================================ */
+.dash-layout.is-collapsed .dash-nav__item {
+    position: relative;
+    overflow: visible;
+}
+
+.dash-layout.is-collapsed .dash-nav__item::after {
+    content: attr(title);
+    display: block;
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f1f1f;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.15s ease;
+    z-index: 100;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.dash-layout.is-collapsed .dash-nav__item:hover::after {
+    opacity: 1;
+    visibility: visible;
+    right: calc(100% + 12px);
+}
+
+.dash-layout.is-collapsed .dash-nav__item.active::after {
+    content: none;
+}
+
+/* ============================================================
    FOOTER
    ============================================================ */
 .dash-sidebar__footer {
     padding: 10px;
     border-top: 1px solid #161616;
     background: #080808;
+    flex-shrink: 0;
 }
 
 .dash-logout-btn {
@@ -440,56 +517,20 @@
     flex-shrink: 0;
 }
 
-.dash-logout-btn span {
-    transition: opacity 0.2s ease;
-}
-
-.dash-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: #777;
-    flex-wrap: wrap;
-}
-
-.dash-breadcrumb a {
-    color: #6ebbff;
-    padding-bottom: 0;
-}
-
-.dash-breadcrumb a::after {
-    display: none;
-}
-
-.dash-breadcrumb a:hover {
-    text-decoration: underline;
-}
-
-.dash-breadcrumb span:last-child {
-    color: #ddd;
-    font-weight: 600;
-}
-
-/* Show topbar on mobile too — but without hamburger */
-.dash-topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
 /* ============================================================
-   RESPONSIVE — HIDE SIDEBAR ON MOBILE (header drawer handles it)
+   RESPONSIVE — HIDE SIDEBAR ON MOBILE
    ============================================================ */
 @media (max-width: 900px) {
     .dash-layout {
         grid-template-columns: 1fr;
-        padding-left: 14px;
-        padding-right: 14px;
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+            "breadcrumb"
+            "main";
+        row-gap: 12px;
+        padding: 16px 14px 60px;
     }
 
-    /* ✅ Hide sidebar completely on mobile — header's drawer takes over */
     .dash-sidebar {
         display: none !important;
     }
@@ -497,49 +538,6 @@
     .dash-main {
         padding-top: 0;
     }
-}
-
-/* ============================================================
-   TOOLTIP ON HOVER WHEN COLLAPSED
-   ============================================================ */
-.dash-layout.is-collapsed .dash-nav__item {
-    position: relative;
-}
-
-.dash-layout.is-collapsed .dash-nav__item::before {
-    content: attr(title);
-    position: absolute;
-    right: calc(100% + 8px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: #1f1f1f;
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.15s ease;
-    z-index: 100;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-}
-
-.dash-layout.is-collapsed .dash-nav__item:hover::before {
-    opacity: 1;
-    visibility: visible;
-    right: calc(100% + 12px);
-}
-
-.dash-layout.is-collapsed .dash-nav__item.active::before {
-    content: none;
-}
-
-.dash-layout.is-collapsed .dash-nav__item:hover {
-    overflow: visible;
 }
 
 /**

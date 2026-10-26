@@ -20,6 +20,8 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "پروفایل من" }) %>
+
     <main class="profile-page container">
 
       <!-- ============ HEADER CARD ============ -->
@@ -81,6 +83,7 @@
 </body>
 
 <script src="/js/form-errors.js"></script>
+<script src="/js/dashboard-nav.js"></script>
 <script src="/js/dashboard/profile.js"></script>
 
 </html>

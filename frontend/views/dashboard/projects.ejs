@@ -21,20 +21,9 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "پروژه‌های من" }) %>
 
     <main class="dash-main">
-      <!-- mobile top bar -->
-      <div class="dash-topbar">
-        <button type="button" class="dash-menu-btn" onclick="toggleDashSidebar()" aria-label="منو">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <h1 class="dash-topbar__title">پروژه‌های من</h1>
-      </div>
-
       <!-- header / actions -->
       <div class="dash-head">
         <div>
@@ -395,6 +384,7 @@
   </div>
 
   <script src="/js/form-errors.js"></script>
+  <script src="/js/dashboard-nav.js"></script>
   <script src="/js/components/tag-picker.js"></script>
   <script src="/js/components/markdown-editor.js"></script>
   <script src="/js/dashboard/projects.js"></script>
