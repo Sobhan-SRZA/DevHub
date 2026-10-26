@@ -140,8 +140,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 
         bio: {
             type: String,
-            default: "",
-            maxlength: 2000
+            default: ""
         },
 
         avatar: { type: avatarSchema, default: null },

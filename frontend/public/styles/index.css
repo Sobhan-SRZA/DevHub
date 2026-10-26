@@ -235,6 +235,35 @@ a:hover::after {
     color: #6ebbff;
 }
 
+/* ---------- Char Counter ---------- */
+.char-counter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s ease;
+    direction: ltr;
+}
+
+.char-counter [data-role="count"] {
+    font-weight: 500;
+    transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.char-counter [data-role="label"] {
+    color: #555;
+    margin-right: 4px;
+}
+
+.char-counter [data-role="warning"] {
+    margin-right: 4px;
+    cursor: help;
+}
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *

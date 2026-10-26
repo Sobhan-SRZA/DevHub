@@ -5,7 +5,7 @@ import { z } from "zod";
    ================================================================== */
 export const updateProfileSchema = z.object({
     name: z.string().trim().min(2, "نام باید حداقل ۲ حرف باشد").max(60).optional(),
-    bio: z.string().trim().max(2000, "توضیحات حداکثر ۲۰۰۰ کاراکتر").optional()
+    bio: z.string().trim().optional()
 });
 
 /* ==================================================================

@@ -11,8 +11,8 @@ export const createProjectSchema = z.object({
     githubUrl: z.string().trim().max(300).optional().nullable(),
     autoSync: z.boolean().optional(),
 
-    shortDescription: z.string().trim().min(5).max(300),
-    fullDescription: z.string().trim().min(20).max(20000),
+    shortDescription: z.string().trim().min(5).max(500),
+    fullDescription: z.string().trim().min(20),
 
     rating: z.number().min(0).max(5).optional(),
     satisfaction: z.number().min(0).max(100).optional(),

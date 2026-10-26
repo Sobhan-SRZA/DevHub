@@ -37,6 +37,7 @@ import { Project } from "../models/Project";
 import { Comment } from "../models/Comment";
 import { Review } from "../models/Review";
 import { Tag } from "../models/Tag";
+import { assertNotSpam, checkSpam } from "../services/spamDetection";
 
 /* ==================================================================
    Helpers
@@ -238,6 +239,23 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
 
     const data = validate(createProjectSchema, req.body);
 
+    /* ---------------- Spam check ---------------- */
+    await assertNotSpam(data.shortDescription, {
+        minLength: 10,
+        maxLinks: 2,
+        checkHashDuplicate: true,
+        userId: String(req.user._id),
+        field: 'shortDescription',
+    });
+
+    await assertNotSpam(data.fullDescription, {
+        minLength: 20,
+        maxLinks: 10,
+        checkHashDuplicate: true,
+        userId: String(req.user._id),
+        field: 'fullDescription',
+    });
+
     const slug = data.slug || slugify(data.title);
 
     // چک slug یکتا
@@ -323,8 +341,16 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
         { path: "owner", select: "name username" },
         { path: "tags", select: "name slug color type" }
     ]);
+    
+    const descCheck = data.fullDescription
+        ? await checkSpam(data.fullDescription, { minLength: 20, maxLinks: 10 })
+        : null;
 
-    res.status(201).json({ ok: true, project: populated });
+    res.status(201).json({
+        ok: true,
+        project: populated,
+        ...(descCheck?.warnings.length ? { warnings: descCheck.warnings } : {})
+    });
 });
 
 /* ==================================================================
@@ -350,6 +376,24 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
 
             data.slug = newSlug;
         }
+    }
+
+    if (data.shortDescription !== undefined) {
+        await assertNotSpam(data.shortDescription, {
+            minLength: 10,
+            maxLinks: 2,
+            userId: String(req.user._id),
+            field: 'shortDescription',
+        });
+    }
+
+    if (data.fullDescription !== undefined) {
+        await assertNotSpam(data.fullDescription, {
+            minLength: 20,
+            maxLinks: 10,
+            userId: String(req.user._id),
+            field: 'fullDescription',
+        });
     }
 
     /* -------- GitHub URL جدید؟ -------- */
@@ -440,7 +484,15 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
         { path: "tags", select: "name slug color type" }
     ]);
 
-    res.json({ ok: true, project: populated });
+    const descCheck = data.fullDescription
+        ? await checkSpam(data.fullDescription, { minLength: 20, maxLinks: 10 })
+        : null;
+
+    res.json({
+        ok: true,
+        project: populated,
+        ...(descCheck?.warnings.length ? { warnings: descCheck.warnings } : {})
+    });
 });
 
 

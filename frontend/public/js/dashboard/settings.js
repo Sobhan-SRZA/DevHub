@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'bio',
             value: state.user.bio || '',
             placeholder: 'درباره خودت بنویس… (Markdown پشتیبانی می‌شود)',
-            maxLength: 2000,
+            maxLength: 500,           // ✅ soft limit (توصیه)
             minHeight: 220,
         });
     }

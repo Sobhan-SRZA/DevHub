@@ -387,7 +387,7 @@
             this.placeholder = options.placeholder || 'شرح را اینجا بنویسید... (Markdown + HTML پشتیبانی می‌شود)';
             this.minHeight = options.minHeight || 260;
             this.onChange = options.onChange || (() => { });
-            this.maxLength = options.maxLength || null;
+            this.maxLength = options.maxLength || 100000;   // ✅ soft limit — نه hard
 
             this._build();
             this._bind();
@@ -471,7 +471,7 @@
                     <div class="md-editor__footer">
                         <div class="md-editor__footer-right">
                             <span data-role="wordcount">0 کلمه</span>
-                            ${this.maxLength ? `<span data-role="charcount">0 / ${this.maxLength}</span>` : ''}
+                            <span data-role="charcount" style="color:#888">0 کاراکتر</span>
                         </div>
                         <span>Markdown + HTML مجاز (مثل GitHub)</span>
                     </div>
@@ -561,11 +561,24 @@
         _updateCounter() {
             const text = this.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
-            if (this.els.wordcount)
-                this.els.wordcount.textContent = `${words} کلمه`;
+            const chars = this.value.length;
 
-            if (this.els.charcount && this.maxLength) {
-                this.els.charcount.textContent = `${this.value.length} / ${this.maxLength}`;
+            if (this.els.wordcount) {
+                this.els.wordcount.textContent = `${words.toLocaleString('fa-IR')} کلمه`;
+            }
+
+            if (this.els.charcount) {
+                const countEl = this.els.charcount;
+                countEl.textContent = `${chars.toLocaleString('fa-IR')} کاراکتر`;
+
+                // رنگ‌بندی هوشمند
+                if (this.maxLength && chars > this.maxLength) {
+                    countEl.style.color = '#fb923c';
+                } else if (this.maxLength && chars > this.maxLength * 0.8) {
+                    countEl.style.color = '#fbbf24';
+                } else {
+                    countEl.style.color = '#888';
+                }
             }
         }
 

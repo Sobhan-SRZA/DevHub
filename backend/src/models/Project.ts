@@ -194,8 +194,8 @@ const projectSchema = new Schema<IProject, ProjectModel>(
         autoSync: { type: Boolean, default: true },
 
         /* محتوا */
-        shortDescription: { type: String, required: true, trim: true, maxlength: 300 },
-        fullDescription: { type: String, required: true, trim: true, maxlength: 20000 },
+        shortDescription: { type: String, required: true, trim: true, maxlength: 500 },
+        fullDescription: { type: String, required: true, trim: true },
 
         /* media */
         images: {

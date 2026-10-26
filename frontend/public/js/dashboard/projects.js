@@ -1033,12 +1033,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateCounters() {
         const shortEl = $("#shortCount");
         if (shortEl) {
-            shortEl.textContent = form.elements.shortDescription.value.length;
-        }
+            const len = form.elements.shortDescription.value.length;
+            shortEl.textContent = len.toLocaleString('fa-IR');
 
-        const fullEl = $("#fullCount");
-        if (fullEl) {
-            fullEl.textContent = form.elements.fullDescription.value.length;
+            // رنگ‌بندی
+            if (len > 500) shortEl.style.color = '#fb923c';
+            else if (len > 400) shortEl.style.color = '#fbbf24';
+            else shortEl.style.color = '';
         }
     }
 
@@ -1380,7 +1381,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mdEditor = new MarkdownEditor("#fullDescriptionEditor", {
                 name: "fullDescriptionEditor",
                 value: "",
-                maxLength: 20000,
+                maxLength: 100000,
                 onChange: () => {
                     // sync با hidden input
                     form.elements.fullDescription.value = mdEditor.getValue();

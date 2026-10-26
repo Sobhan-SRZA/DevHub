@@ -86,7 +86,11 @@ export const ErrorCodes = {
     FILE_TYPE_INVALID: "FILE_TYPE_INVALID",
     FILE_UPLOAD_FAILED: "FILE_UPLOAD_FAILED",
     MEDIA_LIMIT_REACHED: "MEDIA_LIMIT_REACHED",
-    NO_FILE_PROVIDED: "NO_FILE_PROVIDED"
+    NO_FILE_PROVIDED: "NO_FILE_PROVIDED",
+
+    // ---------- Content ----------
+    SPAM_DETECTED: 'SPAM_DETECTED',
+    CONTENT_TOO_LONG: 'CONTENT_TOO_LONG',
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
@@ -179,7 +183,11 @@ export const ErrorMessages: Record<string, string> = {
     [ErrorCodes.FILE_TYPE_INVALID]: 'فرمت فایل مجاز نیست',
     [ErrorCodes.FILE_UPLOAD_FAILED]: 'آپلود فایل ناموفق بود',
     [ErrorCodes.MEDIA_LIMIT_REACHED]: 'به حداکثر تعداد رسیده‌اید',
-    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است'
+    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است',
+
+    // ---------- Content ----------
+    [ErrorCodes.SPAM_DETECTED]: 'محتوای شما مشکوک به اسپم است',
+    [ErrorCodes.CONTENT_TOO_LONG]: 'متن بیش از حد طولانی است',
 };
 
 /**

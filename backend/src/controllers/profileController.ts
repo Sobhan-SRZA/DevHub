@@ -28,6 +28,7 @@ import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { signEmailVerifyToken } from "../utils/token";
+import { assertNotSpam, checkSpam } from "../services/spamDetection";
 
 /* ==================================================================
    GET /api/profile/me — اطلاعات کامل کاربر
@@ -49,7 +50,20 @@ export const updateProfile = asyncHandler(async (req: any, res: Response) => {
     const data = validate(updateProfileSchema, req.body);
 
     const user = await User.findById(req.user._id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+
+    /* ---------------- Spam check for bio ---------------- */
+    if (data.bio !== undefined && data.bio.trim().length > 0) {
+        await assertNotSpam(data.bio, {
+            minLength: 5,
+            maxLinks: 5,
+            checkHashDuplicate: true,
+            userId: String(user._id),
+            field: 'bio',
+        });
+    }
+
 
     if (data.name !== undefined)
         user.name = data.name;
@@ -59,10 +73,15 @@ export const updateProfile = asyncHandler(async (req: any, res: Response) => {
 
     await user.save();
 
+    const spamCheck = data.bio
+        ? await checkSpam(data.bio, { minLength: 5, maxLinks: 5 })
+        : null;
+
     res.json({
         ok: true,
         message: "پروفایل به‌روزرسانی شد",
-        user: publicUser(user)
+        user: publicUser(user),
+        ...(spamCheck?.warnings.length ? { warnings: spamCheck.warnings } : {}),
     });
 });
 
@@ -160,7 +179,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
 
     const user = await User.findById(req.user._id).select("+password");
     if (!user)
-         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     /* ---------- already in transition? ---------- */
     if (user.pendingEmail) {
@@ -199,7 +218,7 @@ export const requestEmailChange = asyncHandler(async (req: any, res: Response) =
     await createVerificationCode({
         userId: user._id,
         purpose: "change_email_old",
-        targetEmail: user.email, 
+        targetEmail: user.email,
         userName: user.name,
         req,
         ttlMinutes: 10
@@ -234,7 +253,7 @@ export const verifyOldEmailForChange = asyncHandler(async (req: any, res: Respon
     const data = validate(verifyOldEmailForChangeSchema, req.body);
 
     const user = await User.findById(req.user._id);
-    if (!user) 
+    if (!user)
         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     if (!user.pendingEmail) {
@@ -293,7 +312,7 @@ export const verifyOldEmailForChange = asyncHandler(async (req: any, res: Respon
             ttlMinutes: 10
         });
     }
-    
+
     catch (err) {
         console.warn("[verifyOldEmailForChange] send verify failed:", (err as Error).message);
     }
@@ -323,7 +342,7 @@ export const verifyOldEmailForChange = asyncHandler(async (req: any, res: Respon
 export const cancelEmailChange = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.user._id);
     if (!user)
-         throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     if (!user.pendingEmail) {
         throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "درخواست تغییر ایمیل فعالی وجود ندارد");
@@ -354,7 +373,7 @@ export const cancelEmailChange = asyncHandler(async (req: any, res: Response) =>
         message: wasInTransition
             ? `ایمیل شما به ${previousEmail} بازگشت`
             : "درخواست تغییر ایمیل لغو شد",
-            
+
         reverted: wasInTransition,
         email: user.email
     });
