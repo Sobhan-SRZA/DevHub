@@ -57,10 +57,11 @@ export const updateProfile = asyncHandler(async (req: any, res: Response) => {
     if (data.bio !== undefined && data.bio.trim().length > 0) {
         await assertNotSpam(data.bio, {
             minLength: 5,
-            maxLinks: 5,
+            maxLinks: 40,
             checkHashDuplicate: true,
             userId: String(user._id),
-            field: 'bio',
+            field: 'profile.bio',
+            allowTables: true,
         });
     }
 
