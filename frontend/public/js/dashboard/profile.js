@@ -1,376 +1,471 @@
-/* ============================================================
-   PROFILE PAGE LOGIC
-   ============================================================ */
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* ---------------- DOM refs ---------------- */
-    const els = {
-        avatarBig: document.getElementById("profileAvatarBig"),
-        heroName: document.getElementById("profileHeroName"),
-        heroUser: document.getElementById("profileHeroUsername"),
-        heroEmail: document.getElementById("profileHeroEmail"),
-        infoUser: document.getElementById("infoUsername"),
-        infoEmail: document.getElementById("infoEmail"),
-        infoCreated: document.getElementById("infoCreatedAt"),
-
-        sessionsList: document.getElementById("sessionsList"),
-
-        logoutBtn: document.getElementById("logoutSessionBtn"),
-        logoutAllBtn: document.getElementById("logoutAllBtn"),
+(function () {
+    'use strict';
+    /* ============================================================
+        State
+       ============================================================ */
+    const bioState = {
+        editor: null,       // نمونه MarkdownEditor (lazy)
+        user: null,         // کاربر فعلی
+        isEditing: false,
     };
 
-    /* ---------------- helpers ---------------- */
-    async function apiGet(path) {
-        const res = await fetch(path, {
-            credentials: "include",
-            headers: { "Content-Type": "application/json" }
-        });
+    /* ============================================================
+       Helpers
+       ============================================================ */
+    function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
-        let data = null;
-        try { data = await res.json(); } catch { /* no body */ }
+    function isObj(v) {
+        return v && typeof v === 'object' && !Array.isArray(v);
+    }
 
-        if (!res.ok) {
-            const err = new Error(data?.message || "Request failed");
-            err.code = data?.code;
+    async function getJSON(url) {
+        const res = await fetch(url, { credentials: 'include' });
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* ignore */ }
+        if (!res.ok || data.ok === false) {
+            const msg = data.message || `خطا در دریافت داده (${res.status})`;
+            const err = new Error(msg);
             err.status = res.status;
-            err.details = data?.details;
-            err.field = data?.field;
+            err.payload = data;
             throw err;
         }
         return data;
     }
 
-    function showError(title, message) {
-        if (typeof openDialogError === "function") {
-            openDialogError(title, message);
+    async function sendJSON(url, method, body) {
+        const res = await fetch(url, {
+            method,
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* ignore */ }
+        if (!res.ok || data.ok === false) {
+            const msg = data.message || `خطا (${res.status})`;
+            const err = new Error(msg);
+            err.status = res.status;
+            err.payload = data;
+            throw err;
         }
+        return data;
+    }
 
-        else {
-            alert(`${title}\n${message}`);
+    function unwrap(payload, key) {
+        if (!payload) return null;
+        if (isObj(payload.data)) {
+            if (key && payload.data[key] !== undefined) return payload.data[key];
+            return payload.data;
+        }
+        if (key && payload[key] !== undefined) return payload[key];
+        return payload;
+    }
+
+    function extractStats(payload) {
+        if (!payload) return null;
+        const root = isObj(payload.data) ? payload.data : payload;
+        if (isObj(root.stats)) return root.stats;
+        if (isObj(root.user) && isObj(root.user.stats)) return root.user.stats;
+
+        const hasStatKeys = (o) => isObj(o) && (
+            o.projects !== undefined ||
+            o.projectCount !== undefined ||
+            o.projectsCount !== undefined ||
+            o.totalProjects !== undefined ||
+            o.reviews !== undefined ||
+            o.reviewCount !== undefined ||
+            o.reviewsReceived !== undefined ||
+            o.totalReviews !== undefined ||
+            o.downloads !== undefined ||
+            o.totalDownloads !== undefined ||
+            o.rating !== undefined ||
+            o.averageRating !== undefined ||
+            o.avgRating !== undefined
+        );
+
+        if (isObj(root.user) && hasStatKeys(root.user)) return root.user;
+        if (hasStatKeys(root)) return root;
+        return null;
+    }
+
+    function formatNumber(n) {
+        if (n === null || n === undefined || isNaN(n)) return '—';
+        return Number(n).toLocaleString('fa-IR');
+    }
+
+    function roleLabel(role) {
+        switch (role) {
+            case 'developer': return 'دولوپر';
+            case 'admin': return 'ادمین';
+            case 'user': return 'کاربر';
+            default: return role || '—';
         }
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr)
-            return "—";
-
-        const d = new Date(dateStr);
-        if (Number.isNaN(d.getTime()))
-            return "—";
-
-        // Persian-friendly short format
-        return new Intl.DateTimeFormat("fa-IR", {
-            dateStyle: "medium",
-            timeStyle: "short",
-        }).format(d);
+    function statusLabel(s) {
+        switch (s) {
+            case 'published': return 'منتشرشده';
+            case 'archived': return 'آرشیو';
+            case 'draft':
+            default: return 'پیش‌نویس';
+        }
     }
 
-    function relativeTime(dateStr) {
-        if (!dateStr)
-            return "";
+    /* ============================================================
+        Render 
+    ============================================================ */
+    /* ============================================================
+   Bio — Display (read-only)
+   ============================================================ */
+    function renderBioDisplay(bio) {
+        const section = document.getElementById('profileBioSection');
+        const preview = document.querySelector('#profileBioDisplay .md-preview-content');
+        if (!section || !preview) return;
 
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const s = Math.floor(diff / 1000);
-        if (s < 60)
-            return "همین الان";
-
-        const m = Math.floor(s / 60);
-        if (m < 60)
-            return `${m} دقیقه پیش`;
-
-        const h = Math.floor(m / 60);
-        if (h < 24)
-            return `${h} ساعت پیش`;
-
-        const days = Math.floor(h / 24);
-        if (days < 30)
-            return `${days} روز پیش`;
-
-        const months = Math.floor(days / 30);
-        return `${months} ماه پیش`;
-    }
-
-    /* ---------------- device icon ---------------- */
-    function deviceIcon(type) {
-        const icons = {
-            mobile: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12" y2="18"></line></svg>`,
-            tablet: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12" y2="18"></line></svg>`,
-            desktop: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
-            bot: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"></rect><circle cx="9" cy="14" r="1"></circle><circle cx="15" cy="14" r="1"></circle><path d="M12 8V4"></path><circle cx="12" cy="3" r="1"></circle></svg>`,
-            unknown: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>`,
-        };
-
-        return icons[type] || icons.unknown;
-    }
-
-    function deviceLabel(device) {
-        if (!device)
-            return "دستگاه ناشناس";
-
-        const parts = [];
-        if (device.os)
-            parts.push(device.os + (device.osVersion ? ` ${device.osVersion}` : ""));
-
-        if (device.browser)
-            parts.push(device.browser);
-
-        return parts.join(" • ") || device.deviceType || "دستگاه ناشناس";
-    }
-
-    function locationLabel(loc) {
-        if (!loc)
-            return "—";
-
-        const parts = [];
-        if (loc.city)
-            parts.push(loc.city);
-
-        if (loc.country)
-            parts.push(loc.country);
-
-        return parts.join(", ") || loc.ip || "—";
-    }
-
-    /* ---------------- render user info ---------------- */
-    function renderUser(user) {
-        if (!user)
+        if (!bio || !bio.trim()) {
+            section.hidden = true;
+            preview.innerHTML = '';
             return;
+        }
 
-        const name = user.name || user.username || "کاربر";
-        els.heroName.textContent = name;
-        els.heroUser.textContent = "@" + (user.username || "—");
-        els.heroEmail.textContent = user.email || "—";
-
-
-        const avatarBig = document.getElementById("profileAvatarBig");
-        const initialEl = document.getElementById("profileAvatarInitial");
-        if (user.avatar?.url) {
-            avatarBig.style.backgroundImage = `url('${user.avatar.url}')`;
-            avatarBig.style.backgroundSize = "cover";
-            avatarBig.style.backgroundPosition = "center";
-            if (initialEl) initialEl.style.display = "none";
+        // ✅ استفاده از parseMarkdown — همان موتور داخلی MarkdownEditor
+        // (چون ادیتور اصلی اینجا نباید UI نمایش دهد — فقط preview لازم است)
+        if (typeof window.parseMarkdown === 'function') {
+            try {
+                preview.innerHTML = window.parseMarkdown(bio);
+            } catch (err) {
+                console.warn('[profile] parseMarkdown failed:', err);
+                preview.textContent = bio;
+            }
         } else {
-            avatarBig.style.backgroundImage = "";
-            avatarBig.style.background = "linear-gradient(135deg, #007bff, #6ebbff)";
-            if (initialEl) {
-                initialEl.style.display = "";
-                initialEl.textContent = name.trim().charAt(0).toUpperCase();
-            }
+            // fallback ساده
+            preview.textContent = bio;
         }
 
-        els.infoUser.textContent = user.username || "—";
-        els.infoEmail.textContent = user.email || "—";
-        els.infoCreated.textContent = user.createdAt ? formatDate(user.createdAt) : "—";
+        section.hidden = false;
     }
 
-    /* ---------------- render sessions ---------------- */
-    function renderSessions(list, currentId) {
-        if (!list || list.length === 0) {
-            els.sessionsList.innerHTML = `<div class="empty-sessions">هیچ سشن فعالی وجود ندارد.</div>`;
+    /* ============================================================
+       Bio — Edit (با استفاده از MarkdownEditor — الگوی projects.js)
+       ============================================================ */
+    function mountBioEditor() {
+        if (bioState.editor) return bioState.editor;
 
-            return;
-        }
+        const host = document.getElementById('profileBioEditor');
+        if (!host) return null;
 
-        els.sessionsList.innerHTML = "";
-
-        for (const s of list) {
-            const isCurrent = String(s.id) === String(currentId);
-            const card = document.createElement("div");
-            card.className = "session-card" + (isCurrent ? " current" : "");
-
-            const deviceType = s.device?.deviceType || "unknown";
-            const isBot = s.device?.isBot;
-
-            card.innerHTML = `
-                <div class="session-icon">${deviceIcon(deviceType)}</div>
-
-                <div class="session-body">
-                    <div class="session-title">
-                        <span class="session-device">${escapeHtml(deviceLabel(s.device))}</span>
-                        ${isCurrent ? `<span class="session-badge">دستگاه فعلی</span>` : ""}
-                        ${isBot ? `<span class="session-badge bot">BOT</span>` : ""}
-                    </div>
-
-                    <div class="session-meta">
-                        <span title="IP">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                            ${escapeHtml(s.location?.ip || "—")}
-                        </span>
-                        <span title="Location">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            ${escapeHtml(locationLabel(s.location))}
-                        </span>
-                        ${s.location?.isp ? `
-                        <span title="ISP">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12" y2="20"></line></svg>
-                            ${escapeHtml(s.location.isp)}
-                        </span>` : ""}
-                    </div>
-
-                    <div class="session-dates">
-                        <span>ورود: ${formatDate(s.loginAt)}</span>
-                        <span>آخرین فعالیت: ${relativeTime(s.lastActiveAt)}</span>
-                    </div>
-                </div>
-
-                <div class="session-actions">
-                    <button type="button" class="revoke-btn" data-id="${s.id}"
-                        ${isCurrent ? `title="برای خروج از این دستگاه از دکمه خروج استفاده کنید"` : ""}>
-                        ${isCurrent ? "دستگاه فعلی" : "خروج از این دستگاه"}
-                    </button>
-                </div>
-            `;
-
-            // disable revoke for current session
-            const btn = card.querySelector(".revoke-btn");
-            if (isCurrent) {
-                btn.disabled = true;
-            }
-
-            else {
-                btn.addEventListener("click", () => revokeSession(s.id, btn));
-            }
-
-            els.sessionsList.appendChild(card);
-        }
-    }
-
-    function escapeHtml(str) {
-        if (str === null || str === undefined)
-            return "";
-
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/"/g, "&#39;");
-    }
-
-    /* ---------------- actions ---------------- */
-    async function revokeSession(id, btn) {
-        const ok = await confirmDialog({
-            title: "خروج از دستگاه",
-            message: "مطمئنید می‌خواهید از این دستگاه خارج شوید؟",
-            confirmText: "بله، خارج شو",
-            cancelText: "انصراف",
-            danger: true,
-        });
-
-        if (!ok)
-            return;
-
-        btn.disabled = true;
-        try {
-            await FormKit.postJSON(`/api/auth/sessions/${id}`, {}, { method: "DELETE" });
-            toast("از این دستگاه خارج شدید", "success");
-
-            await loadSessions();
-        }
-
-        catch (err) {
-            if (err.code === "SESSION_EXPIRED" || err.code === "UNAUTHENTICATED") {
-                location.href = "/auth/login";
-                return;
-            }
-
-            toast(err.message || "خروج ناموفق بود", "error");
-            btn.disabled = false;
-        }
-    }
-
-
-    async function logout() {
-        const ok = await confirmDialog({
-            title: "خروج از دستگاه فعلی",
-            message: "سشن‌ شما بسته می‌شود. ادامه می‌دهید؟",
-            confirmText: "بله، سشن را ببند",
-            danger: true
-        });
-
-        if (!ok)
-            return;
-
-        try {
-            await FormKit.postJSON("/api/auth/logout", {});
-
-            window.location.href = "/";
-        }
-
-        catch (err) {
-            toast(err.message || "خطا در خروج", "error");
-        }
-    }
-
-    async function logoutAll() {
-        const ok = await confirmDialog({
-            title: "خروج از همه دستگاه‌ها",
-            message: "همه سشن‌های فعال شما بسته می‌شوند. ادامه می‌دهید؟",
-            confirmText: "بله، همه را ببند",
-            danger: true
-        });
-
-        if (!ok)
-            return;
-
-        try {
-            await FormKit.postJSON("/api/auth/logout-all", {});
-            window.location.href = "/";
-        }
-
-        catch (err) {
-            toast(err.message || "خطا در خروج", "error");
-        }
-    }
-
-    /* ---------------- loaders ---------------- */
-    async function loadUser() {
-        try {
-            const data = await apiGet("/api/auth/me");
-            renderUser(data.user);
-
-            return data;
-        }
-
-        catch (err) {
-            if (err.status === 401) {
-                window.location.href = "/auth/login";
-
-                return null;
-            }
-
-            showError("خطا", err.message || "دریافت اطلاعات کاربر ناموفق بود");
-
+        if (!window.MarkdownEditor) {
+            console.error('[profile] MarkdownEditor not loaded');
+            if (window.toast) window.toast('ادیتور مارک‌داون لود نشد', 'error');
             return null;
         }
+
+        bioState.editor = new window.MarkdownEditor('#profileBioEditor', {
+            name: 'bio',
+            value: (bioState.user && bioState.user.bio) || '',
+            maxLength: 5000,          // طبق updateProfileSchema (اگه محدودیت دارد)
+            minHeight: 220,
+            placeholder: 'درباره خودت بنویس... (Markdown + HTML)',
+        });
+
+        return bioState.editor;
     }
 
-    async function loadSessions() {
+    function enterBioEditMode() {
+        if (bioState.isEditing) return;
+
+        const displaySection = document.getElementById('profileBioSection');
+        const editSection = document.getElementById('profileBioEditSection');
+        if (!displaySection || !editSection) return;
+
+        // mount editor اگر نبود
+        const editor = mountBioEditor();
+        if (!editor) return;
+
+        // همیشه مقدار فعلی user رو ست کن (شاید از قبل عوض شده)
+        editor.setValue((bioState.user && bioState.user.bio) || '');
+
+        displaySection.hidden = true;
+        editSection.hidden = false;
+        bioState.isEditing = true;
+
+        // فوکوس روی textarea
+        setTimeout(() => editor.focus(), 100);
+    }
+
+    function exitBioEditMode() {
+        if (!bioState.isEditing) return;
+
+        const displaySection = document.getElementById('profileBioSection');
+        const editSection = document.getElementById('profileBioEditSection');
+        if (!displaySection || !editSection) return;
+
+        // اگه bio خالی بود، نمایش‌دهنده هم مخفی بمونه
+        const currentBio = (bioState.user && bioState.user.bio) || '';
+        displaySection.hidden = !currentBio.trim();
+
+        editSection.hidden = true;
+        bioState.isEditing = false;
+    }
+
+    async function saveBio() {
+        const editor = bioState.editor;
+        if (!editor) return;
+
+        const saveBtn = document.getElementById('saveBioBtn');
+        const cancelBtn = document.getElementById('cancelBioBtn');
+        const originalText = saveBtn ? saveBtn.textContent : 'ذخیره';
+
+        const newBio = (editor.getValue() || '').trim();
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'در حال ذخیره…';
+        }
+        if (cancelBtn) cancelBtn.disabled = true;
+
         try {
-            const data = await apiGet("/api/auth/sessions");
-            renderSessions(data.sessions, data.current);
-        }
+            const payload = await sendJSON('/api/profile/me', 'PATCH', { bio: newBio });
 
-        catch (err) {
-            els.sessionsList.innerHTML = `<div class="empty-sessions">دریافت سشن‌ها ناموفق بود.</div>`;
-            console.error(err);
+            // آپدیت state محلی
+            if (bioState.user) bioState.user.bio = newBio;
+
+            // دوباره رندر preview
+            renderBioDisplay(newBio);
+
+            // خروج از edit mode
+            exitBioEditMode();
+
+            if (window.toast) window.toast('بیو ذخیره شد', 'success');
+        } catch (err) {
+            console.error('[profile] save bio failed:', err);
+
+            if (window.openDialogError) {
+                window.openDialogError('خطا در ذخیره بیو', err.message || '');
+            } else if (window.toast) {
+                window.toast(err.message || 'خطا در ذخیره', 'error');
+            }
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            }
+            if (cancelBtn) cancelBtn.disabled = false;
         }
     }
 
-    /* ---------------- wire events ---------------- */
-    els.logoutBtn.addEventListener("click", logout);
-    els.logoutAllBtn.addEventListener("click", logoutAll);
+    function bindBioActions() {
+        document.getElementById('editBioBtn')?.addEventListener('click', enterBioEditMode);
+        document.getElementById('saveBioBtn')?.addEventListener('click', saveBio);
+        document.getElementById('cancelBioBtn')?.addEventListener('click', () => {
+            // rollback مقادیر اگه لازم بود
+            exitBioEditMode();
+        });
+    }
 
-    /* ---------------- init ---------------- */
-    (async function init() {
-        const me = await loadUser();
-        if (!me)
+    function renderProfile(user) {
+        if (!user) return;
+
+        bioState.user = user;
+
+        const nameEl = document.getElementById('profileHeroName');
+        if (nameEl) nameEl.textContent = user.name || user.username || '—';
+
+        const userEl = document.getElementById('profileHeroUsername');
+        if (userEl) userEl.textContent = '@' + (user.username || '—');
+
+        const emailEl = document.getElementById('profileHeroEmail');
+        if (emailEl) emailEl.textContent = user.email || '—';
+
+        const roleEl = document.getElementById('profileRoleBadge');
+        if (roleEl && user.role) {
+            roleEl.textContent = roleLabel(user.role);
+            roleEl.dataset.role = user.role;
+            roleEl.hidden = false;
+        }
+
+        const avatarWrap = document.getElementById('profileAvatarBig');
+        const initial = document.getElementById('profileAvatarInitial');
+        if (avatarWrap) {
+            if (user.avatar && user.avatar.url) {
+                const img = document.createElement('img');
+                img.src = user.avatar.url;
+                img.alt = user.name || user.username || 'avatar';
+                img.className = 'profile-avatar-img';
+                avatarWrap.innerHTML = '';
+                avatarWrap.appendChild(img);
+            } else if (initial) {
+                const source = (user.name || user.username || '?').trim();
+                initial.textContent = source.charAt(0).toUpperCase();
+            }
+        }
+
+        const emailBadge = document.getElementById('profileEmailBadge');
+        if (emailBadge) {
+            if (user.emailVerified) {
+                emailBadge.textContent = '✓ ایمیل تأیید شده';
+                emailBadge.dataset.state = 'ok';
+            } else {
+                emailBadge.textContent = '⚠ در انتظار تأیید ایمیل';
+                emailBadge.dataset.state = 'warn';
+            }
+            emailBadge.hidden = false;
+        }
+
+        const viewBtn = document.getElementById('viewPublicBtn');
+        if (viewBtn && user.username) {
+            viewBtn.href = '/users/' + encodeURIComponent(user.username);
+        }
+
+        // Bio — نمایش
+        renderBioDisplay(user.bio);
+    }
+
+    function renderStats(stats) {
+        if (!stats) {
+            setStat('statProjects', '—');
+            setStat('statReviews', '—');
+            setStat('statDownloads', '—');
+            setStat('statRating', '—');
             return;
+        }
 
-        await loadSessions();
-    })();
-});
+        const projects = stats.projects ?? stats.projectCount ?? stats.projectsCount ?? stats.totalProjects;
+        const reviews = stats.reviews ?? stats.reviewCount ?? stats.reviewsReceived ?? stats.totalReviews;
+        const downloads = stats.downloads ?? stats.totalDownloads ?? stats.downloadCount;
+        const rating = stats.rating ?? stats.averageRating ?? stats.avgRating ?? stats.ratingAverage;
+
+        setStat('statProjects', formatNumber(projects));
+        setStat('statReviews', formatNumber(reviews));
+        setStat('statDownloads', formatNumber(downloads));
+
+        const reviewCount = Number(reviews ?? 0);
+        if (reviewCount > 0 && rating !== null && rating !== undefined && !isNaN(rating)) {
+            setStat('statRating', Number(rating).toFixed(1) + ' / 5');
+        } else {
+            setStat('statRating', '—');
+        }
+    }
+
+    function setStat(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    function renderRecentProjects(projects) {
+        const wrap = document.getElementById('recentProjects');
+        if (!wrap) return;
+
+        if (!Array.isArray(projects) || !projects.length) {
+            wrap.innerHTML = `
+                <div class="recent-empty">
+                    <p>هنوز پروژه‌ای نساخته‌اید.</p>
+                    <a class="btn-primary" href="/dashboard/projects">اولین پروژه را بسازید</a>
+                </div>`;
+            return;
+        }
+
+        wrap.innerHTML = projects.slice(0, 6).map(p => {
+            const img = (p.images && p.images[0] && p.images[0].url) ? p.images[0].url : null;
+            const title = escapeHtml(p.title || 'بدون عنوان');
+            const desc = escapeHtml(p.shortDescription || '');
+            const slug = p.slug || p._id;
+            const status = p.status || 'draft';
+
+            const cover = img
+                ? `<img class="recent-card-cover" src="${escapeHtml(img)}" alt="${title}" loading="lazy">`
+                : `<div class="recent-card-cover recent-card-cover--placeholder">${escapeHtml(title.charAt(0))}</div>`;
+
+            return `
+                <a class="recent-card" href="/projects/${encodeURIComponent(slug)}">
+                    ${cover}
+                    <div class="recent-card-body">
+                        <div class="recent-card-head">
+                            <h3 class="recent-card-title">${title}</h3>
+                            <span class="recent-status recent-status--${escapeHtml(status)}">${statusLabel(status)}</span>
+                        </div>
+                        ${desc ? `<p class="recent-card-desc">${desc}</p>` : ''}
+                    </div>
+                </a>`;
+        }).join('');
+    }
+
+    /* ============================================================
+       Loaders
+       ============================================================ */
+    async function loadProfile() {
+        const payload = await getJSON('/api/profile/me');
+        const user =
+            unwrap(payload, 'user') ||
+            unwrap(payload, 'profile') ||
+            payload;
+        renderProfile(user);
+        return user;
+    }
+
+    async function loadStats(user) {
+        const username = user && user.username;
+        if (!username) {
+            console.warn('[profile] no username, skip stats');
+            renderStats(null);
+            return;
+        }
+        try {
+            const payload = await getJSON('/api/users/' + encodeURIComponent(username));
+            const stats = extractStats(payload);
+            if (!stats) {
+                console.warn('[profile] stats not found in payload:', payload);
+            }
+            renderStats(stats);
+        } catch (err) {
+            console.warn('[profile] stats load failed:', err.message, err.payload);
+            renderStats(null);
+        }
+    }
+
+    async function loadRecentProjects() {
+        try {
+            const payload = await getJSON('/api/projects?mine=true&limit=6&sort=recent');
+            const items =
+                unwrap(payload, 'projects') ||
+                unwrap(payload, 'items') ||
+                (Array.isArray(payload.data) ? payload.data : null) ||
+                [];
+            renderRecentProjects(items);
+        } catch (err) {
+            console.warn('[profile] projects load failed:', err.message, err.payload);
+            renderRecentProjects([]);
+        }
+    }
+
+    /* ============================================================
+       Boot
+       ============================================================ */
+    document.addEventListener('DOMContentLoaded', async () => {
+        bindBioActions();
+
+        try {
+            const user = await loadProfile();
+            await Promise.all([
+                loadStats(user),
+                loadRecentProjects(),
+            ]);
+        } catch (err) {
+            console.error('[profile] load failed:', err);
+            if (window.openDialogError) {
+                window.openDialogError('خطا', err.message || 'بارگذاری پروفایل ناموفق بود.');
+            }
+        }
+    });
+})();
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)

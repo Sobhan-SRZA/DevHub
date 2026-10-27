@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/form-errors.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/dashboard/security.css">
+  <title>امنیت و نشست‌ها</title>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../components/dashboard-nav") %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "امنیت و نشست‌ها" }) %>
+
+    <main class="security-page container">
+
+      <!-- ============ ACTIVE SESSIONS ============ -->
+      <section class="security-section">
+        <div class="security-section-head">
+          <h2 class="security-title">دستگاه‌های فعال</h2>
+        </div>
+        <p class="security-sub">سشن‌هایی که با حساب شما وارد شده‌اند</p>
+
+        <div id="sessionsList" class="sessions-list">
+          <div class="sessions-loading">در حال بارگذاری…</div>
+        </div>
+
+        <div class="security-actions">
+          <button type="button" class="btn-secondary" id="logoutAllBtn">
+            خروج از همه دستگاه‌ها
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ COMING SOON ============ -->
+      <section class="security-section security-coming-soon">
+        <div class="security-section-head">
+          <h2 class="security-title">تاریخچه ورود</h2>
+          <span class="soon-badge">به‌زودی</span>
+        </div>
+        <p class="security-sub">لیست همه‌ی ورودها با تاریخ، IP و موقعیت مکانی.</p>
+      </section>
+
+      <section class="security-section security-coming-soon">
+        <div class="security-section-head">
+          <h2 class="security-title">احراز هویت دو مرحله‌ای (2FA)</h2>
+          <span class="soon-badge">به‌زودی</span>
+        </div>
+        <p class="security-sub">افزودن لایه‌ی دوم امنیت با TOTP (Google Authenticator).</p>
+      </section>
+
+      <section class="security-section security-coming-soon">
+        <div class="security-section-head">
+          <h2 class="security-title">توکن‌های API</h2>
+          <span class="soon-badge">به‌زودی</span>
+        </div>
+        <p class="security-sub">ساخت توکن برای دسترسی برنامه‌نویسی به API.</p>
+      </section>
+
+    </main>
+  </div>
+</body>
+
+<script src="/js/form-errors.js"></script>
+<script src="/js/dashboard-nav.js"></script>
+<script src="/js/dashboard/security.js"></script>
+
+</html>

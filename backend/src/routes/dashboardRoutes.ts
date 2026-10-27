@@ -15,7 +15,8 @@ router.use(attachUserLocals);
 router.get("/", (req, res) => res.render("dashboard/home"));
 router.get("/projects", (req, res) => res.render("dashboard/projects"));
 router.get("/profile", (req, res) => res.render("dashboard/profile"));
-router.get("/profile/settings", (req, res) => res.render("dashboard/settings"));
+router.get("/security", (req, res) => res.render("dashboard/security"));
+router.get("/settings", (req, res) => res.render("dashboard/settings"));
 
 /* ---------- Admin only ---------- */
 router.get("/tag-types", pageAdminGuard, (req, res) => res.render("dashboard/tag-types"));

@@ -1,0 +1,493 @@
+/* ============================================
+   /dashboard/security — Sessions & Security
+   ============================================ */
+
+/* ---------- Local design tokens ---------- */
+.security-page {
+    --sec-surface-1: var(--surface-1, #1a1a1f);
+    --sec-surface-2: var(--surface-2, #23232c);
+    --sec-border: var(--border-1, #2a2a33);
+    --sec-border-hi: var(--border-2, #3a3a48);
+    --sec-text: var(--text-1, #f2f2f7);
+    --sec-text-2: var(--text-2, #b9b9c4);
+    --sec-text-3: var(--text-3, #8a8a99);
+    --sec-accent: var(--accent, #7c9eff);
+    --sec-accent-08: rgba(124, 158, 255, 0.08);
+    --sec-accent-12: rgba(124, 158, 255, 0.12);
+    --sec-accent-bd: rgba(124, 158, 255, 0.28);
+    --sec-accent-glow: rgba(124, 158, 255, 0.10);
+
+    --sec-danger: #f87171;
+    --sec-danger-bg: rgba(248, 113, 113, 0.10);
+    --sec-danger-bd: rgba(248, 113, 113, 0.28);
+
+    --sec-radius: 14px;
+    --sec-radius-lg: 16px;
+    --sec-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-block: 24px;
+}
+
+/* ============================================
+   SECTIONS
+   ============================================ */
+.security-section {
+    position: relative;
+    padding: 22px 24px;
+    border-radius: var(--sec-radius-lg);
+    background: var(--sec-surface-1);
+    border: 1px solid var(--sec-border);
+    transition: border-color 0.2s var(--sec-ease);
+}
+
+.security-section:hover {
+    border-color: var(--sec-border-hi);
+}
+
+.security-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.security-title {
+    margin: 0;
+    font-size: 16.5px;
+    font-weight: 700;
+    color: var(--sec-text);
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+}
+
+.security-sub {
+    margin: 0;
+    color: var(--sec-text-3);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* ============================================
+   COMING SOON — واضح، نه خراب
+   ============================================ */
+.security-coming-soon {
+    background: var(--sec-surface-1);
+    border-color: var(--sec-border);
+}
+
+.security-coming-soon .security-title {
+    color: var(--sec-text-2);
+}
+
+.soon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--sec-surface-2);
+    color: var(--sec-text-3);
+    border: 1px solid var(--sec-border);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* نقطه pulsing — حس «فعال» بهجای «قطعشده» */
+.soon-badge::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sec-accent);
+    animation: sec-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sec-pulse {
+
+    0%,
+    100% {
+        opacity: 0.35;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   SESSIONS LIST
+   ============================================ */
+.sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ---------- Loading skeleton ---------- */
+.sessions-loading {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 96px;
+    padding: 20px;
+    text-align: center;
+    color: var(--sec-text-3);
+    font-size: 13px;
+    background: var(--sec-surface-2);
+    border-radius: var(--sec-radius);
+    overflow: hidden;
+}
+
+.sessions-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            var(--sec-accent-08) 50%,
+            transparent 100%);
+    background-size: 200% 100%;
+    animation: sec-shimmer 1.6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes sec-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ---------- Empty / Error states ---------- */
+.sessions-empty,
+.sessions-error {
+    padding: 32px 20px;
+    text-align: center;
+    border-radius: var(--sec-radius);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.sessions-empty {
+    color: var(--sec-text-3);
+    background: var(--sec-surface-2);
+    border: 1px dashed var(--sec-border);
+}
+
+.sessions-empty::before {
+    content: '🔒';
+    display: block;
+    font-size: 28px;
+    margin-bottom: 8px;
+    opacity: 0.6;
+}
+
+.sessions-error {
+    color: var(--sec-danger);
+    background: var(--sec-danger-bg);
+    border: 1px solid var(--sec-danger-bd);
+}
+
+/* ============================================
+   SESSION CARD
+   ============================================ */
+.session-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: var(--sec-radius);
+    background: var(--sec-surface-2);
+    border: 1px solid var(--sec-border);
+    transition:
+        border-color 0.2s var(--sec-ease),
+        background 0.2s var(--sec-ease);
+}
+
+.session-card:hover {
+    border-color: var(--sec-border-hi);
+}
+
+/* ---------- Current session highlight ---------- */
+.session-card--current {
+    background: linear-gradient(135deg,
+            var(--sec-surface-2) 0%,
+            var(--sec-accent-08) 100%);
+    border-color: var(--sec-accent-bd);
+    box-shadow:
+        0 0 0 1px var(--sec-accent-bd) inset,
+        0 4px 20px var(--sec-accent-glow);
+}
+
+/* نشانگر سمت راست (RTL) — «شما اینجا هستید» */
+.session-card--current::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block: 12px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--sec-accent);
+}
+
+/* ---------- Icon badge ---------- */
+.session-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sec-surface-1);
+    border: 1px solid var(--sec-border);
+    border-radius: 12px;
+    font-size: 22px;
+    line-height: 1;
+    transition: transform 0.2s var(--sec-ease);
+}
+
+.session-card:hover .session-icon {
+    transform: scale(1.04);
+}
+
+.session-card--current .session-icon {
+    background: var(--sec-accent-12);
+    border-color: var(--sec-accent-bd);
+}
+
+/* ---------- Info ---------- */
+.session-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.session-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    min-width: 0;
+}
+
+.session-device {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sec-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--sec-accent);
+    color: #0b1220;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.session-badge::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #0b1220;
+    opacity: 0.7;
+}
+
+/* ---------- Meta rows ---------- */
+.session-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--sec-text-3);
+    line-height: 1.5;
+}
+
+.session-meta>span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.session-meta--small {
+    margin-top: 2px;
+    font-size: 11.5px;
+    opacity: 0.85;
+}
+
+/* ---------- Actions ---------- */
+.session-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.session-actions>button {
+    white-space: nowrap;
+}
+
+.session-actions>button:focus-visible {
+    outline: 2px solid var(--sec-accent);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   BULK ACTIONS — جداسازی بصری
+   ============================================ */
+.security-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--sec-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 720px) {
+    .security-section {
+        padding: 18px 16px;
+    }
+
+    .session-card {
+        padding: 14px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .session-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .session-info {
+        flex: 1 1 calc(100% - 52px);
+    }
+
+    .session-actions {
+        flex-basis: 100%;
+        padding-top: 12px;
+        margin-top: 4px;
+        border-top: 1px dashed var(--sec-border);
+    }
+
+    .session-actions>button {
+        flex: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .security-page {
+        gap: 16px;
+        padding-block: 16px;
+    }
+
+    .security-section {
+        padding: 16px 14px;
+    }
+
+    .session-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        border-radius: 10px;
+    }
+
+    .session-info {
+        flex: 1 1 calc(100% - 48px);
+    }
+
+    .session-device {
+        font-size: 13px;
+    }
+
+    .security-title {
+        font-size: 15px;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    .sessions-loading::after,
+    .soon-badge::before {
+        animation: none;
+    }
+
+    .session-card,
+    .session-card:hover .session-icon,
+    .security-section {
+        transition: none;
+    }
+
+    .session-card:hover .session-icon {
+        transform: none;
+    }
+}
+
+/* ============================================
+   FALLBACK — برای مرورگرهای بدون CSS vars
+   ============================================ */
+@supports not (color: var(--sec-text)) {
+    .security-section {
+        background: #1a1a1f;
+        border-color: #2a2a33;
+    }
+
+    .security-title {
+        color: #f2f2f7;
+    }
+
+    .security-sub,
+    .session-meta {
+        color: #8a8a99;
+    }
+
+    .session-card {
+        background: #23232c;
+        border-color: #2a2a33;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */

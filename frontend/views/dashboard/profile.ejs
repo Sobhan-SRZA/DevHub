@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
   <meta charset="UTF-8">
@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/form-errors.css">
-  <link rel="stylesheet" href="/styles/auth.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/dashboard/profile.css">
-  <title>پروفایل من</title>
+  <link rel="stylesheet" href="/styles/markdown-editor.css">
+  <title>نمای کلی حساب</title>
 </head>
 
 <body>
@@ -24,66 +24,96 @@
 
     <main class="profile-page container">
 
-      <!-- ============ HEADER CARD ============ -->
+      <!-- ============ HERO ============ -->
       <section class="profile-hero">
         <div class="profile-avatar-big" id="profileAvatarBig">
           <span id="profileAvatarInitial">?</span>
         </div>
 
         <div class="profile-hero-info">
-          <h1 class="profile-hero-name" id="profileHeroName">در حال بارگذاری…</h1>
+          <div class="profile-hero-line">
+            <h1 class="profile-hero-name" id="profileHeroName">در حال بارگذاری…</h1>
+            <span class="role-badge" id="profileRoleBadge" hidden>—</span>
+          </div>
           <p class="profile-hero-username" id="profileHeroUsername">@—</p>
-          <p class="profile-hero-email" id="profileHeroEmail">—</p>
+          <div class="profile-hero-meta">
+            <span class="profile-hero-email" id="profileHeroEmail">—</span>
+            <span class="email-badge" id="profileEmailBadge" hidden></span>
+          </div>
         </div>
 
         <div class="profile-hero-actions">
-          <button type="button" class="btn-secondary" id="logoutAllBtn">
-            خروج از همه دستگاه‌ها
-          </button>
-          <button type="button" class="btn-danger" id="logoutSessionBtn">
-            خروج
-          </button>
+          <a class="btn-secondary" id="viewPublicBtn" href="#" target="_blank" rel="noopener">
+            مشاهده پروفایل عمومی
+          </a>
+          <a class="btn-secondary" href="/dashboard/settings">ویرایش پروفایل</a>
+          <a class="btn-secondary" href="/dashboard/security">امنیت و نشست‌ها</a>
         </div>
       </section>
 
-      <!-- ============ INFO GRID ============ -->
-      <section class="profile-grid">
-        <div class="info-card">
-          <span class="info-label">نام کاربری</span>
-          <span class="info-value" id="infoUsername">—</span>
+      <!-- ============ STATS ============ -->
+      <section class="profile-stats">
+        <div class="stat-card">
+          <span class="stat-value" id="statProjects">—</span>
+          <span class="stat-label">پروژه</span>
         </div>
-        <div class="info-card">
-          <span class="info-label">ایمیل</span>
-          <span class="info-value" id="infoEmail">—</span>
+        <div class="stat-card">
+          <span class="stat-value" id="statReviews">—</span>
+          <span class="stat-label">ریویو دریافتی</span>
         </div>
-        <div class="info-card">
-          <span class="info-label">تاریخ عضویت</span>
-          <span class="info-value" id="infoCreatedAt">—</span>
+        <div class="stat-card">
+          <span class="stat-value" id="statDownloads">—</span>
+          <span class="stat-label">دانلود</span>
         </div>
-        <div class="info-card">
-          <span class="info-label">وضعیت</span>
-          <span class="info-value info-value--ok">فعال</span>
-        </div>
-      </section>
-
-      <!-- ============ CURRENT SESSION ============ -->
-      <section class="sessions-section">
-        <div class="sessions-header">
-          <h2 class="sessions-title">دستگاه‌های فعال</h2>
-          <p class="sessions-sub">سشن‌هایی که با حساب شما وارد شده‌اند</p>
-        </div>
-
-        <div id="sessionsList" class="sessions-list">
-          <div class="sessions-loading">در حال بارگذاری…</div>
+        <div class="stat-card">
+          <span class="stat-value" id="statRating">—</span>
+          <span class="stat-label">میانگین امتیاز</span>
         </div>
       </section>
 
+      <!-- ============ RECENT PROJECTS ============ -->
+      <section class="profile-recent">
+        <div class="section-head">
+          <h2 class="section-title">پروژه‌های من</h2>
+          <a class="section-link" href="/dashboard/projects">همه پروژه‌ها ←</a>
+        </div>
+        <div id="recentProjects" class="recent-projects-grid">
+          <div class="recent-loading">در حال بارگذاری…</div>
+        </div>
+      </section>
+
+      <!-- ============ BIO — Display mode ============ -->
+      <section class="profile-bio" id="profileBioSection" hidden>
+        <div class="section-head">
+          <h2 class="section-title">درباره من</h2>
+          <button type="button" class="section-link" id="editBioBtn">ویرایش ←</button>
+        </div>
+        <div id="profileBioDisplay" class="profile-bio-content">
+          <div class="md-preview-content"></div>
+        </div>
+      </section>
+
+      <!-- ============ BIO — Edit mode (hidden by default) ============ -->
+      <section class="profile-bio profile-bio--editing" id="profileBioEditSection" hidden>
+        <div class="section-head">
+          <h2 class="section-title">ویرایش بیو</h2>
+        </div>
+
+        <!-- MarkdownEditor اینجا mount می‌شود -->
+        <div id="profileBioEditor"></div>
+
+        <div class="profile-bio-actions">
+          <button type="button" class="btn-primary" id="saveBioBtn">ذخیره</button>
+          <button type="button" class="btn-secondary" id="cancelBioBtn">انصراف</button>
+        </div>
+      </section>
     </main>
   </div>
 </body>
 
 <script src="/js/form-errors.js"></script>
 <script src="/js/dashboard-nav.js"></script>
+<script src="/js/components/markdown-editor.js"></script>
 <script src="/js/dashboard/profile.js"></script>
 
 </html>
