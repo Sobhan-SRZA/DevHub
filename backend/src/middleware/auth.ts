@@ -42,9 +42,13 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
             return next(new AppError(401, ErrorCodes.SESSION_NOT_FOUND));
         }
 
-        const user = await User.findById(payload.sub).lean();
+        const user = await User.findById(payload.sub).select("-password").lean();
         if (!user) {
             return next(new AppError(401, ErrorCodes.UNAUTHENTICATED));
+        }
+
+        if ((user as any).isBanned) {
+            return next(new AppError(403, ErrorCodes.ACCOUNT_DISABLED));
         }
 
         req.user = user;
@@ -83,8 +87,8 @@ export async function optionalAuth(req: any, _res: Response, next: NextFunction)
         if (!session)
             return next();
 
-        const user = await User.findById(payload.sub).lean();
-        if (user) {
+        const user = await User.findById(payload.sub).select("-password").lean();
+        if (user && !(user as any).isBanned) {
             req.user = user;
             req.session = session;
         }

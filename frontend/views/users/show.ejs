@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <link rel="stylesheet" href="/styles/dialog.css">
-  <link rel="stylesheet" href="/styles/markdown-editor.css">
-  <link rel="stylesheet" href="/styles/users/show.css">
-  <title>پروفایل</title>
+  <%- include("../components/seo-head", {
+    title: (typeof seo !== "undefined" && seo.title) ? seo.title : "پروفایل کاربر",
+    description: (typeof seo !== "undefined" && seo.description) ? seo.description : "پروفایل توسعه‌دهنده در DevHub",
+    canonicalPath: (typeof seo !== "undefined" && seo.canonicalPath) ? seo.canonicalPath : ("/users/" + (typeof idOrUsername !== "undefined" ? idOrUsername : "")),
+    ogImage: (typeof seo !== "undefined" && seo.ogImage) ? seo.ogImage : undefined,
+    ogType: "profile",
+    extraStyles: ["/styles/dialog.css", "/styles/markdown-editor.css", "/styles/users/show.css"],
+    jsonLd: (typeof seo !== "undefined" && seo.jsonLd) ? seo.jsonLd : undefined
+  }) %>
 </head>
 
 <body>
@@ -136,9 +138,9 @@
     </div>
   </main>
 
-  <script src="/js/form-errors.js"></script>
-  <script src="/js/components/markdown-editor.js"></script>
-  <script src="/js/pages/users-show.js"></script>
+  <script defer src="/js/form-errors.js"></script>
+  <script defer src="/js/components/markdown-editor.js"></script>
+  <script defer src="/js/pages/users-show.js"></script>
 </body>
 
 </html>

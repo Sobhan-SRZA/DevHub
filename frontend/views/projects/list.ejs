@@ -1,13 +1,14 @@
 <!-- views/projects/list.ejs -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <link rel="stylesheet" href="/styles/projects.css">
-  <title>پروژه‌ها</title>
+  <%- include("../components/seo-head", {
+    title: "پروژه‌های عمومی",
+    description: "لیست پروژه‌های منتشرشده توسط کاربران در DevHub — کشف پروژه‌های متن‌باز ایرانی و جهانی.",
+    canonicalPath: "/projects",
+    extraStyles: ["/styles/projects.css"]
+  }) %>
 </head>
 
 <body>

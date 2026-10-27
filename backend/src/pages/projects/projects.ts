@@ -3,7 +3,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/", optionalAuth, (req, res) => res.render("projects/list"));
+router.get("/", optionalAuth, (req, res) => res.render("projects/list", { req }));
 
 export default router;
 

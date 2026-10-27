@@ -1,0 +1,15 @@
+# DevHub — robots.txt
+User-agent: *
+Allow: /
+Allow: /explore
+Allow: /projects
+Allow: /projects/
+Allow: /users/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /uploads/private/
+
+# Sitemap
+Sitemap: /sitemap

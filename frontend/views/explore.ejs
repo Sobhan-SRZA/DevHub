@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/styles/index.css">
-    <link rel="stylesheet" href="/styles/dialog.css">
-    <link rel="stylesheet" href="/styles/form-errors.css">
-    <link rel="stylesheet" href="/styles/explore.css">
-    <title>کاوش پروژه‌ها</title>
+    <%- include("components/seo-head", {
+      title: "کاوش پروژه‌ها",
+      description: "جستجو، فیلتر و کشف پروژه‌های متن‌باز در DevHub. مرتب‌سازی بر اساس داغ، برتر، جدید و پربازدید.",
+      keywords: "کاوش پروژه, جستجوی پروژه متن‌باز, فیلتر پروژه, DevHub, trending, hot",
+      canonicalPath: "/explore",
+      extraStyles: ["/styles/dialog.css", "/styles/form-errors.css", "/styles/explore.css"]
+    }) %>
 </head>
 
 <body>
@@ -95,8 +95,8 @@
 
     </main>
 
-    <script src="/js/form-errors.js"></script>
-    <script src="/js/pages/explore.js"></script>
+    <script defer src="/js/form-errors.js"></script>
+    <script defer src="/js/pages/explore.js"></script>
 </body>
 
 </html>

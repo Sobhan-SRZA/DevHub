@@ -159,11 +159,20 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             
             main.querySelectorAll('.pc[data-href]').forEach((card) => {
+                card.setAttribute('role', 'link');
+                card.setAttribute('tabindex', '0');
+                card.style.cursor = 'pointer';
+                const go = () => { location.href = card.dataset.href; };
                 card.addEventListener('click', (e) => {
                     if (e.target.closest('a, button')) return;
-                    location.href = card.dataset.href;
+                    go();
                 });
-                card.style.cursor = 'pointer';
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (!e.target.closest('a, button')) go();
+                    }
+                });
             });
         } catch (err) {
             main.innerHTML = `

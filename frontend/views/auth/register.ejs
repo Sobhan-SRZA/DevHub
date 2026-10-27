@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <link rel="stylesheet" href="/styles/auth.css">
-  <link rel="stylesheet" href="/styles/form-errors.css">
-  <title>ثبت نام</title>
+  <%- include("../components/seo-head", {
+    title: "ثبت‌نام",
+    description: "ساخت حساب کاربری در DevHub و شروع انتشار پروژه‌های متن‌باز",
+    noindex: true,
+    canonicalPath: "/auth/register",
+    extraStyles: ["/styles/auth.css", "/styles/form-errors.css"]
+  }) %>
 </head>
 
 <body>

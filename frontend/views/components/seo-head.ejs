@@ -1,0 +1,130 @@
+<%
+  /* ============================================================
+     SEO Head — مشترک همه صفحات عمومی
+     پارامترها (همه اختیاری مگر title):
+       title          — عنوان صفحه (بدون برند)
+       description    — متا دسکریپشن
+       canonicalPath  — مسیر canonical مثل /explore (پیش‌فرض از req)
+       ogImage        — URL کامل یا نسبی تصویر OG
+       ogType         — website | article | profile (پیش‌فرض website)
+       noindex        — true برای صفحات خصوصی/داشبورد/احراز هویت
+       keywords       — رشته کلمات کلیدی
+       jsonLd         — آبجکت یا آرایه JSON-LD (رندر می‌شود)
+       extraStyles    — آرایه مسیر CSS اضافه
+       extraScripts   — آرایه مسیر JS (defer) — معمولاً در انتهای body بگذارید
+  ============================================================ */
+  const siteName = 'DevHub';
+  const siteTagline = 'کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز';
+  const defaultDesc = 'پلتفرم کشف و بررسی پروژه‌های متن‌باز — ترکیبی از GitHub، Product Hunt و بازخورد واقعی کاربران. پروژه‌های ایرانی و جهانی را پیدا کنید، امتیاز دهید و به اشتراک بگذارید.';
+  const pageTitle = typeof title !== 'undefined' && title
+    ? String(title).trim()
+    : 'صفحه اصلی';
+  const fullTitle = pageTitle.includes(siteName)
+    ? pageTitle
+    : `${pageTitle} | ${siteName}`;
+  const metaDesc = (typeof description !== 'undefined' && description)
+    ? String(description).trim().slice(0, 320)
+    : defaultDesc;
+  const metaKeywords = (typeof keywords !== 'undefined' && keywords)
+    ? String(keywords)
+    : 'پروژه متن‌باز, اپن سورس, GitHub, DevHub, برنامه‌نویسی, React, Node.js, کشف پروژه, ریویو پروژه';
+  const robotsContent = (typeof noindex !== 'undefined' && noindex)
+    ? 'noindex, nofollow'
+    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+  const ogTypeVal = (typeof ogType !== 'undefined' && ogType) ? ogType : 'website';
+
+  // پایه URL — از env یا host درخواست
+  let baseUrl = '';
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.APP_URL) {
+      baseUrl = String(process.env.APP_URL).replace(/\/$/, '');
+    } else if (typeof req !== 'undefined' && req) {
+      const proto = (req.get && req.get('x-forwarded-proto')) || req.protocol || 'https';
+      const host = (req.get && (req.get('x-forwarded-host') || req.get('host'))) || 'localhost';
+      baseUrl = `${proto}://${host}`.replace(/\/$/, '');
+    }
+  } catch (e) { baseUrl = ''; }
+
+  const pathForCanonical = (typeof canonicalPath !== 'undefined' && canonicalPath != null)
+    ? String(canonicalPath)
+    : (typeof req !== 'undefined' && req && req.originalUrl
+        ? String(req.originalUrl).split('?')[0]
+        : '/');
+  const canonicalUrl = baseUrl
+    ? (baseUrl + (pathForCanonical.startsWith('/') ? pathForCanonical : '/' + pathForCanonical))
+    : pathForCanonical;
+
+  let imageUrl = (typeof ogImage !== 'undefined' && ogImage) ? String(ogImage) : '/assets/logo.svg';
+  if (imageUrl && !/^https?:\/\//i.test(imageUrl) && baseUrl) {
+    imageUrl = baseUrl + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
+  }
+
+  const styles = Array.isArray(typeof extraStyles !== 'undefined' ? extraStyles : null)
+    ? extraStyles
+    : [];
+%>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<script>
+(function(){try{var m=localStorage.getItem('dh-mode')||'system';var a=localStorage.getItem('dh-accent')||'blue';var r=m==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):m;document.documentElement.setAttribute('data-mode',r);document.documentElement.setAttribute('data-accent',a);document.documentElement.style.colorScheme=r;}catch(e){}})();
+</script>
+
+<title><%= fullTitle %></title>
+<meta name="description" content="<%= metaDesc %>">
+<meta name="keywords" content="<%= metaKeywords %>">
+<meta name="author" content="<%= siteName %>">
+<meta name="robots" content="<%= robotsContent %>">
+<meta name="googlebot" content="<%= robotsContent %>">
+<link rel="canonical" href="<%= canonicalUrl %>">
+
+<!-- Open Graph -->
+<meta property="og:site_name" content="<%= siteName %>">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:type" content="<%= ogTypeVal %>">
+<meta property="og:title" content="<%= fullTitle %>">
+<meta property="og:description" content="<%= metaDesc %>">
+<meta property="og:url" content="<%= canonicalUrl %>">
+<meta property="og:image" content="<%= imageUrl %>">
+<meta property="og:image:alt" content="<%= pageTitle %> — <%= siteName %>">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= fullTitle %>">
+<meta name="twitter:description" content="<%= metaDesc %>">
+<meta name="twitter:image" content="<%= imageUrl %>">
+
+<!-- Theme & App -->
+<meta name="theme-color" content="#0b1220">
+<meta name="color-scheme" content="dark light">
+<meta name="application-name" content="<%= siteName %>">
+<meta name="apple-mobile-web-app-title" content="<%= siteName %>">
+
+<!-- Favicon -->
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/logo.svg">
+
+<!-- Performance: fonts + preconnect -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"></noscript>
+
+<!-- Styles پایه -->
+<link rel="stylesheet" href="/styles/index.css">
+<link rel="stylesheet" href="/styles/themes.css">
+<link rel="stylesheet" href="/styles/header.css">
+<% styles.forEach(function (href) { %>
+<link rel="stylesheet" href="<%= href %>">
+<% }) %>
+
+<% if (typeof jsonLd !== 'undefined' && jsonLd) {
+  const payload = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
+  payload.forEach(function (item) {
+    if (!item) return;
+%>
+<script type="application/ld+json"><%- JSON.stringify(item) %></script>
+<%
+  });
+} %>

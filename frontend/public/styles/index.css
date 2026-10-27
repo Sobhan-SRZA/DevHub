@@ -1,90 +1,320 @@
-/* -------------------- BASE & RESET -------------------- */
+/* ============================================================
+   DevHub Design System — Base
+   Modern dark UI · RTL · Accessible · Performance-minded
+   ============================================================ */
+
+/* ---------- Design Tokens ---------- */
+:root {
+    /* Surfaces */
+    --bg: #070b12;
+    --bg-elevated: #0c1220;
+    --bg-surface: #111827;
+    --bg-surface-2: #1a2234;
+    --bg-hover: #1e293b;
+    --bg-muted: #0f172a;
+
+    /* Borders */
+    --border: rgba(148, 163, 184, 0.12);
+    --border-strong: rgba(148, 163, 184, 0.22);
+    --border-focus: rgba(59, 130, 246, 0.55);
+
+    /* Text */
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-inverse: #0b1220;
+
+    /* Brand */
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-soft: #60a5fa;
+    --accent-glow: rgba(59, 130, 246, 0.22);
+    --accent-muted: rgba(59, 130, 246, 0.12);
+
+    /* Semantic */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #38bdf8;
+
+    /* Radius */
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --radius-full: 9999px;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+    --shadow-glow: 0 0 0 1px var(--border), 0 12px 40px var(--accent-glow);
+
+    /* Layout */
+    --page-max: 1240px;
+    --page-gutter: clamp(16px, 4vw, 28px);
+    --header-h: 68px;
+
+    /* Motion */
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration: 0.2s;
+    --duration-slow: 0.35s;
+
+    /* Typography */
+    --font: "Vazirmatn", "Tahoma", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    --lh: 1.65;
+}
+
+/* ---------- Reset ---------- */
 *,
-*::after,
-*::before {
+*::before,
+*::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
 }
 
 html {
-    /* overflow-y: scroll; */
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 body {
     position: relative;
-    font-family: 'Tahoma', sans-serif;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    /* ✅ FIX: align-items: center → stretch  */
     align-items: stretch;
-    /* justify-items در flex کاری نمی‌کنه */
-    min-height: 100vh;
-    background-color: rgb(0, 0, 0);
-    color: white;
-    text-align: center;
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: var(--lh);
+    color: var(--text);
+    background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(59, 130, 246, 0.08), transparent 55%),
+        radial-gradient(800px 400px at 100% 20%, rgba(14, 165, 233, 0.05), transparent 50%),
+        var(--bg);
+    background-attachment: fixed;
     overflow-x: hidden;
-    /* ✅ جلوگیری از اسکرول افقی */
+    text-align: start;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* ✅ همه‌ی main‌ها و wrapperهای صفحه full width */
-body>main,
-body>section,
-body>div.page-wrapper {
+body > main,
+body > section,
+body > div.page-wrapper {
     width: 100%;
     flex-shrink: 0;
 }
 
-.container {
-    background-color: #0e0e0e;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
+img,
+svg,
+video {
     max-width: 100%;
+    height: auto;
+    display: block;
 }
 
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+ul,
+ol {
+    list-style: none;
+}
+
+/* ---------- Typography ---------- */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text);
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+p {
+    color: var(--text-secondary);
+}
+
+::selection {
+    background: rgba(59, 130, 246, 0.35);
+    color: #fff;
+}
+
+/* ---------- Links (no global underline animation on every a) ---------- */
+a {
+    color: var(--accent-soft);
+    text-decoration: none;
+    transition: color var(--duration) var(--ease);
+}
+
+a:hover {
+    color: #93c5fd;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Remove the old global underline pseudo that broke buttons/nav */
+a::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* ---------- Layout helpers ---------- */
+.container {
+    width: 100%;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding: var(--page-gutter);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- Buttons ---------- */
+.btn,
+.btn-primary,
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0.7rem 1.35rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition:
+        background var(--duration) var(--ease),
+        color var(--duration) var(--ease),
+        border-color var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease),
+        transform var(--duration) var(--ease);
+    border: 1.5px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.btn-primary,
+.btn {
+    background: linear-gradient(135deg, var(--accent), #1d4ed8);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.btn-primary:hover,
+.btn:hover {
+    background: linear-gradient(135deg, var(--accent-hover), #1e40af);
+    color: #fff;
+    box-shadow: 0 8px 28px rgba(37, 99, 235, 0.45);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active,
+.btn:active,
+.btn-outline:active {
+    transform: translateY(0);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--accent-soft);
+    border-color: rgba(96, 165, 250, 0.45);
+}
+
+.btn-outline:hover {
+    background: var(--accent-muted);
+    color: #93c5fd;
+    border-color: var(--accent-soft);
+}
+
+.btn-primary::after,
+.btn-outline::after,
+.btn::after {
+    display: none !important;
+}
+
+.btn:disabled,
+.btn-primary:disabled,
+.btn-outline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ---------- Legacy / shared bits kept for compatibility ---------- */
 h2 {
-    color: #929292;
+    color: var(--text-secondary);
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
 }
 
 #userInfo {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #e9ecef;
-    border-radius: 5px;
-    border: 1px solid #dee2e6;
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
 }
 
 #userInfo p {
-    margin: 5px 0;
-}
-
-.btn {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    width: 100%;
-    margin-top: 10px;
-    transition: all ease-in-out .5s;
-}
-
-.btn:hover {
-    background-color: #0056b3;
+    margin: 0.35rem 0;
 }
 
 .logout {
     font-size: larger;
     padding: 5px;
     width: 3rem;
-    border: 2px white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 5px;
 }
 
@@ -92,104 +322,7 @@ section {
     margin-bottom: 1rem;
 }
 
-/* -------------------- LINKS -------------------- */
-a {
-    text-decoration: none;
-    color: #e0e0e0;
-    font-weight: 500;
-    font-size: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    padding-bottom: 5px;
-}
-
-a:hover {
-    color: #6ebbff;
-}
-
-a::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #6ebbff;
-    transition: width 0.3s ease;
-}
-
-a:hover::after {
-    width: 100%;
-}
-
-/* ---------- Home hero section ---------- */
-.hero {
-    max-width: 600px;
-    margin: 3rem auto;
-    text-align: center;
-}
-
-.hero-title {
-    font-size: 1.8rem;
-    color: #fff;
-    margin-bottom: 12px;
-}
-
-.hero-sub {
-    color: #999;
-    font-size: 1rem;
-    margin-bottom: 28px;
-    line-height: 1.6;
-}
-
-.hero-actions {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.btn-primary,
-.btn-outline {
-    display: inline-block;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    min-width: 120px;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: #fff;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-    color: #fff;
-}
-
-.btn-primary::after,
-.btn-outline::after {
-    display: none;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: #6ebbff;
-    border: 2px solid #6ebbff;
-}
-
-.btn-outline:hover {
-    background-color: #6ebbff;
-    color: #000;
-}
-
-/* ============================================================
-   USER CHIP — reusable profile link
-   ============================================================ */
+/* ---------- User chip ---------- */
 .user-chip {
     display: inline-flex;
     align-items: center;
@@ -205,12 +338,12 @@ a:hover::after {
 }
 
 .user-chip:hover {
-    opacity: 0.85;
+    opacity: 0.9;
 }
 
 .user-chip__avatar {
     border-radius: 50%;
-    background: linear-gradient(135deg, #007bff, #6ebbff);
+    background: linear-gradient(135deg, var(--accent), var(--accent-soft));
     color: #fff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -224,7 +357,7 @@ a:hover::after {
 }
 
 .user-chip__name {
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.82rem;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -232,17 +365,17 @@ a:hover::after {
 }
 
 .user-chip:hover .user-chip__name {
-    color: #6ebbff;
+    color: var(--accent-soft);
 }
 
-/* ---------- Char Counter ---------- */
+/* ---------- Char counter ---------- */
 .char-counter {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
     font-size: 0.75rem;
-    color: #666;
+    color: var(--text-muted);
     margin-top: 6px;
     font-variant-numeric: tabular-nums;
     transition: color 0.2s ease;
@@ -251,17 +384,93 @@ a:hover::after {
 
 .char-counter [data-role="count"] {
     font-weight: 500;
-    transition: color 0.2s ease, font-weight 0.2s ease;
 }
 
 .char-counter [data-role="label"] {
-    color: #555;
+    color: var(--text-muted);
     margin-right: 4px;
 }
 
 .char-counter [data-role="warning"] {
     margin-right: 4px;
     cursor: help;
+}
+
+/* ---------- Skeleton / loading polish ---------- */
+@keyframes dh-pulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+}
+
+@keyframes dh-spin {
+    to { transform: rotate(360deg); }
+}
+
+.home-loading__spinner,
+.proj-loading__spinner,
+.pp-loading__spinner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid var(--border-strong);
+    border-top-color: var(--accent);
+    animation: dh-spin 0.7s linear infinite;
+    margin-inline: auto;
+}
+
+/* ---------- Form controls (shared) ---------- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text);
+    transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-muted);
+    outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* ---------- Scrollbar (webkit) ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+    background-clip: padding-box;
+    border: 2px solid transparent;
 }
 
 /**

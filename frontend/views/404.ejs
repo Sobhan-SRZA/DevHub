@@ -1,27 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <title>Document | 404</title>
+  <%- include("components/seo-head", {
+    title: "صفحه پیدا نشد",
+    description: "صفحه‌ای که به دنبال آن بودید وجود ندارد یا حذف شده است.",
+    noindex: true,
+    canonicalPath: "/404"
+  }) %>
 </head>
 
 <body>
   <%- include("components/header") %>
 
-  <section>
-    <h1>404</h1>
-    <p>ridi</p>
-    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Temporibus tempora voluptatibus ut corporis iste
-      error porro sit odit, id vel. Error, placeat deserunt corporis blanditiis dolor maxime reprehenderit
-      culpa adipisci!</p>
-  </section>
-
-  <section>
-    <a href="/">Go Home</a>
-  </section>
+  <main class="container" style="padding: 4rem 1rem; text-align: center;">
+    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">۴۰۴</h1>
+    <p style="font-size: 1.25rem; opacity: 0.85; margin-bottom: 0.5rem;">صفحه پیدا نشد</p>
+    <p style="opacity: 0.65; max-width: 28rem; margin: 0 auto 1.5rem;">
+      آدرسی که وارد کرده‌اید اشتباه است یا صفحه حذف شده است.
+    </p>
+    <a href="/" class="btn-primary">بازگشت به خانه</a>
+  </main>
 </body>
 
 </html>

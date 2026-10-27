@@ -5,29 +5,29 @@
 .auth.container {
     max-width: 460px;
     width: 100%;
-    margin: 2rem auto;
-    padding: 25px 20px;
+    margin: 2.5rem auto;
+    padding: var(--page-gutter, 20px);
 }
 
 .auth-card {
-    background-color: #151515;
-    border-radius: 12px;
+    background: var(--bg-elevated, #0c1220);
+    border-radius: var(--radius-lg, 16px);
     padding: 28px 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    border: 1px solid #222;
+    box-shadow: var(--shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.12));
 }
 
 .auth-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text, #f1f5f9);
     margin-bottom: 6px;
     text-align: right;
 }
 
 .auth-sub {
     font-size: 0.9rem;
-    color: #888;
+    color: var(--text-muted, #64748b);
     margin-bottom: 22px;
     text-align: right;
 }
@@ -52,25 +52,26 @@
 
 .field input {
     width: 100%;
+    min-height: 44px;
     padding: 12px 14px;
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 8px;
-    color: #fff;
+    background-color: var(--bg-surface, #111827);
+    border: 1px solid var(--border-strong, rgba(148, 163, 184, 0.22));
+    border-radius: var(--radius-sm, 8px);
+    color: var(--text, #f1f5f9);
     font-size: 0.95rem;
     font-family: inherit;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
 
 .field input::placeholder {
-    color: #555;
+    color: var(--text-muted, #64748b);
     font-size: 0.85rem;
 }
 
 .field input:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 3px var(--accent-muted, rgba(59, 130, 246, 0.12));
 }
 
 /* ---------- Password wrapper with toggle button ---------- */

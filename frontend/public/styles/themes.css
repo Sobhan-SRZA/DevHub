@@ -1,0 +1,391 @@
+/* ============================================================
+   DevHub Themes — Mode (light/dark) + Accent colors
+   data-mode="dark|light"  data-accent="blue|violet|emerald|amber|rose|cyan"
+   ============================================================ */
+
+/* ---------- Default / Dark mode (baseline already on :root) ---------- */
+:root,
+html[data-mode="dark"] {
+    color-scheme: dark;
+
+    --bg: #070b12;
+    --bg-elevated: #0c1220;
+    --bg-surface: #111827;
+    --bg-surface-2: #1a2234;
+    --bg-hover: #1e293b;
+    --bg-muted: #0f172a;
+
+    --border: rgba(148, 163, 184, 0.12);
+    --border-strong: rgba(148, 163, 184, 0.22);
+
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-inverse: #0b1220;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+
+    --header-bg: rgba(7, 11, 18, 0.82);
+    --card-bg: #0c1220;
+    --input-bg: #111827;
+    --overlay: rgba(2, 6, 23, 0.65);
+    --body-glow-1: rgba(59, 130, 246, 0.08);
+    --body-glow-2: rgba(14, 165, 233, 0.05);
+}
+
+/* ---------- Light mode ---------- */
+html[data-mode="light"] {
+    color-scheme: light;
+
+    --bg: #f8fafc;
+    --bg-elevated: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-surface-2: #f1f5f9;
+    --bg-hover: #e2e8f0;
+    --bg-muted: #f1f5f9;
+
+    --border: rgba(15, 23, 42, 0.1);
+    --border-strong: rgba(15, 23, 42, 0.16);
+
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-inverse: #f8fafc;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.12);
+
+    --header-bg: rgba(255, 255, 255, 0.85);
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --overlay: rgba(15, 23, 42, 0.4);
+    --body-glow-1: rgba(59, 130, 246, 0.06);
+    --body-glow-2: rgba(14, 165, 233, 0.04);
+}
+
+/* ---------- Accent: Blue (default) ---------- */
+:root,
+html[data-accent="blue"] {
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-soft: #60a5fa;
+    --accent-glow: rgba(59, 130, 246, 0.22);
+    --accent-muted: rgba(59, 130, 246, 0.12);
+    --border-focus: rgba(59, 130, 246, 0.55);
+    --accent-contrast: #ffffff;
+}
+
+/* ---------- Accent: Violet ---------- */
+html[data-accent="violet"] {
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-soft: #a78bfa;
+    --accent-glow: rgba(139, 92, 246, 0.24);
+    --accent-muted: rgba(139, 92, 246, 0.14);
+    --border-focus: rgba(139, 92, 246, 0.55);
+    --accent-contrast: #ffffff;
+}
+
+/* ---------- Accent: Emerald ---------- */
+html[data-accent="emerald"] {
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --accent-soft: #34d399;
+    --accent-glow: rgba(16, 185, 129, 0.22);
+    --accent-muted: rgba(16, 185, 129, 0.12);
+    --border-focus: rgba(16, 185, 129, 0.55);
+    --accent-contrast: #ffffff;
+}
+
+/* ---------- Accent: Amber ---------- */
+html[data-accent="amber"] {
+    --accent: #f59e0b;
+    --accent-hover: #d97706;
+    --accent-soft: #fbbf24;
+    --accent-glow: rgba(245, 158, 11, 0.24);
+    --accent-muted: rgba(245, 158, 11, 0.14);
+    --border-focus: rgba(245, 158, 11, 0.55);
+    --accent-contrast: #1c1917;
+}
+
+/* ---------- Accent: Rose ---------- */
+html[data-accent="rose"] {
+    --accent: #f43f5e;
+    --accent-hover: #e11d48;
+    --accent-soft: #fb7185;
+    --accent-glow: rgba(244, 63, 94, 0.22);
+    --accent-muted: rgba(244, 63, 94, 0.12);
+    --border-focus: rgba(244, 63, 94, 0.55);
+    --accent-contrast: #ffffff;
+}
+
+/* ---------- Accent: Cyan ---------- */
+html[data-accent="cyan"] {
+    --accent: #06b6d4;
+    --accent-hover: #0891b2;
+    --accent-soft: #22d3ee;
+    --accent-glow: rgba(6, 182, 212, 0.22);
+    --accent-muted: rgba(6, 182, 212, 0.12);
+    --border-focus: rgba(6, 182, 212, 0.55);
+    --accent-contrast: #ffffff;
+}
+
+/* ---------- Body background adapts to mode ---------- */
+body {
+    background:
+        radial-gradient(1200px 600px at 50% -10%, var(--body-glow-1), transparent 55%),
+        radial-gradient(800px 400px at 100% 20%, var(--body-glow-2), transparent 50%),
+        var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Soften transition when switching themes (surfaces) */
+.header,
+.pc,
+.auth-card,
+.explore-search,
+.explore-sort,
+.home-section,
+.theme-panel {
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease,
+        color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+/* ---------- Map common hard-coded surfaces via utilities ---------- */
+html[data-mode="light"] .pc {
+    background: var(--card-bg);
+    border-color: var(--border);
+}
+
+html[data-mode="light"] .pc:hover {
+    background: var(--bg-surface-2);
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    box-shadow: var(--shadow);
+}
+
+html[data-mode="light"] .home-hero__title {
+    color: var(--text);
+}
+
+html[data-mode="light"] .explore-hero__title {
+    color: var(--text);
+}
+
+html[data-mode="light"] .hero-stat__value {
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Header tokens sync */
+.header {
+    --h-bg: var(--header-bg);
+    --h-border: var(--border);
+    --h-accent: var(--accent);
+    --h-accent-hover: var(--accent-hover);
+    --h-accent-light: var(--accent-soft);
+    --h-text: var(--text);
+    --h-text-muted: var(--text-muted);
+    --h-surface: var(--bg-surface);
+    --h-surface-hover: var(--bg-hover);
+    --h-elevated: var(--bg-elevated);
+}
+
+/* Logo gradient follows accent */
+.h-logo__icon {
+    background: linear-gradient(135deg, var(--accent), var(--accent-soft)) !important;
+    box-shadow: 0 4px 12px var(--accent-glow) !important;
+}
+
+.btn-primary,
+.btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: var(--accent-contrast, #fff);
+    box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.btn-primary:hover,
+.btn:hover {
+    background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+    color: var(--accent-contrast, #fff);
+}
+
+.btn-outline {
+    color: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent-soft) 50%, transparent);
+}
+
+.btn-outline:hover {
+    background: var(--accent-muted);
+    color: var(--accent);
+    border-color: var(--accent-soft);
+}
+
+/* ============================================================
+   Theme switcher UI
+   ============================================================ */
+.theme-wrap {
+    position: relative;
+}
+
+.theme-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    inset-inline-start: 0;
+    width: min(300px, calc(100vw - 24px));
+    padding: 14px;
+    border-radius: var(--radius-lg, 16px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    z-index: 1200;
+    display: none;
+    text-align: right;
+    direction: rtl;
+}
+
+.theme-panel.is-open {
+    display: block;
+    animation: theme-pop 0.18s ease;
+}
+
+@keyframes theme-pop {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.theme-panel__title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+    letter-spacing: 0.02em;
+}
+
+.theme-panel__section + .theme-panel__section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.theme-modes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.theme-mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.theme-mode-btn:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+    background: var(--bg-hover);
+}
+
+.theme-mode-btn.is-active {
+    border-color: var(--accent);
+    background: var(--accent-muted);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-muted);
+}
+
+.theme-mode-btn svg {
+    opacity: 0.9;
+}
+
+.theme-accents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.theme-accent-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 2px var(--bg-elevated);
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.theme-accent-btn:hover {
+    transform: scale(1.08);
+}
+
+.theme-accent-btn.is-active {
+    box-shadow:
+        inset 0 0 0 2px var(--bg-elevated),
+        0 0 0 2px var(--accent);
+}
+
+.theme-accent-btn.is-active::after {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html[data-mode="light"] .theme-accent-btn.is-active::after {
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.theme-accent-btn[data-accent="blue"] { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+.theme-accent-btn[data-accent="violet"] { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+.theme-accent-btn[data-accent="emerald"] { background: linear-gradient(135deg, #10b981, #34d399); }
+.theme-accent-btn[data-accent="amber"] { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.theme-accent-btn[data-accent="rose"] { background: linear-gradient(135deg, #f43f5e, #fb7185); }
+.theme-accent-btn[data-accent="cyan"] { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+
+.theme-panel__hint {
+    margin: 12px 0 0;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Icon btn active state when panel open */
+.h-icon-btn[aria-expanded="true"] {
+    background: var(--accent-muted);
+    color: var(--accent);
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */

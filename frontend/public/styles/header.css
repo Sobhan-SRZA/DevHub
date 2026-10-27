@@ -5,28 +5,28 @@
 /* ---------- CSS Variables ---------- */
 .header {
     --h-height: 68px;
-    --h-bg: rgba(15, 15, 15, 0.92);
-    --h-border: rgba(255, 255, 255, 0.08);
-    --h-accent: #007bff;
-    --h-accent-hover: #0056b3;
-    --h-accent-light: #6ebbff;
-    --h-text: #e0e0e0;
-    --h-text-muted: #888;
-    --h-surface: #1a1a1a;
-    --h-surface-hover: #242424;
-    --h-elevated: #151515;
-    --page-max-width: 1400px;
-    --page-gutter: 24px;
+    --h-bg: rgba(7, 11, 18, 0.82);
+    --h-border: rgba(148, 163, 184, 0.12);
+    --h-accent: #3b82f6;
+    --h-accent-hover: #2563eb;
+    --h-accent-light: #60a5fa;
+    --h-text: #e2e8f0;
+    --h-text-muted: #94a3b8;
+    --h-surface: #111827;
+    --h-surface-hover: #1e293b;
+    --h-elevated: #0c1220;
+    --page-max-width: 1240px;
+    --page-gutter: clamp(16px, 4vw, 28px);
 
     position: sticky;
     top: 0;
     width: 100%;
     z-index: 1000;
     background: var(--h-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
     border-bottom: 1px solid var(--h-border);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
 .header__inner {

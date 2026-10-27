@@ -307,6 +307,10 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
         throw Unauthorized(ErrorCodes.INVALID_CREDENTIALS);
     }
 
+    if ((user as any).isBanned) {
+        throw new AppError(403, ErrorCodes.ACCOUNT_DISABLED);
+    }
+
     /* -------- ساخت یا استفاده مجدد از سشن -------- */
     const hints = getDeviceHints(req);
     const { access, refresh, reused } = await startSession(user._id, req, {

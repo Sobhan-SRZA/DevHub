@@ -1,13 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/styles/index.css">
-  <link rel="stylesheet" href="/styles/dialog.css">
-  <link rel="stylesheet" href="/styles/explore.css">
-  <title>صفحه اصلی</title>
+  <%- include("components/seo-head", {
+    title: "کشف پروژه‌های متن‌باز",
+    description: "DevHub — پلتفرم کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز. محبوب‌ترین، تازه‌ترین و بهترین پروژه‌های برنامه‌نویسی ساخته‌شده توسط توسعه‌دهندگان ایرانی و جهانی را پیدا کنید.",
+    keywords: "پروژه متن‌باز, اپن سورس, DevHub, کشف پروژه, برنامه‌نویسی, GitHub, Product Hunt",
+    canonicalPath: "/",
+    ogType: "website",
+    extraStyles: ["/styles/dialog.css", "/styles/explore.css"],
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "DevHub",
+      "description": "پلتفرم کشف و بررسی پروژه‌های متن‌باز",
+      "inLanguage": "fa-IR",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "/explore?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  }) %>
 </head>
 
 <body>
@@ -73,8 +87,8 @@
     </div>
   </main>
 
-  <script src="/js/form-errors.js"></script>
-  <script src="/js/pages/home.js"></script>
+  <script src="/js/form-errors.js" defer></script>
+  <script src="/js/pages/home.js" defer></script>
 </body>
 
 </html>
