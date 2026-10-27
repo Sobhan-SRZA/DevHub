@@ -19,6 +19,11 @@ import {
     AppError,
     Conflict
 } from "../utils/AppError";
+import {
+    assertNotSpam,
+    checkSpam
+} from "../services/spamDetection";
+import { signEmailVerifyToken } from "../utils/token";
 import { VerificationCode } from "../models/VerificationCode";
 import type { Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -27,20 +32,67 @@ import { publicUser } from "./authController";
 import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
-import { signEmailVerifyToken } from "../utils/token";
-import { assertNotSpam, checkSpam } from "../services/spamDetection";
 
 /* ==================================================================
    GET /api/profile/me — اطلاعات کامل کاربر
    ================================================================== */
 export const getMe = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.user._id).lean();
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
+    if (!user)
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
     res.json({
         ok: true,
         user: publicUser(user)
     });
+
+    /*
+ 
+    // آمار aggregate
+    const [projectStats, reviewStats] = await Promise.all([
+        Project.aggregate([
+            { $match: { owner: user._id } },
+            {
+                $group: {
+                    _id: null,
+                    projects: { $sum: 1 },
+                    downloads: { $sum: "$downloads" }
+                }
+            }
+        ]),
+        Review.aggregate([
+            {
+                $lookup: {
+                    from: "projects",
+                    localField: "project",
+                    foreignField: "_id",
+                    as: "p"
+                }
+            },
+            { $unwind: "$p" },
+            { $match: { "p.owner": user._id } },
+            {
+                $group: {
+                    _id: null,
+                    reviews: { $sum: 1 },
+                    rating: { $avg: "$rating" }
+                }
+            }
+        ])
+    ]);
+
+    res.json({
+        ok: true,
+        user: publicUser(user),
+        stats: {
+            projects: projectStats[0]?.projects ?? 0,
+            downloads: projectStats[0]?.downloads ?? 0,
+            reviews: reviewStats[0]?.reviews ?? 0,
+            rating: reviewStats[0]?.rating ?? null
+        }
+    });
+
+     */
 });
 
 /* ==================================================================

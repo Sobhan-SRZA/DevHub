@@ -673,7 +673,6 @@ export async function checkSpam(
         result.warnings = [];
     }
 
-    console.log("🚀 ~ checkSpam ~ result:", result)
     return result;
 }
 
