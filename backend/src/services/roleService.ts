@@ -12,7 +12,7 @@ import { Types } from "mongoose";
 const ROLE_RANK: Record<UserRole, number> = {
     user: 1,
     admin: 2,
-    developer: 3,
+    developer: 3
 };
 
 export function hasRole(user: any, minRole: UserRole): boolean {
@@ -158,6 +158,7 @@ export async function ensureDeveloperExists(): Promise<void> {
         firstUser.roleChangedAt = new Date();
         firstUser.roleChangeReason = "Bootstrap: first registered user";
         await firstUser.save();
+        
         console.log(
             `✅ Promoted first user (${firstUser.email}) to developer`
         );
