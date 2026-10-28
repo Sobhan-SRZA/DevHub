@@ -1,6 +1,6 @@
 import { optionalAuth } from "../../middleware/auth";
-import { Router } from "express";
 import { Project } from "../../models/Project";
+import { Router } from "express";
 import { Types } from "mongoose";
 
 const router = Router();
@@ -17,7 +17,7 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
     } = {
         title: "پروژه",
         description: "مشاهده جزئیات، امتیاز و نظرات پروژه در DevHub",
-        canonicalPath: `/projects/${idOrSlug}`,
+        canonicalPath: `/projects/${idOrSlug}`
     };
 
     try {
@@ -42,6 +42,7 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
             const description =
                 (project.shortDescription || "").slice(0, 300) ||
                 `پروژه ${title} در DevHub`;
+
             const firstImage =
                 Array.isArray(project.images) && project.images.length
                     ? (project.images as any[])
@@ -73,29 +74,32 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
                                   worstRating: 0,
                               }
                             : undefined,
+
                     interactionStatistic: [
                         {
                             "@type": "InteractionCounter",
                             interactionType: "https://schema.org/DownloadAction",
-                            userInteractionCount: project.downloads || 0,
+                            userInteractionCount: project.downloads || 0
                         },
                         {
                             "@type": "InteractionCounter",
                             interactionType: "https://schema.org/ViewAction",
-                            userInteractionCount: project.views || 0,
-                        },
-                    ],
-                },
+                            userInteractionCount: project.views || 0
+                        }
+                    ]
+                }
             };
         }
-    } catch {
+    }
+    
+    catch {
         // در صورت خطا همان متای پیش‌فرض
     }
 
     res.render("projects/show", {
         idOrSlug,
         seo,
-        req,
+        req
     });
 });
 
