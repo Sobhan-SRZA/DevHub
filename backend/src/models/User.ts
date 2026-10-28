@@ -7,7 +7,7 @@ import {
 import bcrypt from "bcrypt";
 
 /* ---------------- قخمثس ---------------- */
-export type UserRole = 'user' | 'admin' | 'developer';
+export type UserRole = "user" | "admin" | "developer";
 
 /* ---------------- avatar ---------------- */
 export interface IUserAvatar {
@@ -149,14 +149,14 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
 
         role: {
             type: String,
-            enum: ['user', 'admin', 'developer'],
-            default: 'user',
+            enum: ["user", "admin", "developer"],
+            default: "user",
             index: true
         },
 
         roleChangedBy: {
             type: Schema.Types.ObjectId,
-            ref: 'User',
+            ref: "User",
             default: null
         },
         roleChangedAt: { type: Date, default: null },
