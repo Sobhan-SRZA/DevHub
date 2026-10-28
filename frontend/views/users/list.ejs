@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <%- include("../components/seo-head", {
+    title: "کاربران",
+    description: "فهرست توسعه‌دهندگان و سازندگان پروژه در DevHub.",
+    canonicalPath: "/users",
+    keywords: "کاربران DevHub, توسعه‌دهنده, پروفایل"
+  }) %>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+
+  <main class="list-page users-page">
+    <div class="list-page__head">
+      <h1 class="list-page__title">کاربران</h1>
+      <p class="list-page__sub">توسعه‌دهندگان و سازندگان پروژه‌های متن‌باز</p>
+    </div>
+
+    <div class="list-toolbar">
+      <input type="search" id="usersSearch" placeholder="جستجوی نام یا نام کاربری…" autocomplete="off">
+      <select id="usersSort">
+        <option value="recent">جدیدترین</option>
+        <option value="name">نام</option>
+        <option value="projects">بیشترین پروژه</option>
+      </select>
+    </div>
+
+    <div class="list-meta" id="usersMeta"></div>
+    <div class="list-grid" id="usersGrid">
+      <div class="home-loading" style="grid-column:1/-1">
+        <div class="home-loading__spinner"></div>
+        <p>در حال بارگذاری…</p>
+      </div>
+    </div>
+    <div class="list-pagination" id="usersPagination"></div>
+  </main>
+
+  <script defer src="/js/pages/users-list.js"></script>
+  <%- include("../components/footer") %>
+</body>
+
+</html>

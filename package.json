@@ -4,9 +4,12 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "npm i && npm run build && node .",
-    "dev": "nodemon",
+    "build:css": "tailwindcss -i ./frontend/src/styles/tailwind.css -o ./frontend/public/styles/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/src/styles/tailwind.css -o ./frontend/public/styles/tailwind.css --watch --poll",
+    "build": "npm run build:css && tsc",
+    "start": "node .",
+    "dev:server": "nodemon",
+    "dev": "npm run build:css && concurrently -k -n css,server -c cyan,magenta \"npm run watch:css\" \"npm run dev:server\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "promote": "tsx backend/src/scripts/promoteUser.ts"
   },
@@ -45,8 +48,12 @@
     "@types/node": "^26.6.4",
     "@types/nodemailer": "^8.0.2",
     "@types/ua-parser-js": "^0.7.39",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "dotenv": "^18.0.6",
     "nodemon": "^3.1.14",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

@@ -1,14 +1,17 @@
 {
-    "watch": [
-        "backend",
-        "frontend",
-        ".env"
-    ],
-    "ext": "ts,ejs",
-    "ignore": [
-        "dist",
-        "node_modules",
-        "frontend/public"
-    ],
-    "exec": "tsx backend/src/index.ts"
+  "watch": [
+    "backend",
+    "frontend/views",
+    ".env"
+  ],
+  "ext": "ts,ejs,json",
+  "ignore": [
+    "dist",
+    "node_modules",
+    "frontend/public",
+    "frontend/src/styles",
+    "**/*.css"
+  ],
+  "delay": 400,
+  "exec": "tsx backend/src/index.ts"
 }

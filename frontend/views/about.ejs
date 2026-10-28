@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <%- include("components/seo-head", {
+    title: "درباره DevHub",
+    description: "DevHub پلتفرمی برای کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز است — ترکیبی از GitHub و Product Hunt با تمرکز روی کیفیت واقعی.",
+    canonicalPath: "/about",
+    keywords: "درباره DevHub, متن‌باز, اپن سورس, پلتفرم توسعه‌دهندگان"
+  }) %>
+</head>
+
+<body>
+  <%- include("components/header") %>
+
+  <main class="static-page about-page">
+    <h1>درباره DevHub</h1>
+    <p class="lead">
+      DevHub جایی است برای <strong>کشف، بررسی و اشتراک‌گذاری</strong> پروژه‌های برنامه‌نویسی —
+      با تمرکز روی کیفیت واقعی، نه فقط تعداد ستاره.
+    </p>
+
+    <div class="static-card">
+      <h2 style="margin-top:0">چرا DevHub؟</h2>
+      <ul>
+        <li>کشف پروژه‌های خوب سخت است؛ ستاره‌های GitHub همیشه کیفیت را نشان نمی‌دهند.</li>
+        <li>بازخورد سازنده‌ها کم است؛ اینجا امتیاز، رضایت و نظر مفصل داریم.</li>
+        <li>دمو، دانلود و مستندات را در یک صفحه جمع می‌کنیم.</li>
+      </ul>
+    </div>
+
+    <h2>برای چه کسانی؟</h2>
+    <div class="static-card">
+      <p><strong>توسعه‌دهنده‌ها</strong> — پیدا کردن پروژه‌های مشابه قبل از شروع کار جدید</p>
+      <p><strong>صاحبان پروژه</strong> — گرفتن بازخورد واقعی و دیده شدن</p>
+      <p style="margin-bottom:0"><strong>کاوشگرها</strong> — کشف ابزارها و پروژه‌های خوب</p>
+    </div>
+
+    <h2>امکانات اصلی</h2>
+    <ul>
+      <li>سینک خودکار با GitHub</li>
+      <li>ریویو با امتیاز و رضایت درصدی</li>
+      <li>کامنت تو در تو</li>
+      <li>کاوش با الگوریتم Hot Score</li>
+      <li>تگ و دسته‌بندی</li>
+    </ul>
+
+    <p style="margin-top:28px">
+      <a href="/explore" class="btn-primary">شروع کاوش</a>
+      <a href="/contact" class="btn-outline" style="margin-right:10px">تماس با ما</a>
+    </p>
+  </main>
+
+  <%- include("components/footer") %>
+</body>
+
+</html>

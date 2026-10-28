@@ -1,0 +1,58 @@
+<%
+  /**
+   * Main public layout
+   * Usage in a page:
+   *   <%- include("layouts/main", {
+   *     title: "...",
+   *     description: "...",
+   *     canonicalPath: "/",
+   *     extraStyles: [],
+   *     jsonLd: null,
+   *     bodyClass: "",
+   *     // then the page content is passed as `body` (HTML string) OR
+   *     // better: pages include this layout and put content between open/close via a content partial.
+   *   }) %>
+   *
+   * Preferred pattern used in this project:
+   * Page sets locals, includes seo-head, then this layout expects the caller to
+   * have already opened <body> or we provide full document.
+   *
+   * Full-document mode (recommended):
+   *   res.render("layouts/main", { title, ..., bodyHtml: renderedContent })
+   * For simplicity with current render calls, pages will include partials.
+   */
+  const _title = typeof title !== "undefined" ? title : "DevHub";
+  const _description = typeof description !== "undefined" ? description : undefined;
+  const _canonicalPath = typeof canonicalPath !== "undefined" ? canonicalPath : undefined;
+  const _extraStyles = typeof extraStyles !== "undefined" ? extraStyles : [];
+  const _jsonLd = typeof jsonLd !== "undefined" ? jsonLd : null;
+  const _noindex = typeof noindex !== "undefined" ? noindex : false;
+  const _bodyClass = typeof bodyClass !== "undefined" ? bodyClass : "";
+  const _ogType = typeof ogType !== "undefined" ? ogType : "website";
+  const _keywords = typeof keywords !== "undefined" ? keywords : undefined;
+%>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <%- include("../components/seo-head", {
+    title: _title,
+    description: _description,
+    canonicalPath: _canonicalPath,
+    extraStyles: _extraStyles,
+    jsonLd: _jsonLd,
+    noindex: _noindex,
+    ogType: _ogType,
+    keywords: _keywords
+  }) %>
+  </head>
+<body class="<%= _bodyClass %>">
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <div class="flex-1 w-full">
+    <%- typeof body !== "undefined" ? body : "" %>
+  </div>
+
+  <%- include("../components/footer") %>
+</body>
+</html>

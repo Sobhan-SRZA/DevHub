@@ -1,0 +1,69 @@
+<%
+  /**
+   * Dashboard layout — no top header.
+   * Navigation lives in the sidebar (side tool).
+   *
+   * Expected locals:
+   *   pageTitle     — string for breadcrumb / document title
+   *   body          — HTML content of the main area (string)
+   *   extraStyles   — optional CSS paths
+   *   bodyClass     — optional extra body classes
+   */
+  const _pageTitle = typeof pageTitle !== "undefined" ? pageTitle : "داشبورد";
+  const _extraStyles = typeof extraStyles !== "undefined" ? extraStyles : [];
+  const _bodyClass = typeof bodyClass !== "undefined" ? bodyClass : "";
+%>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    (function () {
+      try {
+        var m = localStorage.getItem("dh-mode") || "system";
+        var a = localStorage.getItem("dh-accent") || "blue";
+        var r = m === "system"
+          ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+          : m;
+        document.documentElement.setAttribute("data-mode", r);
+        document.documentElement.setAttribute("data-accent", a);
+        document.documentElement.style.colorScheme = r;
+      } catch (e) {}
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/themes.css">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/tailwind.css">
+  <% (_extraStyles || []).forEach(function (href) { %>
+  <link rel="stylesheet" href="<%= href %>">
+  <% }) %>
+  <title><%= _pageTitle %> | داشبورد — DevHub</title>
+</head>
+<body class="dashboard-body <%= _bodyClass %>" data-layout="dashboard">
+  <%- include("../components/dialogError") %>
+
+  <div class="dash-layout flex min-h-screen bg-surface text-content">
+    <!-- Side navigation (replaces top header) -->
+    <%- include("../components/dashboard-nav") %>
+
+    <div class="dash-content flex-1 flex flex-col min-w-0">
+      <%- include("../components/dash-breadcrumb", { pageTitle: _pageTitle }) %>
+
+      <main class="dash-main flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <%- typeof body !== "undefined" ? body : "" %>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/dashboard-nav.js"></script>
+  <script src="/js/theme.js"></script>
+</body>
+</html>

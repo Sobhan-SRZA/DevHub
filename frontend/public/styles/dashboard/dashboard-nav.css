@@ -2,11 +2,13 @@
    DASHBOARD SIDEBAR — Desktop Only + Collapsible
    ============================================================ */
 
-/* ✅ تعریف یک متغیر مشترک برای هم‌ترازی هدر/محتوا */
+/* ✅ متغیرهای لایه‌بندی داشبورد (بدون هدر بالا) */
 :root {
     --page-max-width: 1400px;
     --page-gutter: 24px;
-    --header-height: 68px;
+    /* داشبورد دیگر هدر بالایی ندارد — sidebar خودش ناوبری است */
+    --header-height: 0px;
+    --dash-top-offset: 16px;
 }
 
 /* ---------- Layout ---------- */
@@ -23,8 +25,8 @@
     width: 100%;
     max-width: var(--page-max-width);
     margin: 0 auto;
-    /* ✅ padding-top = 24px تا sticky sidebar پرش نکنه */
-    padding: 24px var(--page-gutter) 60px;
+    min-height: 100vh;
+    padding: var(--dash-top-offset) var(--page-gutter) 48px;
     direction: rtl;
     align-items: start;
     transition: grid-template-columns 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -48,23 +50,23 @@
 }
 
 
-/* ---------- Sidebar ---------- */
+/* ---------- Sidebar (ابزار سمتی — جایگزین هدر بالا) ---------- */
 .dash-sidebar {
     grid-area: sidebar;
-    /* ✅ سطر ۱+۲، ستون ۱ */
     position: sticky;
-    top: calc(var(--header-height) + 22px);
+    top: var(--dash-top-offset);
     align-self: start;
     width: 100%;
-    background: #0a0a0a;
-    border: 1px solid #1a1a1a;
+    background: var(--bg-elevated, #0a0a0a);
+    border: 1px solid var(--border, #1a1a1a);
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - var(--header-height) - 44px);
-    /* ✅ overflow visible برای نمایش tooltipها در حالت collapse */
+    max-height: calc(100vh - (var(--dash-top-offset) * 2));
+    /* overflow visible برای tooltip در حالت collapse */
     overflow: visible;
     transition: width 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
 /* ✅ wrapper داخلی برای حفظ border-radius + اسکرول داخلی */

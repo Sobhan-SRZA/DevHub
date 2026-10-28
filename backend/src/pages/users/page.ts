@@ -59,6 +59,12 @@ router.get("/:idOrUsername", async (req, res) => {
     });
 });
 
+router.get("/", async (req, res) => {
+    res.render("users/list", {
+        req
+    });
+});
+
 export default router;
 
 /**
