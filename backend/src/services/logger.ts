@@ -39,6 +39,7 @@ class Logger {
     /* ---------------- file paths ---------------- */
     private getLogFile(date?: string): string {
         const d = date || new Date().toISOString().split("T")[0];
+
         return path.join(LOG_DIR, `app-${d}.log`);
     }
 
@@ -48,14 +49,17 @@ class Logger {
             this.write("info", args);
             this.originalConsole.log(...args);
         };
+
         console.warn = (...args: any[]) => {
             this.write("warn", args);
             this.originalConsole.warn(...args);
         };
+
         console.error = (...args: any[]) => {
             this.write("error", args);
             this.originalConsole.error(...args);
         };
+
         console.debug = (...args: any[]) => {
             this.write("debug", args);
             this.originalConsole.debug(...args);
@@ -68,11 +72,17 @@ class Logger {
 
         const message = args
             .map((a) => {
-                if (typeof a === "string") return a;
-                if (a instanceof Error) return `${a.name}: ${a.message}\n${a.stack || ""}`;
+                if (typeof a === "string")
+                    return a;
+
+                if (a instanceof Error)
+                    return `${a.name}: ${a.message}\n${a.stack || ""}`;
+
                 try {
                     return JSON.stringify(a);
-                } catch {
+                }
+
+                catch {
                     return String(a);
                 }
             })
@@ -80,40 +90,59 @@ class Logger {
 
         // in-memory buffer
         this.buffer.push({ timestamp, level, message });
-        if (this.buffer.length > this.maxBuffer) this.buffer.shift();
+        if (this.buffer.length > this.maxBuffer)
+            this.buffer.shift();
 
         // file
         try {
             const line = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
             fs.appendFileSync(this.getLogFile(), line, "utf8");
-        } catch {
+        }
+
+        catch {
             /* ignore disk errors */
         }
     }
 
     /* ---------------- public API ---------------- */
     info(msg: string, meta?: any) {
-        if (meta !== undefined) console.log(msg, meta);
-        else console.log(msg);
+        if (meta !== undefined)
+            console.log(msg, meta);
+
+        else
+            console.log(msg);
     }
+
     warn(msg: string, meta?: any) {
-        if (meta !== undefined) console.warn(msg, meta);
-        else console.warn(msg);
+        if (meta !== undefined)
+            console.warn(msg, meta);
+
+        else
+            console.warn(msg);
     }
+
     error(msg: string, meta?: any) {
-        if (meta !== undefined) console.error(msg, meta);
-        else console.error(msg);
+        if (meta !== undefined)
+            console.error(msg, meta);
+
+        else
+            console.error(msg);
     }
+
     debug(msg: string, meta?: any) {
-        if (meta !== undefined) console.debug(msg, meta);
-        else console.debug(msg);
+        if (meta !== undefined)
+            console.debug(msg, meta);
+
+        else
+            console.debug(msg);
     }
 
     /* ---------------- query ---------------- */
     getRecent(limit = 200, level?: LogLevel, search?: string): LogEntry[] {
         let result = this.buffer.slice();
 
-        if (level) result = result.filter((e) => e.level === level);
+        if (level)
+            result = result.filter((e) => e.level === level);
 
         if (search) {
             const s = search.toLowerCase();
@@ -125,11 +154,13 @@ class Logger {
 
     getStats() {
         const stats: Record<LogLevel, number> = { debug: 0, info: 0, warn: 0, error: 0 };
-        for (const e of this.buffer) stats[e.level]++;
+        for (const e of this.buffer)
+            stats[e.level]++;
+
         return {
             ...stats,
             total: this.buffer.length,
-            capacity: this.maxBuffer,
+            capacity: this.maxBuffer
         };
     }
 
@@ -141,7 +172,9 @@ class Logger {
                 .filter((f) => f.startsWith("app-") && f.endsWith(".log"))
                 .sort()
                 .reverse();
-        } catch {
+        }
+
+        catch {
             return [];
         }
     }
@@ -150,7 +183,8 @@ class Logger {
         try {
             const safeName = path.basename(filename); // ضد path traversal
             const filePath = path.join(LOG_DIR, safeName);
-            if (!fs.existsSync(filePath)) return [];
+            if (!fs.existsSync(filePath))
+                return [];
 
             const content = fs.readFileSync(filePath, "utf8");
             const lines = content.split("\n").filter(Boolean);
@@ -164,13 +198,16 @@ class Logger {
                         message: match[3],
                     };
                 }
+
                 return {
                     timestamp: "",
                     level: "info" as LogLevel,
-                    message: line,
+                    message: line
                 };
             });
-        } catch {
+        }
+
+        catch {
             return [];
         }
     }
