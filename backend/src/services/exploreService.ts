@@ -1,42 +1,42 @@
-import { Project } from '../models/Project';
-import { Types } from 'mongoose';
-import { User } from '../models/User';
-import { Tag } from '../models/Tag';
+import { Project } from "../models/Project";
+import { Types } from "mongoose";
+import { User } from "../models/User";
+import { Tag } from "../models/Tag";
 
 /* ==================================================================
    Types
    ================================================================== */
 export type ExploreSort =
-    | 'trending'
-    | 'hot'
-    | 'top'
-    | 'new'
-    | 'top-rated'
-    | 'top-downloaded';
+    | "trending"
+    | "hot"
+    | "top"
+    | "new"
+    | "top-rated"
+    | "top-downloaded";
 
-export type ExploreWindow = '24h' | '7d' | '30d' | 'all';
+export type ExploreWindow = "24h" | "7d" | "30d" | "all";
 
 /* ==================================================================
    تنظیمات الگوریتم
    ================================================================== */
 const GRAVITY: Record<ExploreWindow, number> = {
-    '24h': 1.5,
-    '7d': 1.8,
-    '30d': 2.0,
-    'all': 0
+    "24h": 1.5,
+    "7d": 1.8,
+    "30d": 2.0,
+    "all": 0
 };
 
 const WINDOW_MS: Record<ExploreWindow, number> = {
-    '24h': 24 * 60 * 60 * 1000,
-    '7d': 7 * 24 * 60 * 60 * 1000,
-    '30d': 30 * 24 * 60 * 60 * 1000,
-    'all': 0
+    "24h": 24 * 60 * 60 * 1000,
+    "7d": 7 * 24 * 60 * 60 * 1000,
+    "30d": 30 * 24 * 60 * 60 * 1000,
+    "all": 0
 };
 
 /* ==================================================================
    محاسبه‌ی Hot Score (سمت Node — برای تک پروژه)
    ================================================================== */
-export function computeHotScore(project: any, window: ExploreWindow = '7d'): number {
+export function computeHotScore(project: any, window: ExploreWindow = "7d"): number {
     const gravity = GRAVITY[window];
 
     const points =
@@ -75,7 +75,7 @@ function buildHotScorePipeline(window: ExploreWindow) {
             $addFields: {
                 _ageHours: {
                     $divide: [
-                        { $subtract: [new Date(), '$createdAt'] },
+                        { $subtract: [new Date(), "$createdAt"] },
                         1000 * 60 * 60
                     ]
                 }
@@ -87,15 +87,15 @@ function buildHotScorePipeline(window: ExploreWindow) {
             $addFields: {
                 _points: {
                     $add: [
-                        { $multiply: [1.0, { $ifNull: ['$githubData.stars', 0] }] },
-                        { $multiply: [2.5, { $ifNull: ['$githubData.forks', 0] }] },
-                        { $multiply: [0.3, { $ifNull: ['$downloads', 0] }] },
-                        { $multiply: [0.01, { $ifNull: ['$views', 0] }] },
-                        { $multiply: [5.0, { $ifNull: ['$rating', 0] }] },
-                        { $multiply: [4.0, { $ifNull: ['$reviewCount', 0] }] },
-                        { $cond: [{ $gt: [{ $size: { $ifNull: ['$images', []] } }, 0] }, 10, 0] },
-                        { $cond: [{ $ne: [{ $ifNull: ['$demoVideo.url', null] }, null] }, 10, 0] },
-                        { $cond: [{ $ne: [{ $ifNull: ['$downloadFile.url', null] }, null] }, 5, 0] }
+                        { $multiply: [1.0, { $ifNull: ["$githubData.stars", 0] }] },
+                        { $multiply: [2.5, { $ifNull: ["$githubData.forks", 0] }] },
+                        { $multiply: [0.3, { $ifNull: ["$downloads", 0] }] },
+                        { $multiply: [0.01, { $ifNull: ["$views", 0] }] },
+                        { $multiply: [5.0, { $ifNull: ["$rating", 0] }] },
+                        { $multiply: [4.0, { $ifNull: ["$reviewCount", 0] }] },
+                        { $cond: [{ $gt: [{ $size: { $ifNull: ["$images", []] } }, 0] }, 10, 0] },
+                        { $cond: [{ $ne: [{ $ifNull: ["$demoVideo.url", null] }, null] }, 10, 0] },
+                        { $cond: [{ $ne: [{ $ifNull: ["$downloadFile.url", null] }, null] }, 5, 0] }
                     ]
                 }
             }
@@ -108,8 +108,8 @@ function buildHotScorePipeline(window: ExploreWindow) {
             $addFields: {
                 _hotScore: {
                     $divide: [
-                        '$_points',
-                        { $pow: [{ $add: ['$_ageHours', 2] }, gravity] }
+                        "$_points",
+                        { $pow: [{ $add: ["$_ageHours", 2] }, gravity] }
                     ]
                 }
             }
@@ -117,7 +117,7 @@ function buildHotScorePipeline(window: ExploreWindow) {
     }
 
     else {
-        pipeline.push({ $addFields: { _hotScore: '$_points' } });
+        pipeline.push({ $addFields: { _hotScore: "$_points" } });
     }
 
     return pipeline;
@@ -139,7 +139,7 @@ export interface ExploreOptions {
 export async function exploreProjects(opts: ExploreOptions) {
     const {
         sort,
-        window = sort === 'hot' ? '24h' : sort === 'trending' ? '7d' : 'all',
+        window = sort === "hot" ? "24h" : sort === "trending" ? "7d" : "all",
         tag,
         tagType,
         search,
@@ -149,7 +149,7 @@ export async function exploreProjects(opts: ExploreOptions) {
 
     /* ---------- base match ---------- */
     const match: Record<string, any> = {
-        status: 'published',
+        status: "published",
         isPublic: true
     };
 
@@ -158,21 +158,21 @@ export async function exploreProjects(opts: ExploreOptions) {
 
     if (search) {
         match.$or = [
-            { title: { $regex: search, $options: 'i' } },
-            { shortDescription: { $regex: search, $options: 'i' } }
+            { title: { $regex: search, $options: "i" } },
+            { shortDescription: { $regex: search, $options: "i" } }
         ];
     }
 
     /* ---------- tagType filter ---------- */
     if (tagType) {
-        const tagIds = await Tag.find({ type: tagType }).distinct('_id');
+        const tagIds = await Tag.find({ type: tagType }).distinct("_id");
         match.tags = { $in: tagIds };
     }
 
     const skip = (page - 1) * limit;
 
     /* ---------- sort strategy ---------- */
-    const needsHotScore = sort === 'trending' || sort === 'hot';
+    const needsHotScore = sort === "trending" || sort === "hot";
     let sortStage: Record<string, any>;
     let pipeline: any[];
 
@@ -190,12 +190,12 @@ export async function exploreProjects(opts: ExploreOptions) {
 
     else {
         const sortMap: Record<ExploreSort, Record<string, 1 | -1>> = {
-            'trending': { 'githubData.stars': -1 },
-            'hot': { createdAt: -1 },
-            'top': { rating: -1, reviewCount: -1 },
-            'new': { createdAt: -1 },
-            'top-rated': { rating: -1, reviewCount: -1 },
-            'top-downloaded': { downloads: -1, createdAt: -1 }
+            "trending": { "githubData.stars": -1 },
+            "hot": { createdAt: -1 },
+            "top": { rating: -1, reviewCount: -1 },
+            "new": { createdAt: -1 },
+            "top-rated": { rating: -1, reviewCount: -1 },
+            "top-downloaded": { downloads: -1, createdAt: -1 }
         };
 
         sortStage = sortMap[sort];
@@ -212,8 +212,8 @@ export async function exploreProjects(opts: ExploreOptions) {
     const [projects, total] = await Promise.all([
         Project.aggregate(pipeline).then((docs) =>
             Project.populate(docs, [
-                { path: 'owner', select: 'name username avatar' },
-                { path: 'tags', select: 'name slug color type' }
+                { path: "owner", select: "name username avatar" },
+                { path: "tags", select: "name slug color type" }
             ])
         ),
 
@@ -245,21 +245,21 @@ export async function getHomeFeeds(opts: HomeFeedOptions = {}) {
 
     const [trending, newProjects, topRated, topDownloaded, featured] = await Promise.all([
         /* 1. داغ‌ترین‌های ۷ روز اخیر */
-        exploreProjects({ sort: 'trending', window: '7d', limit }).then((r) => r.projects),
+        exploreProjects({ sort: "trending", window: "7d", limit }).then((r) => r.projects),
 
         /* 2. جدیدترین‌ها */
-        exploreProjects({ sort: 'new', limit: 6 }).then((r) => r.projects),
+        exploreProjects({ sort: "new", limit: 6 }).then((r) => r.projects),
 
         /* 3. بهترین امتیازها */
-        exploreProjects({ sort: 'top-rated', limit: 6 }).then((r) => r.projects),
+        exploreProjects({ sort: "top-rated", limit: 6 }).then((r) => r.projects),
 
         /* 4. پرطرفدارترین دانلودها */
-        exploreProjects({ sort: 'top-downloaded', limit: 6 }).then((r) => r.projects),
+        exploreProjects({ sort: "top-downloaded", limit: 6 }).then((r) => r.projects),
 
         /* 5. پروژه‌های ویژه (featured) */
-        Project.find({ status: 'published', isPublic: true, featured: true })
-            .populate('owner', 'name username avatar')
-            .populate('tags', 'name slug color type')
+        Project.find({ status: "published", isPublic: true, featured: true })
+            .populate("owner", "name username avatar")
+            .populate("tags", "name slug color type")
             .sort({ featuredOrder: 1, updatedAt: -1 })
             .limit(6)
             .lean()
@@ -267,22 +267,22 @@ export async function getHomeFeeds(opts: HomeFeedOptions = {}) {
 
     /* ---------- آمار کلی ---------- */
     const [totalProjects, totalUsers, totalTags, downloadsAgg] = await Promise.all([
-        Project.countDocuments({ status: 'published', isPublic: true }),
+        Project.countDocuments({ status: "published", isPublic: true }),
         User.countDocuments({}),
         Tag.countDocuments({ isApproved: true }),
         Project.aggregate([
-            { $match: { status: 'published', isPublic: true } },
-            { $group: { _id: null, total: { $sum: '$downloads' } } }
+            { $match: { status: "published", isPublic: true } },
+            { $group: { _id: null, total: { $sum: "$downloads" } } }
         ])
     ]);
 
     return {
         sections: {
-            trending: { title: 'داغ‌ترین‌ها', subtitle: 'محبوب‌ترین پروژه‌های هفت روز اخیر', projects: trending },
-            featured: { title: 'پروژه‌های ویژه', subtitle: 'انتخاب تیم ما', projects: featured },
-            newProjects: { title: 'تازه‌ها', subtitle: 'آخرین پروژه‌های منتشرشده', projects: newProjects },
-            topRated: { title: 'بهترین امتیازها', subtitle: 'بر اساس نظرات کاربران', projects: topRated },
-            topDownloaded: { title: 'پرطرفدارترین دانلودها', subtitle: 'بیشترین بارگیری', projects: topDownloaded }
+            trending: { title: "داغ‌ترین‌ها", subtitle: "محبوب‌ترین پروژه‌های هفت روز اخیر", projects: trending },
+            featured: { title: "پروژه‌های ویژه", subtitle: "انتخاب تیم ما", projects: featured },
+            newProjects: { title: "تازه‌ها", subtitle: "آخرین پروژه‌های منتشرشده", projects: newProjects },
+            topRated: { title: "بهترین امتیازها", subtitle: "بر اساس نظرات کاربران", projects: topRated },
+            topDownloaded: { title: "پرطرفدارترین دانلودها", subtitle: "بیشترین بارگیری", projects: topDownloaded }
         },
         stats: {
             projects: totalProjects,
