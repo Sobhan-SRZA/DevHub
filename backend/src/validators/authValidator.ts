@@ -164,7 +164,7 @@ export const resetPasswordSchema = z
 export const resendPasswordResetSchema = z.object({
     resetToken: z
         .string({ error: "توکن بازیابی الزامی است" })
-        .min(10),
+        .min(10)
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
