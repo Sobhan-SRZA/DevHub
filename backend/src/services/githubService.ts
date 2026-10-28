@@ -88,7 +88,7 @@ async function ghFetch<T>(path: string): Promise<T> {
     try {
         res = await fetch(`https://api.github.com${path}`, {
             headers,
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(8000)
         });
     }
 
