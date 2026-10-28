@@ -1,5 +1,5 @@
-import { Router } from "express";
 import { Project } from "../../models/Project";
+import { Router } from "express";
 import { User } from "../../models/User";
 
 const router = Router();
@@ -8,8 +8,10 @@ function baseFromReq(req: any): string {
     if (process.env.APP_URL) {
         return String(process.env.APP_URL).replace(/\/$/, "");
     }
+
     const proto = req.get("x-forwarded-proto") || req.protocol || "https";
     const host = req.get("x-forwarded-host") || req.get("host") || "localhost";
+
     return `${proto}://${host}`.replace(/\/$/, "");
 }
 
@@ -29,7 +31,7 @@ router.get("/", async (req, res) => {
     const staticUrls = [
         { loc: "/", changefreq: "daily", priority: "1.0" },
         { loc: "/explore", changefreq: "hourly", priority: "0.9" },
-        { loc: "/projects", changefreq: "daily", priority: "0.8" },
+        { loc: "/projects", changefreq: "daily", priority: "0.8" }
     ];
 
     let projectUrls: { loc: string; lastmod?: string; changefreq: string; priority: string }[] = [];
@@ -50,10 +52,13 @@ router.get("/", async (req, res) => {
             lastmod: p.updatedAt
                 ? new Date(p.updatedAt as Date).toISOString()
                 : undefined,
+
             changefreq: "weekly",
-            priority: "0.7",
+            priority: "0.7"
         }));
-    } catch {
+    }
+    
+    catch {
         // ignore
     }
 
@@ -69,9 +74,11 @@ router.get("/", async (req, res) => {
             .map((u) => ({
                 loc: `/users/${u.username}`,
                 changefreq: "weekly",
-                priority: "0.5",
+                priority: "0.5"
             }));
-    } catch {
+    }
+    
+    catch {
         // ignore
     }
 
@@ -85,12 +92,16 @@ router.get("/", async (req, res) => {
                 let line = `  <url>\n    <loc>${escapeXml(base + u.loc)}</loc>\n`;
                 if ((u as any).lastmod) {
                     line += `    <lastmod>${(u as any).lastmod}</lastmod>\n`;
-                } else {
+                } 
+                
+                else {
                     line += `    <lastmod>${now}</lastmod>\n`;
                 }
+
                 line += `    <changefreq>${u.changefreq}</changefreq>\n`;
                 line += `    <priority>${u.priority}</priority>\n`;
                 line += `  </url>`;
+                
                 return line;
             })
             .join("\n") +
