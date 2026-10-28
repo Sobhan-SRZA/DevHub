@@ -200,24 +200,30 @@ function nativeCompression(): RequestHandler {
                         : Buffer.from(chunk, encodingOrCb)
                 );
             }
-            if (typeof encodingOrCb === "function") encodingOrCb();
-            else if (typeof cb === "function") cb();
+            if (typeof encodingOrCb === "function") 
+                encodingOrCb();
+            
+            else if (typeof cb === "function") 
+                cb();
+
             return true;
         };
 
         (res as any).end = (chunk?: any, encodingOrCb?: any, cb?: any) => {
-            if (ended) return res;
+            if (ended) 
+                return res;
+
             ended = true;
             if (chunk) {
                 chunks.push(
                     Buffer.isBuffer(chunk)
                         ? chunk
                         : Buffer.from(
-                              chunk,
-                              typeof encodingOrCb === "string"
-                                  ? encodingOrCb
-                                  : undefined
-                          )
+                            chunk,
+                            typeof encodingOrCb === "string"
+                                ? (encodingOrCb as BufferEncoding)
+                                : undefined
+                        )
                 );
             }
 
