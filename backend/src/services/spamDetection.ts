@@ -16,10 +16,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import crypto from 'node:crypto';
-import { cacheGet, cacheSet } from './cache';
-import { AppError } from '../utils/AppError';
-import { ErrorCodes } from '../utils/errorCodes';
+import crypto from "node:crypto";
+import { cacheGet, cacheSet } from "./cache";
+import { AppError } from "../utils/AppError";
+import { ErrorCodes } from "../utils/errorCodes";
 
 /* ================================================================
    Types
@@ -87,55 +87,55 @@ const INVISIBLE_CHARACTERS =
 const DIACRITICS = /[\u064B-\u065F\u0670\u06D6-\u06ED]/gu;
 
 const URL_REGEX =
-    /(?:https?:\/\/|www\.)[^\s<>"'`]+/giu;
+    /(?:https?:\/\/|www\.)[^\s<>""`]+/giu;
 
 const URL_SHORTENERS = new Set([
-    'bit.ly',
-    'tinyurl.com',
-    'goo.gl',
-    'ow.ly',
-    'is.gd',
-    'buff.ly',
-    'shorturl.at',
-    'cutt.ly',
-    'rebrand.ly',
-    't.co',
-    'lnkd.in',
-    'rb.gy',
-    'tiny.one',
+    "bit.ly",
+    "tinyurl.com",
+    "goo.gl",
+    "ow.ly",
+    "is.gd",
+    "buff.ly",
+    "shorturl.at",
+    "cutt.ly",
+    "rebrand.ly",
+    "t.co",
+    "lnkd.in",
+    "rb.gy",
+    "tiny.one",
 ]);
 
 const SUSPICIOUS_PHRASES = [
     // فارسی
-    'کلیک کنید',
-    'پول رایگان',
-    'برنده شوید',
-    'کسب درآمد',
-    'درآمد میلیونی',
-    'اینترنت رایگان',
-    'قیمت باورنکردنی',
-    'فقط امروز',
-    'تخفیف ویژه',
-    'فرصت محدود',
+    "کلیک کنید",
+    "پول رایگان",
+    "برنده شوید",
+    "کسب درآمد",
+    "درآمد میلیونی",
+    "اینترنت رایگان",
+    "قیمت باورنکردنی",
+    "فقط امروز",
+    "تخفیف ویژه",
+    "فرصت محدود",
 
     // English
-    'click here',
-    'free money',
-    'win prize',
-    'buy now',
-    'limited time',
-    'earn money',
-    'make money online',
-    'invest now',
-    'follow me',
-    'check my profile',
+    "click here",
+    "free money",
+    "win prize",
+    "buy now",
+    "limited time",
+    "earn money",
+    "make money online",
+    "invest now",
+    "follow me",
+    "check my profile",
 ];
 
 const HIGH_RISK_PHRASES = [
-    'free money',
-    'پول رایگان',
-    'make money online',
-    'درآمد میلیونی',
+    "free money",
+    "پول رایگان",
+    "make money online",
+    "درآمد میلیونی",
 ];
 
 /* ================================================================
@@ -144,13 +144,13 @@ const HIGH_RISK_PHRASES = [
 
 function normalizeText(text: string): string {
     return text
-        .normalize('NFKC')
-        .replace(INVISIBLE_CHARACTERS, '')
-        .replace(DIACRITICS, '')
-        .replace(/[يى]/g, 'ی')
-        .replace(/ك/g, 'ک')
-        .replace(/\u0640/g, '')
-        .replace(/\u00A0/g, ' ')
+        .normalize("NFKC")
+        .replace(INVISIBLE_CHARACTERS, "")
+        .replace(DIACRITICS, "")
+        .replace(/[يى]/g, "ی")
+        .replace(/ك/g, "ک")
+        .replace(/\u0640/g, "")
+        .replace(/\u00A0/g, " ")
         .toLowerCase()
         .trim();
 }
@@ -161,8 +161,8 @@ function normalizeText(text: string): string {
  */
 function normalizeForMatching(text: string): string {
     return normalizeText(text)
-        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-        .replace(/\s+/g, ' ')
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .replace(/\s+/g, " ")
         .trim();
 }
 
@@ -195,7 +195,7 @@ function isTableLine(line: string): boolean {
         return true;
     }
 
-    if (trimmed.includes('\t')) {
+    if (trimmed.includes("\t")) {
         return true;
     }
 
@@ -218,7 +218,7 @@ function getNonTableText(text: string, allowTables: boolean): string {
 
     return getLines(text)
         .filter((line) => !isTableLine(line))
-        .join('\n');
+        .join("\n");
 }
 
 /* ================================================================
@@ -277,7 +277,7 @@ function analyzeRepeatedWords(text: string): WordStats {
 function getMaxRepeatedCharRun(text: string): number {
     let maxRun = 0;
     let currentRun = 0;
-    let previousChar = '';
+    let previousChar = "";
 
     for (const char of text) {
         if (char === previousChar) {
@@ -320,7 +320,7 @@ function extractUrls(text: string): string[] {
 
 function getDomain(url: string): string {
     try {
-        const cleaned = url.replace(/[),.;!?]+$/g, '');
+        const cleaned = url.replace(/[),.;!?]+$/g, "");
         const parsed = new URL(
             /^https?:\/\//i.test(cleaned)
                 ? cleaned
@@ -328,10 +328,10 @@ function getDomain(url: string): string {
         );
 
         return parsed.hostname
-            .replace(/^www\./i, '')
+            .replace(/^www\./i, "")
             .toLowerCase();
     } catch {
-        return '';
+        return "";
     }
 }
 
@@ -355,9 +355,9 @@ function hashContent(text: string): string {
     const canonical = normalizeForMatching(text);
 
     return crypto
-        .createHash('sha256')
-        .update(canonical, 'utf8')
-        .digest('hex');
+        .createHash("sha256")
+        .update(canonical, "utf8")
+        .digest("hex");
 }
 
 /* ================================================================
@@ -387,7 +387,7 @@ export async function checkSpam(
         warnings: [],
     };
 
-    if (typeof text !== 'string' || !text.trim()) {
+    if (typeof text !== "string" || !text.trim()) {
         return result;
     }
 
@@ -414,8 +414,8 @@ export async function checkSpam(
     if (normalized.length < minLength) {
         add({
             weight: 10,
-            reason: 'TOO_SHORT',
-            message: 'متن برای ارزیابی بسیار کوتاه است.',
+            reason: "TOO_SHORT",
+            message: "متن برای ارزیابی بسیار کوتاه است.",
             warning: true,
         });
     }
@@ -429,20 +429,20 @@ export async function checkSpam(
     if (maxCharRun >= 30) {
         add({
             weight: 40,
-            reason: 'REPEATED_CHARS',
-            message: 'تکرار غیرعادی کاراکترها شناسایی شد.',
+            reason: "REPEATED_CHARS",
+            message: "تکرار غیرعادی کاراکترها شناسایی شد.",
         });
     } else if (maxCharRun >= 15) {
         add({
             weight: 25,
-            reason: 'REPEATED_CHARS',
-            message: 'تعداد کاراکترهای تکراری زیاد است.',
+            reason: "REPEATED_CHARS",
+            message: "تعداد کاراکترهای تکراری زیاد است.",
         });
     } else if (maxCharRun >= 8) {
         add({
             weight: 10,
-            reason: 'REPEATED_CHARS',
-            message: 'تکرار طولانی یک کاراکتر مشاهده شد.',
+            reason: "REPEATED_CHARS",
+            message: "تکرار طولانی یک کاراکتر مشاهده شد.",
             warning: true,
         });
     }
@@ -470,8 +470,8 @@ export async function checkSpam(
         ) {
             add({
                 weight: 35,
-                reason: 'REPEATED_WORDS',
-                message: 'تکرار گسترده کلمات در متن شناسایی شد.',
+                reason: "REPEATED_WORDS",
+                message: "تکرار گسترده کلمات در متن شناسایی شد.",
             });
         } else if (
             wordStats.repeatedWords >= 3 &&
@@ -479,8 +479,8 @@ export async function checkSpam(
         ) {
             add({
                 weight: 20,
-                reason: 'REPEATED_WORDS',
-                message: 'تکرار کلمات بیشتر از حد معمول است.',
+                reason: "REPEATED_WORDS",
+                message: "تکرار کلمات بیشتر از حد معمول است.",
                 warning: true,
             });
         } else if (
@@ -489,8 +489,8 @@ export async function checkSpam(
         ) {
             add({
                 weight: 10,
-                reason: 'REPEATED_WORDS',
-                message: 'یک یا چند کلمه بیش از حد تکرار شده‌اند.',
+                reason: "REPEATED_WORDS",
+                message: "یک یا چند کلمه بیش از حد تکرار شده‌اند.",
                 warning: true,
             });
         }
@@ -505,13 +505,13 @@ export async function checkSpam(
     if (urls.length > maxLinks * 2) {
         add({
             weight: 35,
-            reason: 'TOO_MANY_LINKS',
+            reason: "TOO_MANY_LINKS",
             message: `تعداد لینک‌ها (${urls.length}) بسیار زیاد است.`,
         });
     } else if (urls.length > maxLinks) {
         add({
             weight: 20,
-            reason: 'TOO_MANY_LINKS',
+            reason: "TOO_MANY_LINKS",
             message: `تعداد لینک‌ها (${urls.length}) از حد مجاز بیشتر است.`,
             warning: true,
         });
@@ -526,14 +526,14 @@ export async function checkSpam(
     if (shortenerCount >= 3) {
         add({
             weight: 25,
-            reason: 'URL_SHORTENER',
-            message: 'استفاده مکرر از لینک‌های کوتاه‌کننده شناسایی شد.',
+            reason: "URL_SHORTENER",
+            message: "استفاده مکرر از لینک‌های کوتاه‌کننده شناسایی شد.",
         });
     } else if (shortenerCount > 0) {
         add({
             weight: 8,
-            reason: 'URL_SHORTENER',
-            message: 'لینک کوتاه‌کننده در متن وجود دارد.',
+            reason: "URL_SHORTENER",
+            message: "لینک کوتاه‌کننده در متن وجود دارد.",
             warning: true,
         });
     }
@@ -547,14 +547,14 @@ export async function checkSpam(
     if (capsRatio >= 0.9) {
         add({
             weight: 25,
-            reason: 'CAPS_LOCK',
-            message: 'استفاده غیرعادی از حروف بزرگ انگلیسی.',
+            reason: "CAPS_LOCK",
+            message: "استفاده غیرعادی از حروف بزرگ انگلیسی.",
         });
     } else if (capsRatio >= 0.75) {
         add({
             weight: 12,
-            reason: 'CAPS_LOCK',
-            message: 'نسبت حروف بزرگ انگلیسی بالاست.',
+            reason: "CAPS_LOCK",
+            message: "نسبت حروف بزرگ انگلیسی بالاست.",
             warning: true,
         });
     }
@@ -576,15 +576,15 @@ export async function checkSpam(
     if (suspiciousHits.length >= 3) {
         add({
             weight: 25,
-            reason: 'SUSPICIOUS_KEYWORDS',
-            message: 'چند عبارت تبلیغاتی مشکوک در متن مشاهده شد.',
+            reason: "SUSPICIOUS_KEYWORDS",
+            message: "چند عبارت تبلیغاتی مشکوک در متن مشاهده شد.",
             warning: true,
         });
     } else if (suspiciousHits.length > 0) {
         add({
             weight: 8,
-            reason: 'SUSPICIOUS_KEYWORDS',
-            message: 'عبارت تبلیغاتی مشکوک در متن وجود دارد.',
+            reason: "SUSPICIOUS_KEYWORDS",
+            message: "عبارت تبلیغاتی مشکوک در متن وجود دارد.",
             warning: true,
         });
     }
@@ -593,8 +593,8 @@ export async function checkSpam(
     if (highRiskHits.length >= 2 && urls.length > 0) {
         add({
             weight: 20,
-            reason: 'HIGH_RISK_PROMOTION',
-            message: 'ترکیب عبارات پرریسک تبلیغاتی و لینک شناسایی شد.',
+            reason: "HIGH_RISK_PROMOTION",
+            message: "ترکیب عبارات پرریسک تبلیغاتی و لینک شناسایی شد.",
         });
     }
 
@@ -617,8 +617,8 @@ export async function checkSpam(
         if (injectionPatterns.some((pattern) => pattern.test(text))) {
             add({
                 weight: 50,
-                reason: 'HTML_INJECTION',
-                message: 'الگوی بالقوه خطرناک HTML یا JavaScript شناسایی شد.',
+                reason: "HTML_INJECTION",
+                message: "الگوی بالقوه خطرناک HTML یا JavaScript شناسایی شد.",
             });
         }
     }
@@ -630,8 +630,8 @@ export async function checkSpam(
     if (hasSuspiciousInvisibleChars(text)) {
         add({
             weight: 15,
-            reason: 'INVISIBLE_CHAR_OBFUSCATION',
-            message: 'کاراکتر نامرئی در میان حروف یا ارقام شناسایی شد.',
+            reason: "INVISIBLE_CHAR_OBFUSCATION",
+            message: "کاراکتر نامرئی در میان حروف یا ارقام شناسایی شد.",
             warning: true,
         });
     }
@@ -645,7 +645,7 @@ export async function checkSpam(
 
         // تفکیک فیلدها مانع برخورد ناخواسته شرح پروژه
         // با محتوای پروفایل می‌شود.
-        const scope = field || 'default';
+        const scope = field || "default";
         const cacheKey =
             `spam:hash:${userId}:${scope}:${hash}`;
 
@@ -654,8 +654,8 @@ export async function checkSpam(
         if (existing !== undefined && existing !== null) {
             add({
                 weight: 50,
-                reason: 'DUPLICATE_CONTENT',
-                message: 'محتوای یکسان قبلاً در این فیلد ارسال شده است.',
+                reason: "DUPLICATE_CONTENT",
+                message: "محتوای یکسان قبلاً در این فیلد ارسال شده است.",
             });
         } else {
             cacheSet(cacheKey, Date.now(), 24 * 60 * 60);
@@ -690,13 +690,13 @@ export async function assertNotSpam(
         throw new AppError(
             400,
             ErrorCodes.SPAM_DETECTED,
-            'محتوای شما مشکوک به اسپم است. لطفاً متن را اصلاح کنید.',
+            "محتوای شما مشکوک به اسپم است. لطفاً متن را اصلاح کنید.",
             {
                 field: options.field,
                 details: {
                     score: result.score,
                     reasons: result.reasons,
-                    messages: result.messages,
+                    messages: result.messages
                 }
             }
         );
