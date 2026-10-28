@@ -25,7 +25,7 @@ export const createProjectSchema = z.object({
         .transform((arr) => (arr ? [...new Set(arr)] : undefined)),
 
     status: z.enum(["draft", "published", "archived"]).optional(),
-    isPublic: z.boolean().optional(),
+    isPublic: z.boolean().optional()
 });
 
 /* ---------------- Update ---------------- */
@@ -40,7 +40,7 @@ export const projectListQuerySchema = z.object({
     mine: z.coerce.boolean().optional(),
     sort: z.enum(["recent", "rating", "downloads", "stars"]).optional().default("recent"),
     page: z.coerce.number().int().min(1).optional().default(1),
-    limit: z.coerce.number().int().min(1).max(50).optional().default(12),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(12)
 });
 
 export const exploreQuerySchema = z.object({
@@ -52,7 +52,7 @@ export const exploreQuerySchema = z.object({
     tagType: z.string().regex(OBJECT_ID_RE).optional(),
     search: z.string().trim().max(80).optional(),
     page: z.coerce.number().int().min(1).optional().default(1),
-    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20)
 });
 
 /**
