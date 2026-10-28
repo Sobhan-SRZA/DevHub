@@ -48,7 +48,7 @@ export const findOrCreateTagSchema = z.object({
             // "" یا null → undefined (یعنی «عمومی»)
             (v) => (v === "" || v === null ? undefined : v),
             z.string().regex(OBJECT_ID_RE, "شناسه کتگوری نامعتبر است").optional()
-        ),
+        )
 });
 
 /* ==================================================================
