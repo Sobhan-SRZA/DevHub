@@ -1,38 +1,48 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint to prevent flashing. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/form-errors.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/security.css">
-  <title>امنیت و نشست‌ها</title>
+
+  <title>Security and Sessions</title>
 </head>
 
 <body>
@@ -40,53 +50,69 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: "امنیت و نشست‌ها" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "Security and Sessions" }) %>
 
     <main class="security-page container">
-
-      <!-- ============ ACTIVE SESSIONS ============ -->
+      <!-- ============================================================
+           ACTIVE SESSIONS
+           Lists devices currently signed in to the user's account.
+           ============================================================ -->
       <section class="security-section">
         <div class="security-section-head">
-          <h2 class="security-title">دستگاه‌های فعال</h2>
+          <h2 class="security-title">Active Devices</h2>
         </div>
-        <p class="security-sub">سشن‌هایی که با حساب شما وارد شده‌اند</p>
+
+        <p class="security-sub">Sessions currently signed in to your account.</p>
 
         <div id="sessionsList" class="sessions-list">
-          <div class="sessions-loading">در حال بارگذاری…</div>
+          <div class="sessions-loading">Loading…</div>
         </div>
 
         <div class="security-actions">
           <button type="button" class="btn-secondary" id="logoutAllBtn">
-            خروج از همه دستگاه‌ها
+            Sign Out of All Devices
           </button>
         </div>
       </section>
 
-      <!-- ============ COMING SOON ============ -->
+      <!-- ============================================================
+           LOGIN HISTORY — PLACEHOLDER
+           Reserved for a future release.
+           ============================================================ -->
       <section class="security-section security-coming-soon">
         <div class="security-section-head">
-          <h2 class="security-title">تاریخچه ورود</h2>
-          <span class="soon-badge">به‌زودی</span>
+          <h2 class="security-title">Login History</h2>
+          <span class="soon-badge">Coming Soon</span>
         </div>
-        <p class="security-sub">لیست همه‌ی ورودها با تاریخ، IP و موقعیت مکانی.</p>
+
+        <p class="security-sub">A complete list of sign-ins with date, IP address, and location.</p>
       </section>
 
+      <!-- ============================================================
+           TWO-FACTOR AUTHENTICATION — PLACEHOLDER
+           Reserved for a future release.
+           ============================================================ -->
       <section class="security-section security-coming-soon">
         <div class="security-section-head">
-          <h2 class="security-title">احراز هویت دو مرحله‌ای (2FA)</h2>
-          <span class="soon-badge">به‌زودی</span>
+          <h2 class="security-title">Two-Factor Authentication (2FA)</h2>
+          <span class="soon-badge">Coming Soon</span>
         </div>
-        <p class="security-sub">افزودن لایه‌ی دوم امنیت با TOTP (Google Authenticator).</p>
+
+        <p class="security-sub">Add a second layer of security using TOTP (Google Authenticator).</p>
       </section>
 
+      <!-- ============================================================
+           API TOKENS — PLACEHOLDER
+           Reserved for a future release.
+           ============================================================ -->
       <section class="security-section security-coming-soon">
         <div class="security-section-head">
-          <h2 class="security-title">توکن‌های API</h2>
-          <span class="soon-badge">به‌زودی</span>
+          <h2 class="security-title">API Tokens</h2>
+          <span class="soon-badge">Coming Soon</span>
         </div>
-        <p class="security-sub">ساخت توکن برای دسترسی برنامه‌نویسی به API.</p>
-      </section>
 
+        <p class="security-sub">Create tokens for programmatic access to the API.</p>
+      </section>
     </main>
   </div>
 </body>
