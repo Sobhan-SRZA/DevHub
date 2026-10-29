@@ -1,38 +1,58 @@
+
 import {
     User,
-    type UserRole
+    type UserRole,
 } from "../models/User";
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 import { Types } from "mongoose";
 
 /* ==================================================================
-   Helpers — سلسله‌مراتب
+   Role Hierarchy
    ================================================================== */
+
+/**
+ * Defines the privilege level associated with each user role.
+ * Higher values represent greater privileges.
+ */
 const ROLE_RANK: Record<UserRole, number> = {
     user: 1,
     admin: 2,
-    developer: 3
+    developer: 3,
 };
 
+/**
+ * Determines whether a user has at least the specified role level.
+ */
 export function hasRole(user: any, minRole: UserRole): boolean {
-    if (!user?.role)
+    if (!user?.role) {
         return false;
+    }
 
-    return (ROLE_RANK[user.role as UserRole] || 0) >= (ROLE_RANK[minRole] || 0);
+    return (
+        (ROLE_RANK[user.role as UserRole] || 0) >=
+        (ROLE_RANK[minRole] || 0)
+    );
 }
 
+/**
+ * Checks whether a user has administrator-level privileges or higher.
+ */
 export function isAdmin(user: any): boolean {
     return hasRole(user, "admin");
 }
 
+/**
+ * Checks whether a user has the developer role.
+ */
 export function isDeveloper(user: any): boolean {
     return user?.role === "developer";
 }
 
 /* ==================================================================
-   Promote / Demote
+   Role Management
    ================================================================== */
+
 export interface ChangeRoleOptions {
     targetUserId: Types.ObjectId | string;
     newRole: UserRole;
@@ -40,62 +60,80 @@ export interface ChangeRoleOptions {
     reason?: string;
 }
 
+/**
+ * Changes a user's role after validating the requesting user's permissions.
+ *
+ * Authorization rules:
+ * - Users cannot change their own roles.
+ * - Only developers can assign the developer role.
+ * - Administrators cannot modify developer accounts or assign developer roles.
+ *
+ * The change is persisted with audit metadata, including the previous role,
+ * the requesting user, the timestamp, and the optional reason.
+ */
 export async function changeUserRole(opts: ChangeRoleOptions) {
     const { targetUserId, newRole, changedBy, reason } = opts;
 
-    /* ---------- پیدا کردن کاربر هدف ---------- */
+    // Retrieve the target user.
     const target = await User.findById(targetUserId);
+
     if (!target) {
-        throw new AppError(404, ErrorCodes.UNAUTHENTICATED, "کاربر یافت نشد");
+        throw new AppError(
+            404,
+            ErrorCodes.UNAUTHENTICATED,
+            "User not found."
+        );
     }
 
     if (target.role === newRole) {
         throw new AppError(
             400,
             ErrorCodes.VALIDATION_ERROR,
-            "نقش فعلی کاربر همین است"
+            "The user already has this role."
         );
     }
 
-    /* ---------- چک مجوز دهنده ---------- */
+    // Retrieve the user requesting the role change.
     const actor = await User.findById(changedBy);
+
     if (!actor) {
-        throw new AppError(401, ErrorCodes.UNAUTHENTICATED);
+        throw new AppError(
+            401,
+            ErrorCodes.UNAUTHENTICATED
+        );
     }
 
-    // کاربر نمی‌تونه نقش خودش رو تغییر بده (جلوگیری از خود-ارتقایی)
+    // Prevent self-promotion and self-demotion.
     if (String(actor._id) === String(target._id)) {
         throw new AppError(
             403,
             ErrorCodes.PROJECT_NOT_OWNED,
-            "نمی‌توانید نقش خودتان را تغییر دهید"
+            "You cannot change your own role."
         );
     }
 
-    // فقط developer می‌تونه developer بده
+    // Only developers may assign the developer role.
     if (newRole === "developer" && actor.role !== "developer") {
         throw new AppError(
             403,
             ErrorCodes.PROJECT_NOT_OWNED,
-            "فقط developer می‌تواند نقش developer بدهد"
+            "Only developers can assign the developer role."
         );
     }
 
-    // admin می‌تونه فقط user ↔ admin
+    // Administrators may manage users and other administrators,
+    // but cannot modify developer accounts or assign developer roles.
     if (actor.role === "admin") {
         if (target.role === "developer" || newRole === "developer") {
             throw new AppError(
                 403,
                 ErrorCodes.PROJECT_NOT_OWNED,
-                "ادمین نمی‌تواند نقشی در سطح developer را تغییر دهد"
+                "Administrators cannot modify developer-level roles."
             );
         }
     }
 
-    // developer نمی‌تونه از خودش پایین‌تر بگیره (جلوگیری از قفل شدن سیستم)
-    // ↑ این رو خودش رعایت می‌کنه چون خودش رو تغییر نمی‌ده
-
-    /* ---------- اعمال تغییر ---------- */
+    // Record the previous role before applying the change.
     const previousRole = target.role;
 
     target.role = newRole;
@@ -105,79 +143,111 @@ export async function changeUserRole(opts: ChangeRoleOptions) {
 
     await target.save();
 
-    /* ---------- Audit log ---------- */
+    // Record the role change for operational auditing.
     console.log(
-        `🔐 [ROLE CHANGE] ${previousRole} → ${newRole}` +
-        ` | target=${target._id} | by=${actor._id}` +
-        (reason ? ` | reason: ${reason}` : "")
+        `[ROLE CHANGE] ${previousRole} -> ${newRole}` +
+        ` | target=${target._id} | changedBy=${actor._id}` +
+        (reason ? ` | reason=${reason}` : "")
     );
 
     return {
         userId: target._id,
         previousRole,
-        newRole
+        newRole,
     };
 }
 
 /* ==================================================================
-   Bootstrap — اطمینان از وجود حداقل یک developer
+   Developer Account Bootstrap
    ================================================================== */
+
+/**
+ * Ensures that at least one developer account exists.
+ *
+ * Initialization order:
+ * 1. Preserve existing developer accounts.
+ * 2. Promote the account specified by DEVELOPER_EMAIL, if available.
+ * 3. Otherwise, promote the earliest registered user.
+ *
+ * If no users exist, the first registered user can be assigned the
+ * developer role through the registration workflow.
+ */
 export async function ensureDeveloperExists(): Promise<void> {
-    const devCount = await User.countDocuments({ role: "developer" });
+    const developerCount = await User.countDocuments({
+        role: "developer",
+    });
 
-    if (devCount > 0)
+    if (developerCount > 0) {
         return;
+    }
 
-    // 1) از ENV بخون
-    const envEmail = process.env.DEVELOPER_EMAIL?.toLowerCase().trim();
+    // Prefer the developer account configured through the environment.
+    const envEmail = process.env.DEVELOPER_EMAIL
+        ?.toLowerCase()
+        .trim();
 
     if (envEmail) {
-        const user = await User.findOne({ email: envEmail });
+        const user = await User.findOne({
+            email: envEmail,
+        });
+
         if (user) {
             user.role = "developer";
             user.roleChangedAt = new Date();
-            user.roleChangeReason = "Bootstrap from DEVELOPER_EMAIL env";
+            user.roleChangeReason =
+                "Bootstrap from DEVELOPER_EMAIL environment variable";
+
             await user.save();
-            console.log(`✅ Promoted ${envEmail} to developer (from ENV)`);
+
+            console.log(
+                `Promoted ${envEmail} to developer using environment configuration.`
+            );
 
             return;
         }
 
-        else {
-            console.warn(
-                `⚠️  DEVELOPER_EMAIL=${envEmail} set but user not found`
-            );
-        }
+        console.warn(
+            `DEVELOPER_EMAIL is configured as "${envEmail}", but no matching user was found.`
+        );
     }
 
-    // 2) هیچ developer نداریم → قدیمی‌ترین کاربر رو developer کن
-    const firstUser = await User.findOne({}).sort({ createdAt: 1 });
+    // Fall back to the earliest registered account.
+    const firstUser = await User.findOne({}).sort({
+        createdAt: 1,
+    });
 
     if (firstUser) {
         firstUser.role = "developer";
         firstUser.roleChangedAt = new Date();
-        firstUser.roleChangeReason = "Bootstrap: first registered user";
-        await firstUser.save();
-        
-        console.log(
-            `✅ Promoted first user (${firstUser.email}) to developer`
-        );
-    }
+        firstUser.roleChangeReason =
+            "Bootstrap: earliest registered user";
 
-    else {
+        await firstUser.save();
+
+        console.log(
+            `Promoted the earliest registered user (${firstUser.email}) to developer.`
+        );
+    } else {
         console.warn(
-            "⚠️  No users yet — first registered user will become developer"
+            "No registered users exist. The first registered user will be eligible for developer assignment."
         );
     }
 }
 
 /* ==================================================================
-   First user hook — کاربر اول خودکار developer
+   First User Role Assignment
    ================================================================== */
-export async function shouldBecomeDeveloper(): Promise<boolean> {
-    const devCount = await User.countDocuments({ role: "developer" });
 
-    return devCount === 0;
+/**
+ * Determines whether a newly registered user should receive the developer
+ * role because no developer account currently exists.
+ */
+export async function shouldBecomeDeveloper(): Promise<boolean> {
+    const developerCount = await User.countDocuments({
+        role: "developer",
+    });
+
+    return developerCount === 0;
 }
 
 /**
