@@ -3,98 +3,203 @@
 
 <head>
   <%- include("../components/seo-head", {
-        title: "Contact Us",
-        description: "Get in touch with the DevHub team to share suggestions, report bugs, or discuss collaboration opportunities.",
-        canonicalPath: "/contact"
-    }) %>
+    title: "Contact DevHub — Support, Bug Reports, and Collaboration",
+    description: "Reach the DevHub team for support, security reports, feature requests, or collaboration. Every message creates a tracked ticket.",
+    canonicalPath: "/contact",
+    keywords: "contact DevHub, support, bug report, collaboration, ticket",
+    extraStyles: ["/styles/contact.css", "/styles/form-errors.css"]
+  }) %>
 </head>
 
 <body>
   <%- include("../components/header") %>
   <%- include("../components/dialogError") %>
 
-  <main class="static-page contact-page">
-    <h1>Contact Us</h1>
+  <main class="contact-page">
 
-    <p class="lead">
-      Have a suggestion, found a bug, or interested in collaborating?
-      Send us a message.
-      In the current version, submissions are handled in the browser,
-      and guidance for contacting the team directly is provided below.
-    </p>
+    <!-- ============ HERO ============ -->
+    <section class="contact-hero">
+      <div class="contact-hero__glow" aria-hidden="true"></div>
 
-    <div class="static-card">
-      <form class="contact-form" id="contactForm" novalidate>
-        <div>
-          <label for="cName">Name</label>
-          <input id="cName" name="name" type="text" required maxlength="80" placeholder="Your name" autocomplete="name">
-        </div>
+      <div class="contact-hero__inner">
+        <span class="contact-hero__badge">Support &amp; Collaboration</span>
 
-        <div>
-          <label for="cEmail">Email Address</label>
-          <input id="cEmail" name="email" type="email" required maxlength="120" placeholder="you@example.com" autocomplete="email" dir="ltr">
-        </div>
+        <h1 class="contact-hero__title">Get in touch</h1>
 
-        <div>
-          <label for="cSubject">Subject</label>
-          <input id="cSubject" name="subject" type="text" required maxlength="120" placeholder="Message subject">
-        </div>
-
-        <div>
-          <label for="cMessage">Message</label>
-          <textarea id="cMessage" name="message" required maxlength="2000" placeholder="Write your message here..."></textarea>
-        </div>
-
-        <button type="submit" class="btn-primary" id="cSubmit">
-          Send Message
-        </button>
-
-        <p class="contact-note" id="cNote">
-          Once server-side email delivery is configured,
-          messages can be sent directly to the DevHub team.
+        <p class="contact-hero__lead">
+          Found a bug, have a suggestion, or interested in collaborating?
+          Submit a message below. Every submission creates a tracked
+          ticket, and our team will respond as soon as possible.
         </p>
-      </form>
-    </div>
 
-    <div class="static-card">
-      <h2 style="margin-top: 0">Other Ways to Connect</h2>
+        <div class="contact-hero__links">
+          <a href="https://srza.ir" target="_blank" rel="noopener noreferrer" class="contact-hero__link">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            srza.ir
+          </a>
+          <a href="https://persiancaesar.ir" target="_blank" rel="noopener noreferrer" class="contact-hero__link">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Persian Caesar
+          </a>
+        </div>
+      </div>
+    </section>
 
-      <p>
-        Follow the project's repository and technical discussions on GitHub.
-      </p>
+    <!-- ============ FORM ============ -->
+    <section class="contact-section">
+      <div class="contact-form-card">
 
-      <p style="margin-bottom: 0">
-        For security-related reports, please refer to
-        the <code>SECURITY.md</code> file.
-      </p>
-    </div>
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="contact-form__row">
+            <div class="field">
+              <label for="cName">Your Name <span class="req">*</span></label>
+              <input id="cName" name="name" type="text" required maxlength="80" placeholder="John Smith" autocomplete="name">
+            </div>
+
+            <div class="field">
+              <label for="cEmail">Email Address <span class="req">*</span></label>
+              <input id="cEmail" name="email" type="email" required maxlength="120" placeholder="you@example.com" autocomplete="email" dir="ltr">
+            </div>
+          </div>
+
+          <div class="contact-form__row">
+            <div class="field">
+              <label for="cSubject">Subject <span class="req">*</span></label>
+              <input id="cSubject" name="subject" type="text" required maxlength="120" placeholder="Brief summary of your message">
+            </div>
+
+            <div class="field">
+              <label for="cCategory">Category</label>
+              <select id="cCategory" name="category" class="contact-select">
+                <option value="general">General question</option>
+                <option value="bug">Bug report</option>
+                <option value="feature">Feature request</option>
+                <option value="collaboration">Collaboration</option>
+                <option value="security">Security report</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="cMessage">Message <span class="req">*</span></label>
+            <textarea id="cMessage" name="message" rows="6" required maxlength="5000" placeholder="Describe your issue, suggestion, or request in as much detail as you can."></textarea>
+            <div class="field-hint field-hint--counter">
+              <span id="cMessageCount">0</span> / 5000
+            </div>
+          </div>
+
+          <div class="contact-form__actions">
+            <button type="submit" class="btn-primary" id="cSubmit">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              Send Message
+            </button>
+          </div>
+        </form>
+
+        <!-- Success state: replaces the form after submission -->
+        <div class="contact-success" id="contactSuccess" hidden>
+          <div class="contact-success__icon" aria-hidden="true">✓</div>
+          <h2 class="contact-success__title">Message received</h2>
+          <p class="contact-success__body">
+            Thank you for reaching out. Your ticket has been created
+            and our team will respond as soon as possible.
+          </p>
+
+          <div class="contact-success__ticket">
+            <span class="contact-success__label">Reference number</span>
+            <strong class="contact-success__value" id="ticketNumber">—</strong>
+          </div>
+
+          <p class="contact-success__note">
+            Please keep this reference number for follow-ups.
+          </p>
+
+          <button type="button" class="btn-secondary" id="sendAnother">
+            Send another message
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ OTHER WAYS ============ -->
+    <section class="contact-ways">
+      <h2 class="contact-ways__title">Other ways to connect</h2>
+
+      <div class="contact-ways__grid">
+        <a href="https://github.com/Sobhan-SRZA/DevHub" target="_blank" rel="noopener noreferrer" class="contact-way">
+          <div class="contact-way__icon" style="--c:#a78bfa" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.61 8.21 11.17.6.11.82-.26.82-.58v-2.02c-3.34.71-4.04-1.58-4.04-1.58-.55-1.36-1.34-1.72-1.34-1.72-1.09-.73.08-.71.08-.71 1.2.08 1.84 1.21 1.84 1.21 1.07 1.79 2.8 1.27 3.49.97.11-.76.42-1.27.76-1.56-2.67-.3-5.47-1.31-5.47-5.82 0-1.28.47-2.33 1.24-3.15-.13-.3-.54-1.51.12-3.14 0 0 1-.31 3.3 1.21a11.6 11.6 0 0 1 6 0c2.3-1.52 3.3-1.21 3.3-1.21.66 1.63.25 2.84.12 3.14.77.82 1.24 1.87 1.24 3.15 0 4.52-2.81 5.52-5.49 5.81.43.37.81 1.09.81 2.19v3.25c0 .32.22.7.83.58 4.77-1.56 8.2-5.97 8.2-11.17C24 5.78 18.63.5 12 .5z" />
+            </svg>
+          </div>
+          <div>
+            <strong>GitHub</strong>
+            <span>Open issues and technical discussions</span>
+          </div>
+        </a>
+
+        <a href="https://srza.ir" target="_blank" rel="noopener noreferrer" class="contact-way">
+          <div class="contact-way__icon" style="--c:#6ebbff" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>srza.ir</strong>
+            <span>Personal site and portfolio</span>
+          </div>
+        </a>
+
+        <a href="https://persiancaesar.ir" target="_blank" rel="noopener noreferrer" class="contact-way">
+          <div class="contact-way__icon" style="--c:#34d399" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>Persian Caesar</strong>
+            <span>Team site and collaboration</span>
+          </div>
+        </a>
+
+        <div class="contact-way contact-way--static">
+          <div class="contact-way__icon" style="--c:#fbbf24" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>Security reports</strong>
+            <span>See <code>SECURITY.md</code> in the repository</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <script>
-    document.getElementById("contactForm")?.addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      const name = document.getElementById("cName").value.trim();
-      const email = document.getElementById("cEmail").value.trim();
-      const subject = document.getElementById("cSubject").value.trim();
-      const message = document.getElementById("cMessage").value.trim();
-
-      if (!name || !email || !subject || !message) {
-        alert("Please complete all required fields.");
-        return;
-      }
-
-      const note = document.getElementById("cNote");
-
-      note.textContent =
-        "Your message has been recorded. Thank you for reaching out! We'll get back to you soon.";
-
-      note.style.color = "var(--accent)";
-
-      event.target.reset();
-    });
-  </script>
-
+  <script src="/js/form-errors.js"></script>
+  <script src="/js/pages/contact.js" defer></script>
   <%- include("../components/footer") %>
 </body>
 
