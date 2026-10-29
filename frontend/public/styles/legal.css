@@ -1,0 +1,381 @@
+/* ============================================================
+   LEGAL PAGES — Privacy Policy and Terms of Service
+   ============================================================
+   Shared presentation for legal documents: hero, notice banner,
+   sticky table of contents, body content, and footer nav.
+   ============================================================ */
+
+/* ---------- Page container ---------- */
+.legal-page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    color: #ccc;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.legal-hero {
+    position: relative;
+    padding: 64px 0 40px;
+    border-bottom: 1px solid #141414;
+    margin-bottom: 32px;
+}
+
+.legal-hero__inner {
+    max-width: 720px;
+}
+
+.legal-hero__badge {
+    display: inline-block;
+    padding: 5px 12px;
+    margin-bottom: 16px;
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+    border-radius: 999px;
+    color: #6ebbff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.legal-hero__title {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 16px;
+}
+
+.legal-hero__sub {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #999;
+    margin: 0 0 20px;
+}
+
+.legal-hero__updated {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    color: #888;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.legal-hero__updated strong {
+    color: #bbb;
+    font-weight: 600;
+}
+
+.legal-hero__updated time {
+    color: #ddd;
+    font-weight: 600;
+}
+
+/* ============================================================
+   NOTICE BANNER
+   ============================================================ */
+.legal-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.06), rgba(251, 191, 36, 0.02));
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 12px;
+}
+
+.legal-notice svg {
+    flex-shrink: 0;
+    color: #fbbf24;
+    margin-top: 2px;
+}
+
+.legal-notice p {
+    margin: 0;
+    color: #bbb;
+    font-size: 0.86rem;
+    line-height: 1.65;
+}
+
+/* ============================================================
+   TABLE OF CONTENTS
+   ============================================================ */
+.legal-toc {
+    padding: 22px 24px;
+    margin-bottom: 32px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+}
+
+.legal-toc__title {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 14px;
+    letter-spacing: 0.01em;
+}
+
+.legal-toc__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: toc;
+}
+
+.legal-toc__list li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.86rem;
+}
+
+.legal-toc__list li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    color: #555;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.legal-toc__list a {
+    color: #999;
+    text-decoration: none;
+    padding-bottom: 0;
+    transition: color 0.15s ease;
+}
+
+.legal-toc__list a::after {
+    display: none;
+}
+
+.legal-toc__list a:hover {
+    color: #6ebbff;
+}
+
+/* ============================================================
+   CONTENT
+   ============================================================ */
+.legal-content {
+    max-width: 800px;
+}
+
+.legal-section {
+    margin-bottom: 40px;
+    scroll-margin-top: 90px;
+}
+
+.legal-section h2 {
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #141414;
+}
+
+.legal-section h3 {
+    color: #e6e6e6;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 24px 0 10px;
+    line-height: 1.4;
+}
+
+.legal-section h3:first-of-type {
+    margin-top: 16px;
+}
+
+.legal-section p {
+    color: #bbb;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    margin: 0 0 14px;
+}
+
+.legal-section ul {
+    margin: 0 0 16px;
+    padding-left: 20px;
+    color: #bbb;
+    font-size: 0.92rem;
+    line-height: 1.8;
+}
+
+.legal-section ul li {
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+.legal-section ul li::marker {
+    color: #555;
+}
+
+.legal-section strong {
+    color: #ddd;
+    font-weight: 600;
+}
+
+.legal-section code {
+    padding: 2px 6px;
+    background: #161616;
+    border: 1px solid #262626;
+    border-radius: 4px;
+    color: #d0d0d0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.82em;
+}
+
+.legal-section a {
+    color: #6ebbff;
+    text-decoration: none;
+    padding-bottom: 0;
+    border-bottom: 1px solid rgba(110, 187, 255, 0.25);
+    transition: border-color 0.15s ease;
+}
+
+.legal-section a::after {
+    display: none;
+}
+
+.legal-section a:hover {
+    border-bottom-color: #6ebbff;
+}
+
+/* Inline CTA row at the end of a section */
+.legal-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0 16px;
+}
+
+/* ============================================================
+   FOOTER NAV
+   ============================================================ */
+.legal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid #141414;
+}
+
+.legal-footer__link {
+    color: #777;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.legal-footer__link::after {
+    display: none;
+}
+
+.legal-footer__link:hover {
+    color: #ddd;
+    background: #141414;
+}
+
+.legal-footer__link--active {
+    color: #6ebbff;
+    background: rgba(0, 123, 255, 0.08);
+}
+
+.legal-footer__sep {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 720px) {
+    .legal-page {
+        padding: 0 16px 60px;
+    }
+
+    .legal-hero {
+        padding: 40px 0 28px;
+    }
+
+    .legal-hero__sub {
+        font-size: 0.96rem;
+    }
+
+    .legal-toc {
+        padding: 18px 18px;
+    }
+
+    .legal-toc__list {
+        grid-template-columns: 1fr;
+    }
+
+    .legal-section {
+        margin-bottom: 32px;
+    }
+
+    .legal-section h2 {
+        font-size: 1.15rem;
+    }
+
+    .legal-section p,
+    .legal-section ul {
+        font-size: 0.88rem;
+    }
+
+    .legal-cta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .legal-cta>* {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    .legal-toc__list a,
+    .legal-footer__link,
+    .legal-section a {
+        transition: none;
+    }
+}
+
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
