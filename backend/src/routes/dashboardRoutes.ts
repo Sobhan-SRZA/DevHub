@@ -1,32 +1,56 @@
-import {
-    pageAdminGuard,
-    pageDeveloperGuard
-} from "../middleware/roles";
+import { Router } from "express";
 import { attachUserLocals } from "../middleware/locals";
 import { pageAuth } from "../middleware/pageAuth";
-import { Router } from "express";
+import {
+    pageAdminGuard,
+    pageDeveloperGuard,
+} from "../middleware/roles";
 
 const router = Router();
 
+// Authenticate dashboard requests and expose user information to view templates.
 router.use(pageAuth);
 router.use(attachUserLocals);
 
-/* ---------- Common dashboard pages ---------- */
+/* -------------------------------------------------------------------------- */
+/*                          Common Dashboard Pages                            */
+/* -------------------------------------------------------------------------- */
+
 router.get("/", (req, res) => res.render("dashboard/home"));
 router.get("/projects", (req, res) => res.render("dashboard/projects"));
 router.get("/profile", (req, res) => res.render("dashboard/profile"));
 router.get("/security", (req, res) => res.render("dashboard/security"));
 router.get("/settings", (req, res) => res.render("dashboard/settings"));
 
-/* ---------- Admin only ---------- */
-router.get("/tag-types", pageAdminGuard, (req, res) => res.render("dashboard/tag-types"));
-router.get("/tags", pageAdminGuard, (req, res) => res.render("dashboard/tags"));
-router.get("/users", pageAdminGuard, (req, res) => res.render("dashboard/users"));
+/* -------------------------------------------------------------------------- */
+/*                              Admin-Only Pages                              */
+/* -------------------------------------------------------------------------- */
 
-/* ---------- Developer only ---------- */
-router.get("/system", pageDeveloperGuard, (req, res) => res.render("dashboard/system"));
-router.get("/logs", pageDeveloperGuard, (req, res) => res.render("dashboard/logs"));
+// Restrict administrative pages to users with the required admin privileges.
+router.get("/tag-types", pageAdminGuard, (req, res) =>
+    res.render("dashboard/tag-types"),
+);
 
+router.get("/tags", pageAdminGuard, (req, res) =>
+    res.render("dashboard/tags"),
+);
+
+router.get("/users", pageAdminGuard, (req, res) =>
+    res.render("dashboard/users"),
+);
+
+/* -------------------------------------------------------------------------- */
+/*                            Developer-Only Pages                            */
+/* -------------------------------------------------------------------------- */
+
+// Restrict system diagnostics and log pages to authorized developers.
+router.get("/system", pageDeveloperGuard, (req, res) =>
+    res.render("dashboard/system"),
+);
+
+router.get("/logs", pageDeveloperGuard, (req, res) =>
+    res.render("dashboard/logs"),
+);
 
 export default router;
 
