@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            return new Date(timestamp).toLocaleTimeString("fa-IR");
+            return new Date(timestamp);
         } catch {
             return String(timestamp);
         }
@@ -119,23 +119,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update the log statistics.
         if (stats) {
-            $("#statTotal").textContent = Number(stats.total || 0).toLocaleString("fa-IR");
-            $("#statInfo").textContent = Number(stats.info || 0).toLocaleString("fa-IR");
-            $("#statWarn").textContent = Number(stats.warn || 0).toLocaleString("fa-IR");
-            $("#statError").textContent = Number(stats.error || 0).toLocaleString("fa-IR");
-            $("#statDebug").textContent = Number(stats.debug || 0).toLocaleString("fa-IR");
+            $("#statTotal").textContent = Number(stats.total || 0);
+            $("#statInfo").textContent = Number(stats.info || 0);
+            $("#statWarn").textContent = Number(stats.warn || 0);
+            $("#statError").textContent = Number(stats.error || 0);
+            $("#statDebug").textContent = Number(stats.debug || 0);
         }
 
         // Update the terminal footer.
         $("#logsCount").textContent =
-            `${Number(entries.length).toLocaleString("fa-IR")} log entries`;
+            `${Number(entries.length)} log entries`;
 
         $("#logsSource").textContent = source === "live"
             ? "Source: In-memory buffer"
             : `Source: ${source}`;
 
         $("#logsLastUpdate").textContent =
-            `Last updated: ${new Date().toLocaleTimeString("fa-IR")}`;
+            `Last updated: ${new Date()}`;
 
         // Keep the terminal scrolled to the latest entry when follow mode is enabled.
         if (state.follow) {
