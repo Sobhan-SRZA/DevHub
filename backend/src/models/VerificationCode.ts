@@ -6,23 +6,26 @@ import {
 } from "mongoose";
 import crypto from "crypto";
 
+/* -------------------- Verification Purposes -------------------- */
+
 export type VerificationPurpose =
     | "verify_email"
     | "change_password"
-    | "change_email_old"   // تایید روی ایمیل قدیم
-    | "change_email_new"   // تایید روی ایمیل جدید
+    | "change_email_old" // Verification sent to the current email address.
+    | "change_email_new" // Verification sent to the new email address.
     | "login_2fa"
     | "reset_password";
+
+/* -------------------- Verification Code Interface -------------------- */
 
 export interface IVerificationCode {
     user: Types.ObjectId;
     purpose: VerificationPurpose;
 
-    codeHash: string;         // sha256(code + salt)
+    codeHash: string; // SHA-256 hash of the verification code combined with a salt.
     salt: string;
 
-    // برای تغییر ایمیل
-    targetEmail?: string | null;
+    targetEmail?: string | null; // Target email address for email change verification.
 
     attempts: number;
     maxAttempts: number;
@@ -39,7 +42,12 @@ export interface IVerificationCode {
 
 type VerificationCodeModel = Model<IVerificationCode>;
 
-const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeModel>(
+/* -------------------- Verification Code Schema -------------------- */
+
+const verificationCodeSchema = new Schema<
+    IVerificationCode,
+    VerificationCodeModel
+>(
     {
         user: {
             type: Schema.Types.ObjectId,
@@ -62,16 +70,44 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
             index: true
         },
 
-        codeHash: { type: String, required: true },
-        salt: { type: String, required: true },
+        codeHash: {
+            type: String,
+            required: true
+        },
+        salt: {
+            type: String,
+            required: true
+        },
 
-        targetEmail: { type: String, default: null, lowercase: true, trim: true },
+        targetEmail: {
+            type: String,
+            default: null,
+            lowercase: true,
+            trim: true
+        },
 
-        attempts: { type: Number, default: 0, min: 0 },
-        maxAttempts: { type: Number, default: 5, min: 1 },
-        expiresAt: { type: Date, required: true },
-        consumedAt: { type: Date, default: null },
-        requestedAt: { type: Date, default: () => new Date() },
+        attempts: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+        maxAttempts: {
+            type: Number,
+            default: 5,
+            min: 1
+        },
+        expiresAt: {
+            type: Date,
+            required: true
+        },
+        consumedAt: {
+            type: Date,
+            default: null
+        },
+        requestedAt: {
+            type: Date,
+            default: () => new Date()
+        },
 
         ip: String,
         userAgent: String
@@ -79,35 +115,49 @@ const verificationCodeSchema = new Schema<IVerificationCode, VerificationCodeMod
     { timestamps: true }
 );
 
-/* ---------------- indexes ---------------- */
+/* -------------------- Indexes -------------------- */
+
 verificationCodeSchema.index({ user: 1, purpose: 1, consumedAt: 1 });
 
-// TTL: به محض رسیدن expiresAt حذف کن
-// MongoDB هر ~۶۰ ثانیه TTL رو چک می‌کنه، پس حداکثر ۱ دقیقه بعد از انقضا حذف می‌شه
+// Automatically removes expired verification codes.
+// MongoDB checks TTL indexes periodically, typically every 60 seconds.
+// Consequently, expired documents may remain in the database briefly after expiration.
 verificationCodeSchema.index(
     { expiresAt: 1 },
-    { expireAfterSeconds: 0 }   // ← از 60*60 به 0 تغییر کن
+    { expireAfterSeconds: 0 }
 );
 
+/* -------------------- Static Methods -------------------- */
 
-/* ---------------- statics ---------------- */
 verificationCodeSchema.statics.generateCode = function () {
-    // ۶ رقمی، با صفر اول
-    const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+    // Generates a six-digit verification code, preserving leading zeros.
+    const code = String(
+        crypto.randomInt(0, 1_000_000)
+    ).padStart(6, "0");
+
     const salt = crypto.randomBytes(16).toString("hex");
-    const codeHash = crypto.createHash("sha256").update(code + salt).digest("hex");
+    const codeHash = crypto
+        .createHash("sha256")
+        .update(code + salt)
+        .digest("hex");
 
     return { code, codeHash, salt };
 };
 
-verificationCodeSchema.statics.hashCode = function (code: string, salt: string) {
-    return crypto.createHash("sha256").update(code + salt).digest("hex");
+verificationCodeSchema.statics.hashCode = function (
+    code: string,
+    salt: string
+) {
+    return crypto
+        .createHash("sha256")
+        .update(code + salt)
+        .digest("hex");
 };
 
-export const VerificationCode = model<IVerificationCode, VerificationCodeModel>(
-    "VerificationCode",
-    verificationCodeSchema
-);
+export const VerificationCode = model<
+    IVerificationCode,
+    VerificationCodeModel
+>("VerificationCode", verificationCodeSchema);
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
