@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
-  <%- include("components/seo-head", {
+  <%- include("../components/seo-head", {
         title: "Explore Open-Source Projects",
         description: "Search, filter, and discover open-source projects on DevHub. Browse projects by trending activity, popularity, ratings, downloads, and release date.",
         keywords: "explore projects, open-source project search, project filters, DevHub, trending projects, popular open-source projects",
@@ -16,8 +16,8 @@
 </head>
 
 <body>
-  <%- include("components/header") %>
-  <%- include("components/dialogError") %>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
 
   <main class="explore-page">
 
@@ -112,7 +112,7 @@
   <script defer src="/js/form-errors.js"></script>
   <script defer src="/js/pages/explore.js"></script>
 
-  <%- include("components/footer") %>
+  <%- include("../components/footer") %>
 </body>
 
 </html>

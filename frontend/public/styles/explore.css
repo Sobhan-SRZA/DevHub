@@ -679,11 +679,57 @@
 /* ---------- Pagination ---------- */
 .explore-pagination {
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 30px 0 0;
     flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 32px;
 }
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    color: #ccc;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+    background: #161616;
+    border-color: #2a2a2a;
+    color: #fff;
+}
+
+.page-btn.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    cursor: default;
+}
+
+.page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-btn:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
 
 /* ============================================================
    RESPONSIVE

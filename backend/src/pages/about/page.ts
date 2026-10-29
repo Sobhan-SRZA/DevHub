@@ -5,7 +5,7 @@ const router = Router();
 /* -------------------- About Page -------------------- */
 
 router.get("/", (req, res) => {
-    res.render("about", { req });
+    res.render("pages/about", { req });
 });
 
 export default router;

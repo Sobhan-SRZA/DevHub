@@ -11,7 +11,7 @@ router.get(
     noCache,
     redirectProfile,
     (req, res) => {
-        return res.render("auth/reset-password");
+        return res.render("pages/auth/reset-password");
     }
 );
 

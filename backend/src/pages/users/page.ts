@@ -60,7 +60,7 @@ router.get("/:idOrUsername", async (req, res) => {
         // Fall back to the default SEO metadata if an error occurs.
     }
 
-    res.render("users/show", {
+    res.render("pages/users/show", {
         idOrUsername,
         seo,
         req,
@@ -68,7 +68,7 @@ router.get("/:idOrUsername", async (req, res) => {
 });
 
 router.get("/", (req, res) => {
-    res.render("users/list", { req });
+    res.render("pages/users/list", { req });
 });
 
 export default router;

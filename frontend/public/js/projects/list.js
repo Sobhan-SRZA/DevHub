@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (p.rating) stats.push(`<span class="pc__stat">★ ${Number(p.rating).toFixed(1)}</span>`);
 
         return `
-        <article class="pc" data-href="/projects/${escapeHtml(p.slug)}" role="link" tabindex="0">
+        <a class="pc" href="/projects/${escapeHtml(p.slug)}" role="link" tabindex="0">
             <div class="pc__cover" style="${coverStyle}">
                 ${!cover ? `<span class="pc__cover-initial">${escapeHtml((p.title || '?')[0])}</span>` : ''}
             </div>
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${stats.length ? `<div class="pc__stats">${stats.join('')}</div>` : ''}
                 </div>
             </div>
-        </article>`;
+        </a>`;
     }
 
     /**
@@ -158,39 +158,51 @@ document.addEventListener('DOMContentLoaded', () => {
      * buttons with a sliding window around the current page.
      */
     function renderPagination() {
-        if (!pagination) return;
-
         if (state.totalPages <= 1) {
-            pagination.innerHTML = '';
+            pagination.innerHTML = "";
+
             return;
         }
 
+        const cur = state.page;
+        const total = state.totalPages;
         const pages = [];
-        const maxBtn = 7;
 
-        let start = Math.max(1, state.page - 3);
-        let end = Math.min(state.totalPages, start + maxBtn - 1);
-        start = Math.max(1, end - maxBtn + 1);
+        if (total <= 7) {
+            for (let i = 1; i <= total; i++)
+                pages.push(i);
+        } else {
+            pages.push(1);
+            if (cur > 3)
+                pages.push("...");
 
-        if (state.page > 1) {
-            pages.push(`<button type="button" data-page="${state.page - 1}">Previous</button>`);
+            for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
+                pages.push(i);
+
+            if (cur < total - 2)
+                pages.push("...");
+
+            pages.push(total);
         }
 
-        for (let i = start; i <= end; i++) {
-            pages.push(`<button type="button" data-page="${i}" class="${i === state.page ? 'active' : ''}">${i}</button>`);
-        }
+        pagination.innerHTML = `
+            <button class="page-btn" ${cur === 1 ? "disabled" : ""} data-page="${cur - 1}">Previous</button>
+            ${pages.map((p) => p === "..."
+            ? `<span class="page-btn" style="cursor:default;border:none;background:transparent">…</span>`
+            : `<button class="page-btn ${p === cur ? "active" : ""}" data-page="${p}">${p}</button>`
+        ).join("")}
+            <button class="page-btn" ${cur === total ? "disabled" : ""} data-page="${cur + 1}">Next</button>
+        `;
 
-        if (state.page < state.totalPages) {
-            pages.push(`<button type="button" data-page="${state.page + 1}">Next</button>`);
-        }
+        pagination.querySelectorAll("[data-page]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const p = Number(btn.dataset.page);
 
-        pagination.innerHTML = pages.join('');
-
-        pagination.querySelectorAll('button').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                state.page = Number(btn.dataset.page);
-                load();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (p >= 1 && p <= total && p !== cur) {
+                    state.page = p;
+                    load();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
             });
         });
     }

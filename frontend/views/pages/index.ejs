@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
-  <%- include("components/seo-head", {
+  <%- include("../components/seo-head", {
         title: "Discover Open-Source Projects",
         description: "DevHub is a platform for discovering, reviewing, and sharing open-source projects. Explore the most popular, newest, and highest-rated software projects built by developers around the world.",
         keywords: "open-source projects, open source, DevHub, project discovery, software development, GitHub, Product Hunt",
@@ -25,8 +25,8 @@
 </head>
 
 <body>
-  <%- include("components/header") %>
-  <%- include("components/dialogError") %>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
 
   <!-- ============ HERO SECTION ============ -->
   <section class="home-hero">
@@ -92,7 +92,7 @@
     </div>
   </main>
 
-  <%- include("components/footer") %>
+  <%- include("../components/footer") %>
 
   <script src="/js/form-errors.js" defer></script>
   <script src="/js/pages/home.js" defer></script>

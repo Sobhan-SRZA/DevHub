@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <%- include("../../components/seo-head", {
+    title: "Public Projects",
+    description: "Browse projects published by DevHub users and discover open-source projects from Iran and around the world.",
+    canonicalPath: "/projects",
+    extraStyles: ["/styles/projects/list.css"]
+  }) %>
+</head>
+
+<body>
+  <%- include("../../components/header") %>
+
+  <section class="container projects-page">
+    <!-- Page header -->
+    <header class="projects-page__head">
+      <h1 class="page-title">Public Projects</h1>
+      <p class="page-sub">Projects published by users</p>
+    </header>
+
+    <!-- Search and sort controls -->
+    <div class="projects-filters">
+      <div class="projects-filters__search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchProjects" placeholder="Search projects...">
+      </div>
+
+      <select id="sortProjects" class="projects-filters__select">
+        <option value="recent">Newest</option>
+        <option value="rating">Highest Rated</option>
+        <option value="downloads">Most Downloaded</option>
+        <option value="stars">Most Starred</option>
+      </select>
+    </div>
+
+    <!-- Result count / meta -->
+    <div class="projects-meta" id="projectsMeta" aria-live="polite"></div>
+
+    <!-- Project grid -->
+    <div class="projects-grid" id="projectsGrid" role="list"></div>
+
+    <!-- Pagination -->
+    <div class="dash-pagination" id="pagination" aria-label="Pagination"></div>
+  </section>
+
+  <script src="/js/projects/list.js" defer></script>
+  <%- include("../../components/footer") %>
+</body>
+
+</html>

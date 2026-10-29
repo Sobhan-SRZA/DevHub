@@ -216,7 +216,7 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
         if (!project) {
             // Render the page anyway so the client-side script can
             // display its own "not found" state.
-            return res.render("projects/show", { idOrSlug, seo, req });
+            return res.render("pages/projects/show", { idOrSlug, seo, req });
         }
 
         const description =
@@ -252,7 +252,7 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
         );
     }
 
-    res.render("projects/show", { idOrSlug, seo, req });
+    res.render("pages/projects/show", { idOrSlug, seo, req });
 });
 
 /**
@@ -262,7 +262,7 @@ router.get("/:idOrSlug", optionalAuth, async (req, res) => {
  * data is required beyond the layout's default metadata.
  */
 router.get("/", optionalAuth, (req, res) => {
-    res.render("projects/list", { req });
+    res.render("pages/projects/list", { req });
 });
 
 export default router;

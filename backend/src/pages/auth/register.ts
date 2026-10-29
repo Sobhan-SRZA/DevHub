@@ -11,7 +11,7 @@ router.get(
     noCache,
     redirectProfile,
     (req, res) => {
-        return res.render("auth/register");
+        return res.render("pages/auth/register");
     }
 );
 

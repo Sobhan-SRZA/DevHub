@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 
 <head>
-  <%- include("../components/seo-head", {
+  <%- include("../../components/seo-head", {
     title: (typeof seo !== "undefined" && seo.title) ? seo.title : "Project",
     description: (typeof seo !== "undefined" && seo.description) ? seo.description : "Explore project details, ratings, and reviews on DevHub.",
     keywords: (typeof seo !== "undefined" && seo.keywords) ? seo.keywords : "open-source project, DevHub",
@@ -15,8 +15,8 @@
 </head>
 
 <body>
-  <%- include("../components/header") %>
-  <%- include("../components/dialogError") %>
+  <%- include("../../components/header") %>
+  <%- include("../../components/dialogError") %>
 
   <!-- ============================= -->
   <!-- SHARE DIALOG                  -->
@@ -495,7 +495,7 @@
     <div class="lightbox__counter" id="lightboxCounter">1 / 1</div>
   </div>
 
-  <%- include("../components/footer") %>
+  <%- include("../../components/footer") %>
 </body>
 
 <script defer src="/js/form-errors.js"></script>
