@@ -9,7 +9,7 @@ router.get(
     "/verify-email",
     noCache,
     (req, res) => {
-        return res.render("auth/verify-email");
+        return res.render("auth/verify-email", req);
     }
 );
 
