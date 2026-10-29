@@ -1,10 +1,14 @@
 /* ============================================================
-   Global dialog + confirm + toast API
-   Backwards-compatible with old openDialogError / closeDialogError
+   Global Dialog, Confirm, and Toast API
+   ------------------------------------------------------------
+   Provides a unified interface for modal dialogs, promise-based
+   confirmation prompts, and transient toast notifications.
+   Maintains backwards compatibility with the legacy
+   `openDialogError` / `closeDialogError` functions.
    ============================================================ */
 
 (function () {
-    /* ---------- refs ---------- */
+    /* ---------- Element References ---------- */
     const backdrop = document.getElementById("dialogBackdrop");
 
     const errDialog = document.getElementById("appDialog");
@@ -22,7 +26,7 @@
 
     const toastWrap = document.getElementById("toastContainer");
 
-    /* ---------- helpers ---------- */
+    /* ---------- Helpers ---------- */
     function openBackdrop() {
         backdrop.classList.add("open");
     }
@@ -37,9 +41,12 @@
 
     /* ============================================================
        ERROR / INFO DIALOG
+       ------------------------------------------------------------
+       Displays a modal dialog for error, success, or informational
+       messages. The visual style of the icon is driven by `type`.
        ============================================================ */
     function openDialogError(title, message, type = "error") {
-        errTitle.textContent = title || "خطا";
+        errTitle.textContent = title || "Error";
         errMessage.textContent = message || "";
         errIcon.textContent = type === "success" ? "✓" : type === "info" ? "i" : "!";
         errIcon.className = `app-dialog__icon app-dialog__icon--${type}`;
@@ -57,13 +64,17 @@
 
     /* ============================================================
        CONFIRM DIALOG (Promise-based)
+       ------------------------------------------------------------
+       Presents a confirmation prompt and resolves to `true` when
+       the user confirms, or `false` when the dialog is cancelled
+       (including via the Escape key or backdrop click).
        ============================================================ */
     function confirmDialog(opts = {}) {
         const {
-            title = "تایید",
-            message = "مطمئن هستید؟",
-            confirmText = "تایید",
-            cancelText = "انصراف",
+            title = "Confirm",
+            message = "Are you sure?",
+            confirmText = "Confirm",
+            cancelText = "Cancel",
             danger = true,
         } = opts;
 
@@ -72,10 +83,14 @@
             cfmMessage.textContent = message;
             cfmOk.textContent = confirmText;
             cfmCancel.textContent = cancelText;
-            cfmIcon.textContent = danger ? "!" : "؟";
+            cfmIcon.textContent = danger ? "!" : "?";
             cfmIcon.className = `app-dialog__icon ${danger ? "app-dialog__icon--error" : "app-dialog__icon--warn"}`;
             cfmOk.className = `app-dialog__btn ${danger ? "app-dialog__btn--danger" : "app-dialog__btn--primary"}`;
 
+            /**
+             * Remove all event listeners and hide the backdrop.
+             * Called from both the confirm and cancel paths.
+             */
             const cleanup = () => {
                 cfmOk.removeEventListener("click", onOk);
                 cfmCancel.removeEventListener("click", onCancel);
@@ -89,19 +104,21 @@
                 cfmDialog.close("ok");
                 resolve(true);
             };
+
             const onCancel = (e) => {
                 e?.preventDefault?.();
                 cleanup();
                 cfmDialog.close("cancel");
                 resolve(false);
             };
+
             const onClose = () => {
-                /* safety net */
+                /* Safety net — no additional action required. */
             };
 
             cfmOk.addEventListener("click", onOk);
             cfmCancel.addEventListener("click", onCancel);
-            cfmDialog.addEventListener("cancel", onCancel); // ESC
+            cfmDialog.addEventListener("cancel", onCancel); // Handle Escape key.
             cfmDialog.addEventListener("close", onClose);
 
             openBackdrop();
@@ -111,6 +128,9 @@
 
     /* ============================================================
        TOAST
+       ------------------------------------------------------------
+       Renders a transient notification that automatically dismisses
+       after the specified duration. Users may dismiss it manually.
        ============================================================ */
     function toast(message, type = "info", duration = 3200) {
         const el = document.createElement("div");
@@ -123,20 +143,26 @@
             info: "i",
             warn: "!"
         };
+
         el.innerHTML = `
             <span class="app-toast__icon">${icons[type] || "i"}</span>
             <span class="app-toast__message"></span>
-            <button type="button" class="app-toast__close" aria-label="بستن">×</button>
+            <button type="button" class="app-toast__close" aria-label="Close">×</button>
         `;
         el.querySelector(".app-toast__message").textContent = message;
         el.querySelector(".app-toast__close").addEventListener("click", () => dismiss());
 
         toastWrap.appendChild(el);
-        // trigger entry animation
+
+        // Trigger the entry animation on the next animation frame.
         requestAnimationFrame(() => el.classList.add("app-toast--visible"));
 
         let timer = setTimeout(() => dismiss(), duration);
 
+        /**
+         * Begin the dismissal sequence: hide the toast and remove it
+         * from the DOM after its exit transition completes.
+         */
         function dismiss() {
             clearTimeout(timer);
             el.classList.remove("app-toast--visible");
@@ -147,15 +173,18 @@
     }
 
     /* ============================================================
-       Backdrop click → close whatever is open
+       Backdrop Click — Close Any Open Dialog
        ============================================================ */
     backdrop.addEventListener("click", () => {
-            cfmDialog.close("cancel");
-            closeDialogError();
+        cfmDialog.close("cancel");
+        closeDialogError();
     });
 
     /* ============================================================
-       ESC on backdrop (in case dialog ESC doesn't fire)
+       Escape Key — Safety Net
+       ------------------------------------------------------------
+       Closes any open dialog if the native `cancel` event does not
+       fire (for example, in browsers with partial dialog support).
        ============================================================ */
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
@@ -165,7 +194,7 @@
     });
 
     /* ============================================================
-       Expose globally
+       Expose Public API Globally
        ============================================================ */
     window.openDialogError = openDialogError;
     window.closeDialogError = closeDialogError;
