@@ -8,8 +8,9 @@ import { Project } from "../models/Project";
 import { Tag } from "../models/Tag";
 
 /**
- * چک می‌کنه پروژه متعلق به کاربر فعلی باشه.
- * نتیجه رو تو req.project می‌ذاره که کنترلر دوباره query نزنه.
+ * Ensures that the requested project belongs to the authenticated user.
+ * Attaches the project to req.project to prevent redundant database queries
+ * in subsequent middleware and controllers.
  */
 export async function requireProjectOwnership(
     req: any,
@@ -18,6 +19,7 @@ export async function requireProjectOwnership(
 ) {
     try {
         const project = await Project.findById(req.params.id);
+
         if (!project) {
             return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
         }
@@ -28,16 +30,16 @@ export async function requireProjectOwnership(
 
         req.project = project;
         next();
-    }
-
-    catch (err) {
+    } catch (err) {
         next(err);
     }
 }
 
 /**
- * چک می‌کنه تگ توسط کاربر ساخته شده یا system باشه.
- * اگه system → اجازه تغییر نمی‌دیم مگه admin.
+ * Ensures that a tag is either owned by the authenticated user or is
+ * a system tag accessible to administrators.
+ *
+ * System tags cannot be modified by non-administrative users.
  */
 export async function requireTagOwnership(
     req: any,
@@ -46,15 +48,23 @@ export async function requireTagOwnership(
 ) {
     try {
         const tag = await Tag.findById(req.params.id);
-        if (!tag)
+
+        if (!tag) {
             return next(new AppError(404, ErrorCodes.TAG_NOT_FOUND));
+        }
 
         const isSystem = tag.createdBy === null;
         const isOwner = req.user && String(tag.createdBy) === String(req.user._id);
         const isAdmin = req.user?.role === "admin";
 
         if (isSystem && !isAdmin) {
-            return next(new AppError(403, ErrorCodes.TAG_TYPE_IS_SYSTEM, "تگ‌های سیستمی قابل تغییر نیستند"));
+            return next(
+                new AppError(
+                    403,
+                    ErrorCodes.TAG_TYPE_IS_SYSTEM,
+                    "System tags cannot be modified"
+                )
+            );
         }
 
         if (!isOwner && !isAdmin) {
@@ -62,20 +72,18 @@ export async function requireTagOwnership(
         }
 
         req.tag = tag;
-
         next();
-    }
-
-    catch (err) {
+    } catch (err) {
         next(err);
     }
 }
 
 /* ==================================================================
-   loadProject — NEW
-   فقط پروژه رو بارگذاری می‌کنه (با id یا slug)
-   چک مالکیت نمی‌کنه، ولی دسترسی عمومی/خصوصی رو رعایت می‌کنه.
+   loadProject
+   Loads a project by ID or slug without checking ownership.
+   Enforces public and private access restrictions.
    ================================================================== */
+
 export async function loadProject(
     req: any,
     _res: Response,
@@ -83,31 +91,43 @@ export async function loadProject(
 ) {
     try {
         const { idOrSlug } = req.params;
+
         if (!idOrSlug) {
-            return next(new AppError(400, ErrorCodes.VALIDATION_ERROR, 'شناسه پروژه الزامی است'));
+            return next(
+                new AppError(
+                    400,
+                    ErrorCodes.VALIDATION_ERROR,
+                    "A project identifier is required"
+                )
+            );
         }
 
         const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
-        const query = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
+        const query = isObjectId
+            ? { _id: idOrSlug }
+            : { slug: idOrSlug };
 
         const project = await Project.findOne(query);
+
         if (!project) {
             return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
         }
 
-        // اگه private/draft هست، فقط صاحبش یا ادمین می‌تونه ببینه
+        // Restrict access to private or unpublished projects to their owner or an administrator.
         const isOwner = req.user && String(project.owner) === String(req.user._id);
-        const isAdmin = req.user?.role === 'admin';
+        const isAdmin = req.user?.role === "admin";
 
-        if ((!project.isPublic || project.status !== 'published') && !isOwner && !isAdmin) {
+        if (
+            (!project.isPublic || project.status !== "published") &&
+            !isOwner &&
+            !isAdmin
+        ) {
             return next(new AppError(403, ErrorCodes.PROJECT_NOT_OWNED));
         }
 
         req.project = project;
         next();
-    } 
-    
-    catch (err) {
+    } catch (err) {
         next(err);
     }
 }
