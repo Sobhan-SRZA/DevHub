@@ -17,24 +17,29 @@ import { Project } from "../models/Project";
 import { Review } from "../models/Review";
 
 /* ==================================================================
-   Helper — پیدا کردن پروژه با idOrSlug
+   Helper — Find a project by its ID or slug
    ================================================================== */
 async function findProject(idOrSlug: string) {
     const isId = /^[a-f\d]{24}$/i.test(idOrSlug);
-    const project = await Project.findOne(isId ? { _id: idOrSlug } : { slug: idOrSlug }).lean();
-    if (!project)
+
+    const project = await Project.findOne(
+        isId ? { _id: idOrSlug } : { slug: idOrSlug }
+    ).lean();
+
+    if (!project) {
         throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+    }
 
     return project;
 }
 
 /* ==================================================================
-   LIST — ریویوهای یک پروژه
+   LIST — Retrieve paginated reviews for a project
    ================================================================== */
 export const listReviews = asyncHandler(async (req: any, res: Response) => {
     const { idOrSlug } = req.params;
 
-    const q = validate(reviewListQuerySchema, req.query);
+    const query = validate(reviewListQuerySchema, req.query);
     const project = await findProject(idOrSlug);
 
     const sortMap: Record<string, Record<string, 1 | -1>> = {
@@ -45,89 +50,104 @@ export const listReviews = asyncHandler(async (req: any, res: Response) => {
         helpful: { helpfulCount: -1, createdAt: -1 }
     };
 
-    const sort = sortMap[q.sort] || sortMap.recent;
-
-    const skip = (q.page - 1) * q.limit;
+    const sort = sortMap[query.sort] || sortMap.recent;
+    const skip = (query.page - 1) * query.limit;
 
     const [reviews, total, distribution] = await Promise.all([
         Review.find({ project: project._id })
             .populate("user", "name username avatar")
             .sort(sort)
             .skip(skip)
-            .limit(q.limit)
+            .limit(query.limit)
             .lean(),
 
         Review.countDocuments({ project: project._id }),
 
-        // توزیع امتیازات (برای نمودار 5 ستاره‌ای)
+        // Aggregate review counts by rating for the five-star distribution chart.
         Review.aggregate([
             { $match: { project: project._id } },
             { $group: { _id: { $floor: "$rating" }, count: { $sum: 1 } } }
         ])
     ]);
 
-    // پر کردن ستون‌های خالی
-    const distMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (const d of distribution) distMap[d._id] = d.count;
+    // Initialize every rating category, including categories with no reviews.
+    const ratingDistribution: Record<number, number> = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0
+    };
 
-    // آمار کاربر فعلی (اگه لاگینه)
+    for (const entry of distribution) {
+        ratingDistribution[entry._id] = entry.count;
+    }
+
+    // Include the authenticated user's review when available.
     let myReview = null;
+
     if (req.user) {
-        myReview = await Review.findOne({ project: project._id, user: req.user._id }).lean();
+        myReview = await Review.findOne({
+            project: project._id,
+            user: req.user._id
+        }).lean();
     }
 
     res.json({
         ok: true,
         reviews,
         myReview,
-        distribution: distMap,
+        distribution: ratingDistribution,
         summary: {
             rating: project.rating,
             satisfaction: project.satisfaction,
             reviewCount: project.reviewCount
         },
         pagination: {
-            page: q.page,
-            limit: q.limit,
+            page: query.page,
+            limit: query.limit,
             total,
-            pages: Math.ceil(total / q.limit)
+            pages: Math.ceil(total / query.limit)
         }
     });
 });
 
 /* ==================================================================
-   GET ONE — ریویو خودم برای این پروژه
+   GET ONE — Retrieve the authenticated user's review for a project
    ================================================================== */
 export const getMyReview = asyncHandler(async (req: any, res: Response) => {
     const project = await findProject(req.params.idOrSlug);
+
     const review = await Review.findOne({
         project: project._id,
-        user: req.user._id,
+        user: req.user._id
     }).lean();
 
     res.json({ ok: true, review });
 });
 
 /* ==================================================================
-   CREATE — یک بار برای هر کاربر
+   CREATE — Enforce one review per user for each project
    ================================================================== */
 export const createReview = asyncHandler(async (req: any, res: Response) => {
     const project = await findProject(req.params.idOrSlug);
     const data = validate(createReviewSchema, req.body);
 
-    // صاحب پروژه نمی‌تونه به خودش امتیاز بده
+    // Prevent project owners from reviewing their own projects.
     if (String(project.owner) === String(req.user._id)) {
         throw Forbidden(ErrorCodes.CANNOT_REVIEW_OWN);
     }
 
-    // چک یکتایی
-    const existing = await Review.findOne({
+    // Ensure the user has not already reviewed this project.
+    const existingReview = await Review.findOne({
         project: project._id,
-        user: req.user._id,
+        user: req.user._id
     }).lean();
 
-    if (existing)
+    if (existingReview) {
         throw Conflict(ErrorCodes.REVIEW_ALREADY_EXISTS);
+    }
 
     const review = await Review.create({
         project: project._id,
@@ -140,12 +160,13 @@ export const createReview = asyncHandler(async (req: any, res: Response) => {
 
     await recalculateProjectStats(project._id);
 
-    const populated = await review.populate("user", "name username");
-    res.status(201).json({ ok: true, review: populated });
+    const populatedReview = await review.populate("user", "name username");
+
+    res.status(201).json({ ok: true, review: populatedReview });
 });
 
 /* ==================================================================
-   UPDATE — فقط صاحب ریویو
+   UPDATE — Allow only the review author to modify a review
    ================================================================== */
 export const updateReview = asyncHandler(async (req: any, res: Response) => {
     const project = await findProject(req.params.idOrSlug);
@@ -153,36 +174,42 @@ export const updateReview = asyncHandler(async (req: any, res: Response) => {
 
     const review = await Review.findOne({
         project: project._id,
-        user: req.user._id,
+        user: req.user._id
     });
 
-    if (!review)
+    if (!review) {
         throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+    }
 
-    if (data.rating !== undefined)
+    if (data.rating !== undefined) {
         review.rating = data.rating;
+    }
 
-    if (data.satisfaction !== undefined)
+    if (data.satisfaction !== undefined) {
         review.satisfaction = data.satisfaction;
+    }
 
-    if (data.title !== undefined)
+    if (data.title !== undefined) {
         review.title = data.title;
+    }
 
-    if (data.body !== undefined)
+    if (data.body !== undefined) {
         review.body = data.body;
+    }
 
     review.isEdited = true;
     review.editedAt = new Date();
-    await review.save();
 
+    await review.save();
     await recalculateProjectStats(project._id);
 
-    const populated = await review.populate("user", "name username");
-    res.json({ ok: true, review: populated });
+    const populatedReview = await review.populate("user", "name username");
+
+    res.json({ ok: true, review: populatedReview });
 });
 
 /* ==================================================================
-   DELETE
+   DELETE — Delete the authenticated user's review
    ================================================================== */
 export const deleteReview = asyncHandler(async (req: any, res: Response) => {
     const project = await findProject(req.params.idOrSlug);
@@ -191,34 +218,44 @@ export const deleteReview = asyncHandler(async (req: any, res: Response) => {
         project: project._id,
         user: req.user._id
     });
-    if (!review)
+
+    if (!review) {
         throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+    }
 
     await review.deleteOne();
     await recalculateProjectStats(project._id);
 
-    res.json({ ok: true, message: "ریویو حذف شد" });
+    res.json({
+        ok: true,
+        message: "Review deleted successfully."
+    });
 });
 
 /* ==================================================================
-   MARK HELPFUL
+   MARK HELPFUL — Mark a review as helpful
    ================================================================== */
 export const markHelpful = asyncHandler(async (req: any, res: Response) => {
     const review = await Review.findById(req.params.id);
-    if (!review)
+
+    if (!review) {
         throw new AppError(404, ErrorCodes.REVIEW_NOT_FOUND);
+    }
 
     review.helpfulCount += 1;
     await review.save();
 
-    res.json({ ok: true, helpfulCount: review.helpfulCount });
+    res.json({
+        ok: true,
+        helpfulCount: review.helpfulCount
+    });
 });
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
  * Licensed under the BSD 3-Clause License.
- * See the LICENSE file in the project root for license information.
+ * See the LICENSE file in the project root for licensing details.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
