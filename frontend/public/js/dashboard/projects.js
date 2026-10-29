@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Attempt to obtain a fresh verification token.
         try {
-            const res = await fetch('/api/auth/resend-verification-for-me', {
+            const res = await fetch('/api/auth/resend-verification', {
                 method: 'POST',
                 credentials: 'include',
             });
