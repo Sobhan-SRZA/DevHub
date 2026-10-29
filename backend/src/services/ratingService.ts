@@ -1,42 +1,67 @@
+
 import { Project } from "../models/Project";
 import { Review } from "../models/Review";
 import { Types } from "mongoose";
 
 /**
- * میانگین rating و satisfaction رو از روی همه‌ی reviewها حساب می‌کنه
- * و روی Project آپدیت می‌کنه.
+ * Recalculates a project's average rating, average satisfaction score,
+ * and total review count, then updates the corresponding project record.
  *
- * این تابع رو بعد از هر create/update/delete روی Review صدا بزن.
+ * Call this function after every review creation, update, or deletion
+ * to keep project statistics synchronized with the review collection.
+ *
+ * @param projectId - The MongoDB ObjectId or string identifier of the project.
+ * @returns The updated rating, satisfaction score, and review count.
  */
-export async function recalculateProjectStats(projectId: Types.ObjectId | string) {
+export async function recalculateProjectStats(
+    projectId: Types.ObjectId | string
+) {
+    const normalizedProjectId = new Types.ObjectId(String(projectId));
+
     const [result] = await Review.aggregate([
-        { $match: { project: new Types.ObjectId(String(projectId)) } },
+        {
+            $match: {
+                project: normalizedProjectId,
+            },
+        },
         {
             $group: {
                 _id: null,
                 avgRating: { $avg: "$rating" },
                 avgSatisfaction: { $avg: "$satisfaction" },
-                count: { $sum: 1 }
-            }
-        }
+                count: { $sum: 1 },
+            },
+        },
     ]);
 
-    const rating = result ? Math.round(result.avgRating * 10) / 10 : 0;
-    const satisfaction = result ? Math.round(result.avgSatisfaction) : 0;
-    const reviewCount = result?.count || 0;
+    // Round the average rating to one decimal place and satisfaction
+    // to the nearest whole number. Use zero when no reviews exist.
+    const rating = result
+        ? Math.round(result.avgRating * 10) / 10
+        : 0;
+
+    const satisfaction = result
+        ? Math.round(result.avgSatisfaction)
+        : 0;
+
+    const reviewCount = result?.count ?? 0;
 
     await Project.updateOne(
-        { _id: projectId },
+        { _id: normalizedProjectId },
         {
             $set: {
                 rating,
                 satisfaction,
-                reviewCount
-            }
+                reviewCount,
+            },
         }
     );
 
-    return { rating, satisfaction, reviewCount };
+    return {
+        rating,
+        satisfaction,
+        reviewCount,
+    };
 }
 
 /**
