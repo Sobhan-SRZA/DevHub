@@ -1,135 +1,258 @@
 /* ============================================================
-   Logs Page
-   ============================================================ */
+ * Logs Page
+ * ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
-    const $ = (s) => document.querySelector(s);
-    const $$ = (s) => Array.from(document.querySelectorAll(s));
+document.addEventListener("DOMContentLoaded", () => {
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
     const state = {
-        level: 'all',
-        search: '',
-        file: 'live',
+        level: "all",
+        search: "",
+        file: "live",
         autoRefresh: true,
         follow: true,
         interval: null,
         lastCount: 0,
-        filesLoaded: false,
+        filesLoaded: false
     };
 
-    /* ---------------- formatters ---------------- */
-    function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    /* ============================================================
+     * Formatting Utilities
+     * ============================================================ */
+
+    /**
+     * Escapes HTML-sensitive characters to prevent HTML injection.
+     *
+     * @param {*} value - The value to escape.
+     * @returns {string} The escaped string.
+     */
+    function escapeHtml(value) {
+        if (value == null) {
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
+    /**
+     * Escapes regular expression metacharacters in a search query.
+     *
+     * @param {string} value - The search query.
+     * @returns {string} The escaped query.
+     */
+    function escapeRegExp(value) {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    /**
+     * Highlights search matches in a log message.
+     *
+     * @param {string} message - The log message.
+     * @param {string} search - The search query.
+     * @returns {string} The escaped message with highlighted matches.
+     */
     function highlight(message, search) {
-        const safe = escapeHtml(message);
-        if (!search) return safe;
-        const re = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        return safe.replace(re, '<mark>$1</mark>');
+        const safeMessage = escapeHtml(message);
+
+        if (!search) {
+            return safeMessage;
+        }
+
+        const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
+
+        return safeMessage.replace(regex, "<mark>$1</mark>");
     }
 
-    function formatTime(iso) {
-        if (!iso) return '';
+    /**
+     * Formats a timestamp using the Persian locale.
+     *
+     * @param {string|number|Date} timestamp - The timestamp to format.
+     * @returns {string} The formatted time or the original value if invalid.
+     */
+    function formatTime(timestamp) {
+        if (!timestamp) {
+            return "";
+        }
+
         try {
-            return new Date(iso).toLocaleTimeString('fa-IR');
+            return new Date(timestamp).toLocaleTimeString("fa-IR");
         } catch {
-            return iso;
+            return String(timestamp);
         }
     }
 
-    /* ---------------- render ---------------- */
+    /* ============================================================
+     * Log Rendering
+     * ============================================================ */
+
+    /**
+     * Renders log entries, statistics, and terminal metadata.
+     *
+     * @param {Array<Object>} entries - The log entries to display.
+     * @param {Object|null} stats - Aggregated log statistics.
+     * @param {string} source - The source of the displayed logs.
+     */
     function renderLogs(entries, stats, source) {
-        const terminal = $('#logsTerminal');
+        const terminal = $("#logsTerminal");
 
         if (!entries.length) {
-            terminal.innerHTML = `<div class="logs-empty">هیچ لاگی با این فیلترها یافت نشد</div>`;
-        } else {
-            terminal.innerHTML = entries.map((e) => `
-                <div class="log-line" data-level="${escapeHtml(e.level)}">
-                    <span class="log-line__time">${escapeHtml(formatTime(e.timestamp))}</span>
-                    <span class="log-line__level">${escapeHtml(e.level)}</span>
-                    <span class="log-line__message">${highlight(e.message, state.search)}</span>
+            terminal.innerHTML = `
+                <div class="logs-empty">
+                    No log entries match the selected filters.
                 </div>
-            `).join('');
+            `;
+        } else {
+            terminal.innerHTML = entries.map((entry) => `
+                <div class="log-line" data-level="${escapeHtml(entry.level)}">
+                    <span class="log-line__time">${escapeHtml(formatTime(entry.timestamp))}</span>
+                    <span class="log-line__level">${escapeHtml(entry.level)}</span>
+                    <span class="log-line__message">${highlight(entry.message, state.search)}</span>
+                </div>
+            `).join("");
         }
 
-        // update stats
+        // Update the log statistics.
         if (stats) {
-            $('#statTotal').textContent = Number(stats.total || 0).toLocaleString('fa-IR');
-            $('#statInfo').textContent = Number(stats.info || 0).toLocaleString('fa-IR');
-            $('#statWarn').textContent = Number(stats.warn || 0).toLocaleString('fa-IR');
-            $('#statError').textContent = Number(stats.error || 0).toLocaleString('fa-IR');
-            $('#statDebug').textContent = Number(stats.debug || 0).toLocaleString('fa-IR');
+            $("#statTotal").textContent = Number(stats.total || 0).toLocaleString("fa-IR");
+            $("#statInfo").textContent = Number(stats.info || 0).toLocaleString("fa-IR");
+            $("#statWarn").textContent = Number(stats.warn || 0).toLocaleString("fa-IR");
+            $("#statError").textContent = Number(stats.error || 0).toLocaleString("fa-IR");
+            $("#statDebug").textContent = Number(stats.debug || 0).toLocaleString("fa-IR");
         }
 
-        // footer
-        $('#logsCount').textContent = `${Number(entries.length).toLocaleString('fa-IR')} لاگ`;
-        $('#logsSource').textContent = source === 'live' ? 'منبع: حافظه' : `منبع: ${source}`;
-        $('#logsLastUpdate').textContent = `آخرین به‌روزرسانی: ${new Date().toLocaleTimeString('fa-IR')}`;
+        // Update the terminal footer.
+        $("#logsCount").textContent =
+            `${Number(entries.length).toLocaleString("fa-IR")} log entries`;
 
-        // auto scroll
+        $("#logsSource").textContent = source === "live"
+            ? "Source: In-memory buffer"
+            : `Source: ${source}`;
+
+        $("#logsLastUpdate").textContent =
+            `Last updated: ${new Date().toLocaleTimeString("fa-IR")}`;
+
+        // Keep the terminal scrolled to the latest entry when follow mode is enabled.
         if (state.follow) {
             terminal.scrollTop = terminal.scrollHeight;
         }
     }
 
-    /* ---------------- load files ---------------- */
+    /* ============================================================
+     * Log File Discovery
+     * ============================================================ */
+
+    /**
+     * Retrieves available log files and populates the file selector.
+     */
     async function loadFiles() {
         try {
-            const res = await fetch('/api/system/logs?limit=1', { credentials: 'include' });
-            if (!res.ok) return;
-            const data = await res.json();
-            if (!data.files || !data.files.length) return;
-
-            const select = $('#fileFilter');
-            const current = select.value;
-
-            select.innerHTML = `
-                <option value="live">زنده (حافظه)</option>
-                ${data.files.map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('')}
-            `;
-            select.value = current || 'live';
-            state.filesLoaded = true;
-        } catch { }
-    }
-
-    /* ---------------- fetch ---------------- */
-    async function load() {
-        try {
-            const params = new URLSearchParams({
-                limit: '300',
-                level: state.level,
-                search: state.search,
-                file: state.file,
+            const response = await fetch("/api/system/logs?limit=1", {
+                credentials: "include"
             });
 
-            const res = await fetch(`/api/system/logs?${params}`, { credentials: 'include' });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
+            if (!response.ok) {
+                return;
+            }
 
-            const data = await res.json();
-            renderLogs(data.entries || [], data.stats, data.source);
-            state.lastCount = (data.entries || []).length;
+            const data = await response.json();
 
-            if (!state.filesLoaded) loadFiles();
-        } catch (err) {
-            console.error('[logs] load failed:', err);
-            $('#logsTerminal').innerHTML = `<div class="logs-empty">خطا در دریافت لاگ‌ها: ${escapeHtml(err.message)}</div>`;
+            if (!data.files || !data.files.length) {
+                return;
+            }
+
+            const select = $("#fileFilter");
+            const currentFile = select.value || state.file;
+
+            select.innerHTML = `
+                <option value="live">Live (Memory)</option>
+                ${data.files.map((file) => `
+                    <option value="${escapeHtml(file)}">${escapeHtml(file)}</option>
+                `).join("")}
+            `;
+
+            // Preserve the current selection when the file is still available.
+            const availableFiles = Array.from(select.options).map(
+                (option) => option.value
+            );
+
+            select.value = availableFiles.includes(currentFile)
+                ? currentFile
+                : "live";
+
+            state.file = select.value;
+            state.filesLoaded = true;
+        } catch {
+            // File discovery failures should not interrupt log viewing.
         }
     }
 
-    /* ---------------- auto refresh ---------------- */
+    /* ============================================================
+     * Log Retrieval
+     * ============================================================ */
+
+    /**
+     * Fetches log entries from the API and updates the terminal.
+     */
+    async function load() {
+        try {
+            const params = new URLSearchParams({
+                limit: "300",
+                level: state.level,
+                search: state.search,
+                file: state.file
+            });
+
+            const response = await fetch(
+                `/api/system/logs?${params}`,
+                { credentials: "include" }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const entries = data.entries || [];
+
+            renderLogs(entries, data.stats, data.source);
+
+            state.lastCount = entries.length;
+
+            if (!state.filesLoaded) {
+                loadFiles();
+            }
+        } catch (error) {
+            console.error("[Logs] Failed to load log entries:", error);
+
+            $("#logsTerminal").innerHTML = `
+                <div class="logs-empty">
+                    Failed to retrieve logs: ${escapeHtml(error.message)}
+                </div>
+            `;
+        }
+    }
+
+    /* ============================================================
+     * Automatic Refresh
+     * ============================================================ */
+
+    /**
+     * Starts periodic log retrieval.
+     */
     function startAuto() {
         stopAuto();
         state.interval = setInterval(load, 3000);
     }
 
+    /**
+     * Stops periodic log retrieval.
+     */
     function stopAuto() {
         if (state.interval) {
             clearInterval(state.interval);
@@ -137,112 +260,170 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* ---------------- debounce ---------------- */
-    function debounce(fn, wait = 300) {
-        let t;
+    /* ============================================================
+     * Debounce Utility
+     * ============================================================ */
+
+    /**
+     * Delays function execution until the specified interval has elapsed
+     * without another invocation.
+     *
+     * @param {Function} callback - The function to execute.
+     * @param {number} [wait=300] - The debounce interval in milliseconds.
+     * @returns {Function} The debounced function.
+     */
+    function debounce(callback, wait = 300) {
+        let timeout;
+
         return (...args) => {
-            clearTimeout(t);
-            t = setTimeout(() => fn(...args), wait);
+            clearTimeout(timeout);
+
+            timeout = setTimeout(() => {
+                callback(...args);
+            }, wait);
         };
     }
 
-    /* ---------------- events ---------------- */
-    // level stats cards
-    $$('.log-stat-card').forEach((card) => {
-        card.addEventListener('click', () => {
+    /* ============================================================
+     * Event Handlers
+     * ============================================================ */
+
+    // Filter log entries by clicking a statistics card.
+    $$(".log-stat-card").forEach((card) => {
+        card.addEventListener("click", () => {
             const level = card.dataset.level;
+
             state.level = level;
-            $('#levelFilter').value = level;
-            $$('.log-stat-card').forEach((c) => c.classList.toggle('active', c === card));
+            $("#levelFilter").value = level;
+
+            $$(".log-stat-card").forEach((item) => {
+                item.classList.toggle("active", item === card);
+            });
+
             load();
         });
     });
 
-    // level dropdown
-    $('#levelFilter').addEventListener('change', (e) => {
-        state.level = e.target.value;
-        $$('.log-stat-card').forEach((c) => c.classList.toggle('active', c.dataset.level === state.level));
+    // Handle changes to the log severity filter.
+    $("#levelFilter").addEventListener("change", (event) => {
+        state.level = event.target.value;
+
+        $$(".log-stat-card").forEach((card) => {
+            card.classList.toggle(
+                "active",
+                card.dataset.level === state.level
+            );
+        });
+
         load();
     });
 
-    // file dropdown
-    $('#fileFilter').addEventListener('change', (e) => {
-        state.file = e.target.value;
+    // Handle changes to the selected log source.
+    $("#fileFilter").addEventListener("change", (event) => {
+        state.file = event.target.value;
         load();
     });
 
-    // search (debounced)
-    const doSearch = debounce(() => load(), 300);
-    $('#searchInput').addEventListener('input', (e) => {
-        state.search = e.target.value.trim();
+    // Debounce search input to avoid unnecessary API requests.
+    const doSearch = debounce(load, 300);
+
+    $("#searchInput").addEventListener("input", (event) => {
+        state.search = event.target.value.trim();
         doSearch();
     });
 
-    // auto refresh
-    $('#autoRefreshToggle').addEventListener('change', (e) => {
-        state.autoRefresh = e.target.checked;
-        if (state.autoRefresh) startAuto();
-        else stopAuto();
-    });
+    // Enable or disable periodic log retrieval.
+    $("#autoRefreshToggle").addEventListener("change", (event) => {
+        state.autoRefresh = event.target.checked;
 
-    // follow
-    $('#followToggle').addEventListener('change', (e) => {
-        state.follow = e.target.checked;
-        if (state.follow) {
-            const t = $('#logsTerminal');
-            t.scrollTop = t.scrollHeight;
+        if (state.autoRefresh) {
+            startAuto();
+        } else {
+            stopAuto();
         }
     });
 
-    // refresh
-    $('#refreshBtn').addEventListener('click', () => {
+    // Keep the terminal positioned at the latest entry when follow mode is enabled.
+    $("#followToggle").addEventListener("change", (event) => {
+        state.follow = event.target.checked;
+
+        if (state.follow) {
+            const terminal = $("#logsTerminal");
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+    });
+
+    // Manually refresh the available log files and displayed entries.
+    $("#refreshBtn").addEventListener("click", () => {
         loadFiles();
         load();
     });
 
-    // download
-    $('#downloadBtn').addEventListener('click', () => {
-        if (state.file === 'live') {
-            // دانلود فایل امروز
-            const today = new Date().toISOString().split('T')[0];
-            window.location.href = `/api/system/logs/download?file=app-${today}.log`;
-        } else {
-            window.location.href = `/api/system/logs/download?file=${encodeURIComponent(state.file)}`;
-        }
+    // Download the selected log file.
+    $("#downloadBtn").addEventListener("click", () => {
+        const file = state.file === "live"
+            ? `app-${new Date().toISOString().split("T")[0]}.log`
+            : state.file;
+
+        window.location.href =
+            `/api/system/logs/download?file=${encodeURIComponent(file)}`;
     });
 
-    // clear
-    $('#clearBtn').addEventListener('click', async () => {
-        const ok = confirmDialog
+    // Clear in-memory logs after explicit user confirmation.
+    $("#clearBtn").addEventListener("click", async () => {
+        const confirmed = typeof confirmDialog === "function"
             ? await confirmDialog({
-                title: 'پاک‌سازی لاگ‌ها',
-                message: 'لاگ‌های موجود در حافظه پاک شوند؟ (فایل‌ها دست نمی‌خورند)',
-                confirmText: 'بله، پاک کن',
-                danger: true,
+                title: "Clear Logs",
+                message: "Clear all log entries from memory? Log files will remain unchanged.",
+                confirmText: "Yes, Clear Logs",
+                danger: true
             })
-            : confirm('پاک شوند؟');
+            : confirm("Are you sure you want to clear the logs?");
 
-        if (!ok) return;
+        if (!confirmed) {
+            return;
+        }
 
         try {
-            await fetch('/api/system/logs/clear', {
-                method: 'POST',
-                credentials: 'include',
+            const response = await fetch("/api/system/logs/clear", {
+                method: "POST",
+                credentials: "include"
             });
-            if (window.toast) toast('لاگ‌ها پاک شدند', 'success');
-            load();
-        } catch (err) {
-            if (window.toast) toast('خطا در پاک‌سازی', 'error');
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            if (typeof window.toast === "function") {
+                toast("Logs cleared successfully.", "success");
+            }
+
+            await load();
+        } catch (error) {
+            console.error("[Logs] Failed to clear logs:", error);
+
+            if (typeof window.toast === "function") {
+                toast("Failed to clear logs.", "error");
+            }
         }
     });
 
-    /* ---------------- init ---------------- */
-    $$('.log-stat-card').forEach((c) => {
-        if (c.dataset.level === state.level) c.classList.add('active');
+    /* ============================================================
+     * Initialization
+     * ============================================================ */
+
+    // Highlight the statistics card corresponding to the initial severity filter.
+    $$(".log-stat-card").forEach((card) => {
+        if (card.dataset.level === state.level) {
+            card.classList.add("active");
+        }
     });
 
     loadFiles().then(load);
-    startAuto();
+
+    if (state.autoRefresh) {
+        startAuto();
+    }
 });
 
 /**
