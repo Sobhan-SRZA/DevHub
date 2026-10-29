@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { User } from "../../models/User";
 import { Types } from "mongoose";
+import { User } from "../../models/User";
 
 const router = Router();
 
 router.get("/:idOrUsername", async (req, res) => {
-    const idOrUsername = req.params.idOrUsername;
+    const { idOrUsername } = req.params;
+
     let seo: {
         title?: string;
         description?: string;
@@ -13,13 +14,14 @@ router.get("/:idOrUsername", async (req, res) => {
         ogImage?: string;
         jsonLd?: object;
     } = {
-        title: "پروفایل کاربر",
-        description: "پروفایل توسعه‌دهنده در DevHub",
+        title: "User Profile",
+        description: "Discover developer profiles on DevHub.",
         canonicalPath: `/users/${idOrUsername}`,
     };
 
     try {
         const isObjectId = /^[a-f\d]{24}$/i.test(idOrUsername);
+
         const query = isObjectId
             ? { _id: new Types.ObjectId(idOrUsername) }
             : { usernameLower: idOrUsername.toLowerCase() };
@@ -33,10 +35,16 @@ router.get("/:idOrUsername", async (req, res) => {
 
         if (user) {
             const display = user.name || user.username || idOrUsername;
-            const bio = (user.bio || "").replace(/[#*_`>\[\]()]/g, "").slice(0, 200);
+
+            const bio = (user.bio || "")
+                .replace(/[#*_\`>\[\]()]/g, "")
+                .slice(0, 200);
+
             seo = {
                 title: display,
-                description: bio || `پروفایل ${display} در DevHub — پروژه‌ها و فعالیت‌های متن‌باز`,
+                description:
+                    bio ||
+                    `Discover ${display}'s profile, open-source projects, and contributions on DevHub.`,
                 canonicalPath: `/users/${user.username || idOrUsername}`,
                 ogImage: user.avatar?.url || undefined,
                 jsonLd: {
@@ -49,7 +57,7 @@ router.get("/:idOrUsername", async (req, res) => {
             };
         }
     } catch {
-        // پیش‌فرض
+        // Fall back to the default SEO metadata if an error occurs.
     }
 
     res.render("users/show", {
@@ -59,10 +67,8 @@ router.get("/:idOrUsername", async (req, res) => {
     });
 });
 
-router.get("/", async (req, res) => {
-    res.render("users/list", {
-        req
-    });
+router.get("/", (req, res) => {
+    res.render("users/list", { req });
 });
 
 export default router;
