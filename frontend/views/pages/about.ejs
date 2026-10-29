@@ -3,83 +3,242 @@
 
 <head>
   <%- include("../components/seo-head", {
-        title: "About DevHub",
-        description: "DevHub is a platform for discovering, reviewing, and sharing open-source projects. Combining the discovery experience of GitHub and Product Hunt, DevHub focuses on real project quality and community feedback.",
-        canonicalPath: "/about",
-        keywords: "about DevHub, open source, open-source projects, developer platform, software discovery"
-    }) %>
+    title: "About DevHub — Discover, Review, and Share Open-Source Projects",
+    description: "DevHub is a community-driven platform for discovering, reviewing, and sharing open-source projects. Ratings, satisfaction scores, and real feedback — not just GitHub stars.",
+    canonicalPath: "/about",
+    keywords: "about DevHub, open source, developer platform, software discovery, project reviews, GitHub alternative",
+    ogType: "website",
+    extraStyles: ["/styles/about.css"],
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      "name": "About DevHub",
+      "description": "DevHub is a platform for discovering, reviewing, and sharing open-source projects.",
+      "url": "/about",
+      "mainEntity": {
+        "@type": "Organization",
+        "name": "DevHub",
+        "description": "A community-driven platform for discovering and reviewing open-source projects.",
+        "sameAs": []
+      }
+    }
+  }) %>
 </head>
 
 <body>
   <%- include("../components/header") %>
 
-  <main class="static-page about-page">
-    <h1>About DevHub</h1>
+  <main class="about-page">
 
-    <p class="lead">
-      DevHub is a platform for
-      <strong>discovering, reviewing, and sharing</strong>
-      software projects, with a focus on real-world quality rather
-      than just the number of stars a project receives.
-    </p>
+    <!-- ============ HERO ============ -->
+    <section class="about-hero">
+      <div class="about-hero__glow" aria-hidden="true"></div>
 
-    <div class="static-card">
-      <h2 style="margin-top: 0">Why DevHub?</h2>
+      <div class="about-hero__inner">
+        <span class="about-hero__badge">Open-source discovery, reimagined</span>
 
-      <ul>
-        <li>
-          Discovering great projects can be difficult.
-          GitHub stars do not always reflect a project's actual quality.
+        <h1 class="about-hero__title">About DevHub</h1>
+
+        <p class="about-hero__lead">
+          DevHub is a community-driven platform for
+          <strong>discovering, reviewing, and sharing</strong>
+          open-source projects. It brings the discovery experience of
+          GitHub and Product Hunt together, focusing on real project
+          quality and honest feedback rather than star counts alone.
+        </p>
+
+        <div class="about-hero__cta">
+          <a href="/explore" class="btn-primary">
+            Explore Projects
+          </a>
+          <a href="/projects" class="btn-outline">
+            Browse the Catalog
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHY DEVHUB ============ -->
+    <section class="about-section">
+      <header class="about-section__head">
+        <h2 class="about-section__title">Why DevHub exists</h2>
+        <p class="about-section__sub">
+          Three problems with how developers discover software today —
+          and how DevHub addresses each one.
+        </p>
+      </header>
+
+      <div class="about-cards">
+        <article class="about-card">
+          <div class="about-card__icon" style="--c:#6ebbff" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <h3 class="about-card__title">Stars are a poor signal</h3>
+          <p class="about-card__body">
+            A project can gather thousands of stars and still be
+            abandoned, poorly documented, or hard to integrate. DevHub
+            surfaces signals that reflect actual usability — ratings
+            from real users, satisfaction levels, and long-form reviews.
+          </p>
+        </article>
+
+        <article class="about-card">
+          <div class="about-card__icon" style="--c:#a78bfa" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="about-card__title">Feedback gets lost</h3>
+          <p class="about-card__body">
+            Issues and discussions on repository platforms often bury
+            user experience in technical threads. DevHub provides a
+            dedicated space for structured feedback — ratings, reviews,
+            and threaded comments that stay attached to the project.
+          </p>
+        </article>
+
+        <article class="about-card">
+          <div class="about-card__icon" style="--c:#34d399" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <h3 class="about-card__title">Everything is scattered</h3>
+          <p class="about-card__body">
+            Demos live on one platform, downloads on another,
+            documentation somewhere else. DevHub consolidates
+            screenshots, demo videos, downloadable releases, and
+            Markdown documentation into one coherent project page.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ AUDIENCE ============ -->
+    <section class="about-section">
+      <header class="about-section__head">
+        <h2 class="about-section__title">Who DevHub is for</h2>
+        <p class="about-section__sub">
+          Whether you are building, publishing, or simply exploring —
+          DevHub is designed to help.
+        </p>
+      </header>
+
+      <div class="about-audience">
+        <article class="about-audience__item">
+          <div class="about-audience__badge" aria-hidden="true">01</div>
+          <h3 class="about-audience__title">Developers</h3>
+          <p class="about-audience__body">
+            Avoid reinventing the wheel. Before starting a new project,
+            discover similar work, compare approaches, and learn from
+            what the community has already built.
+          </p>
+        </article>
+
+        <article class="about-audience__item">
+          <div class="about-audience__badge" aria-hidden="true">02</div>
+          <h3 class="about-audience__title">Project owners</h3>
+          <p class="about-audience__body">
+            Receive structured feedback that goes beyond a star count.
+            Understand what users value, what needs improvement, and
+            increase your project's visibility among the right audience.
+          </p>
+        </article>
+
+        <article class="about-audience__item">
+          <div class="about-audience__badge" aria-hidden="true">03</div>
+          <h3 class="about-audience__title">Explorers</h3>
+          <p class="about-audience__body">
+            Discover useful tools, creative ideas, and high-quality
+            projects you would otherwise miss. Every listing is curated
+            through community ratings and reviews.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="about-section">
+      <header class="about-section__head">
+        <h2 class="about-section__title">Core features</h2>
+        <p class="about-section__sub">
+          What you get on every project page.
+        </p>
+      </header>
+
+      <ul class="about-features">
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">🔄</span>
+          <div>
+            <strong>Automatic GitHub synchronization</strong>
+            <span>Stars, forks, language, and license are kept up to date.</span>
+          </div>
         </li>
-        <li>
-          Constructive feedback is often limited.
-          DevHub provides ratings, satisfaction scores, and detailed reviews.
+
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">⭐</span>
+          <div>
+            <strong>Reviews with ratings and satisfaction scores</strong>
+            <span>Rate out of five and indicate how satisfied you actually were.</span>
+          </div>
         </li>
-        <li>
-          Demos, downloads, and documentation are brought together
-          in one convenient place.
+
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">💬</span>
+          <div>
+            <strong>Nested comments and threaded discussions</strong>
+            <span>Follow conversations without losing context.</span>
+          </div>
+        </li>
+
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">🔥</span>
+          <div>
+            <strong>Hot Score–based discovery</strong>
+            <span>Trending projects are ranked by engagement, not raw popularity.</span>
+          </div>
+        </li>
+
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">🏷️</span>
+          <div>
+            <strong>Tags and categories</strong>
+            <span>Find related projects through a consistent taxonomy.</span>
+          </div>
+        </li>
+
+        <li class="about-feature">
+          <span class="about-feature__icon" aria-hidden="true">🎥</span>
+          <div>
+            <strong>Rich project pages</strong>
+            <span>Screenshots, demo videos, downloadable releases, and Markdown docs.</span>
+          </div>
         </li>
       </ul>
-    </div>
+    </section>
 
-    <h2>Who Is DevHub For?</h2>
+    <!-- ============ CALL TO ACTION ============ -->
+    <section class="about-cta">
+      <div class="about-cta__inner">
+        <h2 class="about-cta__title">Ready to explore?</h2>
+        <p class="about-cta__sub">
+          Start discovering open-source projects, or publish your own
+          and start receiving feedback.
+        </p>
 
-    <div class="static-card">
-      <p>
-        <strong>Developers</strong> — Discover similar projects
-        before starting something new.
-      </p>
+        <div class="about-cta__actions">
+          <a href="/explore" class="btn-primary">Start Exploring</a>
+          <a href="/dashboard/projects" class="btn-outline">Publish a Project</a>
+          <a href="/contact" class="btn-ghost">Contact Us</a>
+        </div>
+      </div>
+    </section>
 
-      <p>
-        <strong>Project Owners</strong> — Receive meaningful feedback
-        and increase your project's visibility.
-      </p>
-
-      <p style="margin-bottom: 0">
-        <strong>Explorers</strong> — Discover useful tools,
-        innovative ideas, and high-quality projects.
-      </p>
-    </div>
-
-    <h2>Core Features</h2>
-
-    <ul>
-      <li>Automatic synchronization with GitHub</li>
-      <li>Reviews with ratings and percentage-based satisfaction scores</li>
-      <li>Nested comments and threaded discussions</li>
-      <li>Project discovery powered by a Hot Score algorithm</li>
-      <li>Tags and categories for organized project discovery</li>
-    </ul>
-
-    <p style="margin-top: 28px">
-      <a href="/explore" class="btn-primary">
-        Start Exploring
-      </a>
-
-      <a href="/contact" class="btn-outline" style="margin-left: 10px">
-        Contact Us
-      </a>
-    </p>
   </main>
 
   <%- include("../components/footer") %>
