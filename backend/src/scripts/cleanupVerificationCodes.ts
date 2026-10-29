@@ -1,19 +1,32 @@
+
 import { VerificationCode } from "../models/VerificationCode";
 
+/**
+ * Removes expired and previously consumed verification codes.
+ *
+ * Expired codes are deleted regardless of their consumption status.
+ * Consumed codes are also removed to clean up records retained by
+ * previous bugs or incomplete cleanup operations.
+ *
+ * @returns The number of expired and consumed verification codes deleted.
+ */
 export async function cleanupOldVerificationCodes() {
     const now = new Date();
 
-    // 1) کدهای منقضی (چه consumed، چه نه)
+    // Delete all expired verification codes, whether consumed or not.
     const expired = await VerificationCode.deleteMany({
-        expiresAt: { $lte: now },
+        expiresAt: { $lte: now }
     });
 
-    // 2) کدهای consumed قدیمی (باقی‌مانده از باگ قبلی)
+    // Delete all consumed verification codes that remain in the database.
     const consumed = await VerificationCode.deleteMany({
-        consumedAt: { $ne: null },
+        consumedAt: { $ne: null }
     });
 
-    console.log(`🧹 Cleanup: ${expired.deletedCount} expired, ${consumed.deletedCount} consumed`);
+    console.log(
+        `Verification code cleanup completed: ${expired.deletedCount} expired, ${consumed.deletedCount} consumed.`
+    );
+
     return {
         expired: expired.deletedCount,
         consumed: consumed.deletedCount
