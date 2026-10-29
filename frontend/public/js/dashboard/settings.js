@@ -1,769 +1,1170 @@
 /* ============================================================
-   Settings Page
-   ============================================================ */
+ * Settings Page
+ * ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
-    const $ = (s, r = document) => r.querySelector(s);
-    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+document.addEventListener("DOMContentLoaded", () => {
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
     /* ============================================================
-       State
-       ============================================================ */
+     * State Management
+     * ============================================================ */
+
     const state = {
         user: null,
         pendingEmail: null,
         pendingEmailTimer: null,
         bioEditor: null,
-        newPasswordPlain: null,
+        newPasswordPlain: null
     };
 
     /* ============================================================
-       API
-       ============================================================ */
-    async function api(path, opts = {}) {
-        const res = await fetch(path, {
-            credentials: 'include',
-            headers: opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
-            ...opts,
+     * API Utilities
+     * ============================================================ */
+
+    /**
+     * Sends an HTTP request and parses the response when JSON is available.
+     *
+     * @param {string} path - The API endpoint.
+     * @param {Object} [options={}] - Fetch options.
+     * @returns {Promise<Object|null>} The parsed response data.
+     * @throws {Error} If the request fails.
+     */
+    async function api(path, options = {}) {
+        const response = await fetch(path, {
+            credentials: "include",
+            headers: options.body instanceof FormData
+                ? {}
+                : { "Content-Type": "application/json" },
+            ...options
         });
 
         let data = null;
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-            try {
-                data = await res.json();
-            }
+        const contentType = response.headers.get("content-type") || "";
 
-            catch { }
+        if (contentType.includes("application/json")) {
+            try {
+                data = await response.json();
+            } catch {
+                // Ignore malformed JSON responses.
+            }
         }
 
-        if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
-            Object.assign(err, data || {}, { status: res.status });
+        if (!response.ok) {
+            const error = new Error(
+                data?.message || "An unexpected error occurred."
+            );
 
-            throw err;
+            Object.assign(error, data || {}, {
+                status: response.status
+            });
+
+            throw error;
         }
 
         return data;
     }
 
     /* ============================================================
-       Tabs
-       ============================================================ */
-    $$('.st-tab').forEach((tab) => {
-        tab.addEventListener('click', () => {
-            $$('.st-tab').forEach((t) => t.classList.toggle('active', t === tab));
-            $$('.st-panel').forEach((p) => {
-                p.classList.toggle('active', p.dataset.panel === tab.dataset.tab);
+     * Tab Navigation
+     * ============================================================ */
+
+    $$(".st-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            $$(".st-tab").forEach((item) => {
+                item.classList.toggle("active", item === tab);
             });
-            // اگه به تب password رفت، reset کن
-            if (tab.dataset.tab === 'password') {
+
+            $$(".st-panel").forEach((panel) => {
+                panel.classList.toggle(
+                    "active",
+                    panel.dataset.panel === tab.dataset.tab
+                );
+            });
+
+            // Reset the password workflow whenever the password tab is opened.
+            if (tab.dataset.tab === "password") {
                 resetPasswordFlow();
             }
         });
     });
 
     /* ============================================================
-       Load user
-       ============================================================ */
+     * User Profile Loading
+     * ============================================================ */
+
+    /**
+     * Retrieves the authenticated user's profile and initializes the UI.
+     */
     async function loadUser() {
         try {
-            const data = await api('/api/profile/me');
+            const data = await api("/api/profile/me");
+
             state.user = data.user;
+
             renderUser();
             initBioEditor();
-        } catch (err) {
-            if (err.status === 401) {
-                location.href = '/auth/login';
+        } catch (error) {
+            if (error.status === 401) {
+                location.href = "/auth/login";
             } else {
-                toast(err.message || 'خطا در بارگذاری', 'error');
+                toast(
+                    error.message || "Failed to load your profile.",
+                    "error"
+                );
             }
         }
     }
 
+    /**
+     * Updates the profile fields, avatar, email verification status,
+     * and pending email change state.
+     */
     function renderUser() {
-        const u = state.user;
-        if (!u) return;
+        const user = state.user;
 
-        /* ---------- Name / username ---------- */
-        $('#stName').value = u.name || '';
-        $('#stUsername').value = u.username || '';
-
-        /* ---------- Avatar ---------- */
-        // Avatar
-        const preview = $('#avatarPreview');
-        if (u.avatar?.url) {
-            preview.style.backgroundImage = `url('${u.avatar.url}')`;
-            preview.style.backgroundSize = 'cover';
-            preview.style.backgroundPosition = 'center';
-            preview.textContent = '';   // ← این خط مهمه
-        } else {
-            preview.style.backgroundImage = '';
-            preview.style.background = 'linear-gradient(135deg, #007bff, #6ebbff)';
-            preview.textContent = (u.name || '?').charAt(0).toUpperCase();
+        if (!user) {
+            return;
         }
 
-        /* ---------- Email ---------- */
-        $('#currentEmail').textContent = u.email || '—';
+        /* ---------------- Name and Username ---------------- */
 
-        const badge = $('#emailVerifiedBadge');
-        if (u.emailVerified) {
-            badge.className = 'email-current__badge';
-            badge.innerHTML = `
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            تایید شده
-        `;
+        $("#stName").value = user.name || "";
+        $("#stUsername").value = user.username || "";
+
+        /* ---------------- Avatar ---------------- */
+
+        const avatarPreview = $("#avatarPreview");
+
+        if (user.avatar?.url) {
+            avatarPreview.style.backgroundImage = `url('${user.avatar.url}')`;
+            avatarPreview.style.backgroundSize = "cover";
+            avatarPreview.style.backgroundPosition = "center";
+            avatarPreview.textContent = "";
         } else {
-            badge.className = 'email-current__badge email-current__badge--unverified';
-            badge.innerHTML = `⚠️ تایید نشده`;
+            avatarPreview.style.backgroundImage = "";
+            avatarPreview.style.background = "linear-gradient(135deg, #007bff, #6ebbff)";
+            avatarPreview.textContent = (user.name || "?").charAt(0).toUpperCase();
+        }
+
+        /* ---------------- Email Verification ---------------- */
+
+        $("#currentEmail").textContent = user.email || "—";
+
+        const verificationBadge = $("#emailVerifiedBadge");
+
+        if (user.emailVerified) {
+            verificationBadge.className = "email-current__badge";
+            verificationBadge.innerHTML = `
+                <svg
+                    viewBox="0 0 24 24"
+                    width="11"
+                    height="11"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Verified
+            `;
+        } else {
+            verificationBadge.className =
+                "email-current__badge email-current__badge--unverified";
+            verificationBadge.textContent = "⚠️ Unverified";
         }
 
         renderEmailState();
     }
 
     /* ============================================================
-       Avatar upload
-       ============================================================ */
-    $('#avatarInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+     * Avatar Management
+     * ============================================================ */
 
-        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!allowed.includes(file.type)) {
-            toast('فرمت مجاز: JPG, PNG, WebP, GIF', 'error');
+    $("#avatarInput").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+
+        if (!file) {
             return;
         }
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            toast(
+                "Allowed formats: JPG, PNG, WebP, and GIF.",
+                "error"
+            );
+            event.target.value = "";
+            return;
+        }
+
         if (file.size > 5 * 1024 * 1024) {
-            toast('حجم فایل حداکثر 5MB', 'error');
+            toast("The maximum file size is 5 MB.", "error");
+            event.target.value = "";
             return;
         }
 
-        const fd = new FormData();
-        fd.append('avatar', file);
+        const formData = new FormData();
+        formData.append("avatar", file);
 
         try {
-            const data = await api('/api/profile/avatar', { method: 'POST', body: fd });
+            const data = await api("/api/profile/avatar", {
+                method: "POST",
+                body: formData
+            });
+
             state.user.avatar = data.avatar;
+
             renderUser();
-            toast('عکس پروفایل به‌روزرسانی شد', 'success');
-        } catch (err) {
-            toast(err.message || 'خطا در آپلود', 'error');
+
+            toast("Profile picture updated successfully.", "success");
+        } catch (error) {
+            toast(
+                error.message || "Failed to upload the profile picture.",
+                "error"
+            );
         } finally {
-            e.target.value = '';
+            event.target.value = "";
         }
     });
 
-    $('#avatarRemove').addEventListener('click', async () => {
-        const ok = await confirmDialog({
-            title: 'حذف عکس پروفایل',
-            message: 'عکس پروفایل شما حذف شود؟',
-            confirmText: 'حذف کن',
-            danger: true,
+    $("#avatarRemove").addEventListener("click", async () => {
+        const confirmed = await confirmDialog({
+            title: "Remove Profile Picture",
+            message: "Are you sure you want to remove your profile picture?",
+            confirmText: "Remove",
+            danger: true
         });
-        if (!ok) return;
+
+        if (!confirmed) {
+            return;
+        }
 
         try {
-            await api('/api/profile/avatar', { method: 'DELETE' });
+            await api("/api/profile/avatar", {
+                method: "DELETE"
+            });
+
             state.user.avatar = null;
+
             renderUser();
-            toast('عکس حذف شد', 'success');
-        } catch (err) {
-            toast(err.message || 'خطا', 'error');
+
+            toast("Profile picture removed successfully.", "success");
+        } catch (error) {
+            toast(
+                error.message || "Failed to remove the profile picture.",
+                "error"
+            );
         }
     });
 
     /* ============================================================
-       Profile (name, username)
-       ============================================================ */
-    $('#profileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+     * Profile Information Management
+     * ============================================================ */
 
-        const name = $('#stName').value.trim();
-        const username = $('#stUsername').value.trim();
+    $("#profileForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
 
+        const name = $("#stName").value.trim();
+        const username = $("#stUsername").value.trim();
         const errors = {};
-        if (!name || name.length < 2) errors.name = 'نام باید حداقل ۲ کاراکتر باشد';
-        if (!username || username.length < 3) errors.username = 'نام کاربری باید حداقل ۳ کاراکتر باشد';
-        else if (!/^[a-zA-Z0-9_.-]{3,20}$/.test(username)) errors.username = 'فرمت نام کاربری نامعتبر';
 
-        if (Object.keys(errors).length) {
-            FormKit.clearAllErrors($('#profileForm'));
-            if (errors.name) FormKit.showFieldError($('#stName'), errors.name);
-            if (errors.username) FormKit.showFieldError($('#stUsername'), errors.username);
+        if (!name || name.length < 2) {
+            errors.name = "Name must contain at least 2 characters.";
+        }
+
+        if (!username || username.length < 3) {
+            errors.username = "Username must contain at least 3 characters.";
+        } else if (!/^[a-zA-Z0-9_.-]{3,20}$/.test(username)) {
+            errors.username = "Please enter a valid username.";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            FormKit.clearAllErrors($("#profileForm"));
+
+            if (errors.name) {
+                FormKit.showFieldError($("#stName"), errors.name);
+            }
+
+            if (errors.username) {
+                FormKit.showFieldError($("#stUsername"), errors.username);
+            }
+
             return;
         }
 
-        const btn = $('#saveProfileBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال ذخیره…';
+        const button = $("#saveProfileBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Saving...";
 
         try {
-            // name
+            // Update the display name only when it has changed.
             if (name !== state.user.name) {
-                await api('/api/profile/me', {
-                    method: 'PATCH',
-                    body: JSON.stringify({ name }),
+                await api("/api/profile/me", {
+                    method: "PATCH",
+                    body: JSON.stringify({ name })
                 });
+
                 state.user.name = name;
             }
 
-            // username (اگه عوض شده)
+            // Update the username only when it has changed.
             if (username !== state.user.username) {
-                await api('/api/profile/username', {
-                    method: 'PATCH',
-                    body: JSON.stringify({ username }),
+                await api("/api/profile/username", {
+                    method: "PATCH",
+                    body: JSON.stringify({ username })
                 });
+
                 state.user.username = username;
             }
 
-            toast('اطلاعات به‌روزرسانی شد', 'success');
+            toast("Profile information updated successfully.", "success");
+
             renderUser();
-        } catch (err) {
-            if (err.field) {
-                const el = $(`[name="${err.field}"]`);
-                if (el) FormKit.showFieldError(el, err.message);
+        } catch (error) {
+            if (error.field) {
+                const field = $(`[name="${error.field}"]`);
+
+                if (field) {
+                    FormKit.showFieldError(field, error.message);
+                }
             }
-            toast(err.message || 'خطا', 'error');
+
+            toast(
+                error.message || "Failed to update profile information.",
+                "error"
+            );
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
     /* ============================================================
-       Bio editor (Markdown)
-       ============================================================ */
-    function initBioEditor() {
-        if (!window.MarkdownEditor) return;
+     * Markdown Bio Editor
+     * ============================================================ */
 
-        state.bioEditor = new MarkdownEditor('#bioEditorRoot', {
-            name: 'bio',
-            value: state.user.bio || '',
-            placeholder: 'درباره خودت بنویس… (Markdown پشتیبانی می‌شود)',
-            maxLength: 500,           // ✅ soft limit (توصیه)
-            minHeight: 220,
+    /**
+     * Initializes the Markdown editor with the user's current biography.
+     */
+    function initBioEditor() {
+        if (!window.MarkdownEditor) {
+            return;
+        }
+
+        state.bioEditor = new MarkdownEditor("#bioEditorRoot", {
+            name: "bio",
+            value: state.user.bio || "",
+            placeholder: "Write about yourself... (Markdown is supported)",
+            maxLength: 500,
+            minHeight: 220
         });
     }
 
-    $('#saveBioBtn').addEventListener('click', async () => {
-        const bio = state.bioEditor.getValue();
+    $("#saveBioBtn").addEventListener("click", async () => {
+        if (!state.bioEditor) {
+            toast("The biography editor is not available.", "error");
+            return;
+        }
 
-        const btn = $('#saveBioBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال ذخیره…';
+        const bio = state.bioEditor.getValue();
+        const button = $("#saveBioBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Saving...";
 
         try {
-            await api('/api/profile/me', {
-                method: 'PATCH',
-                body: JSON.stringify({ bio }),
+            await api("/api/profile/me", {
+                method: "PATCH",
+                body: JSON.stringify({ bio })
             });
+
             state.user.bio = bio;
-            toast('توضیحات ذخیره شد', 'success');
-        } catch (err) {
-            toast(err.message || 'خطا', 'error');
+
+            toast("Biography saved successfully.", "success");
+        } catch (error) {
+            toast(
+                error.message || "Failed to save your biography.",
+                "error"
+            );
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
     /* ============================================================
-   Ref — email state cards
-   ============================================================ */
-    const emailStateRequest = $('#emailStateRequest');
-    const emailStateOldVerify = $('#emailStateOldVerify');
-    const emailStateNewVerify = $('#emailStateNewVerify');
+     * Email Change: State Elements
+     * ============================================================ */
+
+    const emailStateRequest = $("#emailStateRequest");
+    const emailStateOldVerify = $("#emailStateOldVerify");
+    const emailStateNewVerify = $("#emailStateNewVerify");
 
     /* ============================================================
-       State machine helpers
-       ============================================================ */
-    function setEmailState(state, data = {}) {
-        emailStateRequest.style.display = state === 'request' ? '' : 'none';
-        emailStateOldVerify.style.display = state === 'oldVerify' ? '' : 'none';
-        emailStateNewVerify.style.display = state === 'newVerify' ? '' : 'none';
+     * Email Change: State Management
+     * ============================================================ */
 
-        if (state === 'oldVerify') {
-            $('#oldEmailDisplay').textContent = data.previousEmail || '—';
-            $('#newEmailDisplay').textContent = data.newEmail || '—';
+    /**
+     * Displays the appropriate email change workflow state.
+     *
+     * @param {"request"|"oldVerify"|"newVerify"} currentState - The workflow state.
+     * @param {Object} [data={}] - State-specific data.
+     */
+    function setEmailState(currentState, data = {}) {
+        emailStateRequest.style.display =
+            currentState === "request" ? "" : "none";
+
+        emailStateOldVerify.style.display =
+            currentState === "oldVerify" ? "" : "none";
+
+        emailStateNewVerify.style.display =
+            currentState === "newVerify" ? "" : "none";
+
+        if (currentState === "oldVerify") {
+            $("#oldEmailDisplay").textContent = data.previousEmail || "—";
+            $("#newEmailDisplay").textContent = data.newEmail || "—";
+
             startOldVerifyTimer(data.expiresIn || 600);
-            setTimeout(() => $('#oldEmailCode').focus(), 200);
+
+            setTimeout(() => {
+                $("#oldEmailCode").focus();
+            }, 200);
         }
 
-        if (state === 'newVerify') {
-            $('#newEmailChanged').textContent = data.newEmail || '—';
-            $('#newEmailChangedInline').textContent = data.newEmail || '—';
+        if (currentState === "newVerify") {
+            $("#newEmailChanged").textContent = data.newEmail || "—";
+            $("#newEmailChangedInline").textContent = data.newEmail || "—";
         }
     }
 
     let oldVerifyTimerId = null;
 
+    /**
+     * Starts the countdown for verification of the previous email address.
+     *
+     * @param {number} seconds - The countdown duration in seconds.
+     */
     function startOldVerifyTimer(seconds) {
         clearInterval(oldVerifyTimerId);
-        const el = $('#oldVerifyTimer');
+
+        const timerElement = $("#oldVerifyTimer");
         let remaining = seconds;
 
         const tick = () => {
             if (remaining <= 0) {
                 clearInterval(oldVerifyTimerId);
-                el.textContent = 'منقضی شد';
+                timerElement.textContent = "Expired";
                 return;
             }
-            const min = String(Math.floor(remaining / 60)).padStart(2, '0');
-            const sec = String(remaining % 60).padStart(2, '0');
-            el.textContent = `${min}:${sec}`;
+
+            const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
+            const secondsRemaining = String(remaining % 60).padStart(2, "0");
+
+            timerElement.textContent = `${minutes}:${secondsRemaining}`;
+
             remaining--;
         };
+
         tick();
+
         oldVerifyTimerId = setInterval(tick, 1000);
     }
 
     /* ============================================================
-       Render user — determine email state
-       ============================================================ */
+     * Email Change: State Restoration
+     * ============================================================ */
+
+    /**
+     * Determines the current email change workflow state from the user profile.
+     */
     function renderEmailState() {
-        const u = state.user;
-        if (!u) return;
+        const user = state.user;
 
-        const pe = u.pendingEmail;
-
-        if (!pe) {
-            // حالت عادی — امکان درخواست
-            setEmailState('request');
+        if (!user) {
             return;
         }
 
-        if (!pe.oldVerified) {
-            // مرحله ۱ در جریان — منتظر کد ایمیل قبلی
-            setEmailState('oldVerify', {
-                previousEmail: pe.previousEmail || u.email,
-                newEmail: pe.newEmail,
-                expiresIn: 600,
+        const pendingEmail = user.pendingEmail;
+
+        if (!pendingEmail) {
+            // No pending request; allow the user to initiate an email change.
+            setEmailState("request");
+            return;
+        }
+
+        if (!pendingEmail.oldVerified) {
+            // Waiting for verification of the previous email address.
+            setEmailState("oldVerify", {
+                previousEmail: pendingEmail.previousEmail || user.email,
+                newEmail: pendingEmail.newEmail,
+                expiresIn: 600
             });
+
             return;
         }
 
-        // مرحله ۲ — ایمیل عوض شده، منتظر تایید جدید
-        setEmailState('newVerify', { newEmail: u.email });
+        // The previous email is verified; the new address still requires verification.
+        setEmailState("newVerify", {
+            newEmail: user.email
+        });
     }
 
     /* ============================================================
-       State A: Request change
-       ============================================================ */
-    $('#changeEmailForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+     * Email Change: Step 1 — Request a Change
+     * ============================================================ */
 
-        const newEmail = $('#newEmail').value.trim().toLowerCase();
-        const password = $('#confirmPasswordForEmail').value;
+    $("#changeEmailForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-        FormKit.clearAllErrors($('#changeEmailForm'));
+        const newEmail = $("#newEmail").value.trim().toLowerCase();
+        const password = $("#confirmPasswordForEmail").value;
+        const form = $("#changeEmailForm");
 
-        if (!newEmail) return FormKit.showFieldError($('#newEmail'), 'ایمیل جدید الزامی است');
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail)) {
-            return FormKit.showFieldError($('#newEmail'), 'ایمیل نامعتبر است');
+        FormKit.clearAllErrors(form);
+
+        if (!newEmail) {
+            return FormKit.showFieldError(
+                $("#newEmail"),
+                "A new email address is required."
+            );
         }
-        if (!password) return FormKit.showFieldError($('#confirmPasswordForEmail'), 'رمز عبور الزامی است');
 
-        const btn = $('#requestEmailBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال ارسال…';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail)) {
+            return FormKit.showFieldError(
+                $("#newEmail"),
+                "Please enter a valid email address."
+            );
+        }
+
+        if (!password) {
+            return FormKit.showFieldError(
+                $("#confirmPasswordForEmail"),
+                "Your current password is required."
+            );
+        }
+
+        const button = $("#requestEmailBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Sending...";
 
         try {
-            const data = await api('/api/profile/email/request', {
-                method: 'POST',
-                body: JSON.stringify({ newEmail, password }),
+            const data = await api("/api/profile/email/request", {
+                method: "POST",
+                body: JSON.stringify({ newEmail, password })
             });
 
-            // موفق — مرحله ۱ شروع شد
+            // Store the pending request and transition to previous-email verification.
             state.user.pendingEmail = {
                 newEmail: data.newEmail,
                 previousEmail: data.currentEmail,
-                oldVerified: false,
+                oldVerified: false
             };
 
-            setEmailState('oldVerify', {
+            setEmailState("oldVerify", {
                 previousEmail: data.currentEmail,
                 newEmail: data.newEmail,
-                expiresIn: data.expiresIn || 600,
+                expiresIn: data.expiresIn || 600
             });
 
-            // پاک کردن فرم
-            $('#newEmail').value = '';
-            $('#confirmPasswordForEmail').value = '';
+            // Clear sensitive form values after a successful request.
+            $("#newEmail").value = "";
+            $("#confirmPasswordForEmail").value = "";
 
-            toast(data.message || 'کد به ایمیل فعلی شما ارسال شد', 'success');
-        } catch (err) {
-            if (err.field) {
-                const el = $(`[name="${err.field}"]`);
-                if (el) FormKit.showFieldError(el, err.message);
+            toast(
+                data.message || "A verification code has been sent to your current email address.",
+                "success"
+            );
+        } catch (error) {
+            if (error.field) {
+                const field = $(`[name="${error.field}"]`);
+
+                if (field) {
+                    FormKit.showFieldError(field, error.message);
+                }
             }
-            toast(err.message || 'خطا', 'error');
+
+            toast(error.message || "Failed to request an email change.", "error");
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
     /* ============================================================
-       State B: Verify OLD email
-       ============================================================ */
-    $('#verifyOldEmailForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+     * Email Change: Step 2 — Verify the Previous Email
+     * ============================================================ */
 
-        const code = $('#oldEmailCode').value.trim();
+    $("#verifyOldEmailForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-        FormKit.clearAllErrors($('#verifyOldEmailForm'));
+        const code = $("#oldEmailCode").value.trim();
+        const form = $("#verifyOldEmailForm");
+
+        FormKit.clearAllErrors(form);
 
         if (!/^\d{6}$/.test(code)) {
-            return FormKit.showFieldError($('#oldEmailCode'), 'کد باید ۶ رقم باشد');
+            return FormKit.showFieldError(
+                $("#oldEmailCode"),
+                "The verification code must contain exactly 6 digits."
+            );
         }
 
-        const btn = $('#verifyOldEmailBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال تایید…';
+        const button = $("#verifyOldEmailBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Verifying...";
 
         try {
-            const data = await api('/api/profile/email/verify-old', {
-                method: 'POST',
-                body: JSON.stringify({ code }),
+            const data = await api("/api/profile/email/verify-old", {
+                method: "POST",
+                body: JSON.stringify({ code })
             });
 
-            // ایمیل عوض شد ولی unverified
+            // Update the profile to reflect the new, unverified email address.
             state.user.email = data.newEmail;
             state.user.emailVerified = false;
+
             state.user.pendingEmail = {
                 newEmail: data.newEmail,
                 previousEmail: data.previousEmail,
-                oldVerified: true,
+                oldVerified: true
             };
 
-            // ذخیره verifyToken برای /verify-email
-            sessionStorage.setItem('verify_email_state', JSON.stringify({
-                verifyToken: data.verifyToken,
-                email: data.newEmail,
-            }));
+            // Store the verification token for the email verification page.
+            sessionStorage.setItem(
+                "email_verify_state",
+                JSON.stringify({
+                    verifyToken: data.verifyToken,
+                    email: data.newEmail
+                })
+            );
 
-            // به حالت ۳ برو
-            setEmailState('newVerify', { newEmail: data.newEmail });
+            setEmailState("newVerify", {
+                newEmail: data.newEmail
+            });
+
             renderUser();
 
-            toast(`ایمیل شما تغییر کرد. کد تایید به ${data.newEmail} ارسال شد`, 'success');
-        } catch (err) {
-            FormKit.showFieldError($('#oldEmailCode'), err.message);
+            toast(
+                `Your email address has been changed. A verification code has been sent to ${data.newEmail}.`,
+                "success"
+            );
+        } catch (error) {
+            FormKit.showFieldError(
+                $("#oldEmailCode"),
+                error.message
+            );
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
     /* ============================================================
-       State C: Go to /verify-email OR cancel & revert
-       ============================================================ */
-    $('#goToVerifyEmail').addEventListener('click', () => {
-        location.href = '/auth/verify-email';
+     * Email Change: Step 3 — Verify or Revert
+     * ============================================================ */
+
+    $("#goToVerifyEmail").addEventListener("click", () => {
+        location.href = "/auth/verify-email";
     });
 
-    $('#cancelNewVerify').addEventListener('click', async () => {
-        const ok = await confirmDialog({
-            title: 'لغو تغییر ایمیل',
-            message: 'ایمیل شما به ایمیل قبلی بازمی‌گردد. مطمئنید؟',
-            confirmText: 'بله، بازگردان',
-            danger: true,
+    $("#cancelNewVerify").addEventListener("click", async () => {
+        const confirmed = await confirmDialog({
+            title: "Cancel Email Change",
+            message: "Your email address will be reverted to the previous address. Are you sure?",
+            confirmText: "Yes, Revert",
+            danger: true
         });
-        if (!ok) return;
+
+        if (!confirmed) {
+            return;
+        }
 
         try {
-            const data = await api('/api/profile/email/pending', { method: 'DELETE' });
+            const data = await api("/api/profile/email/pending", {
+                method: "DELETE"
+            });
 
             state.user.email = data.email;
             state.user.emailVerified = true;
             state.user.pendingEmail = null;
 
             renderUser();
-            setEmailState('request');
-            toast(data.message || 'ایمیل به حالت قبل بازگشت', 'success');
-        } catch (err) {
-            toast(err.message || 'خطا', 'error');
+            setEmailState("request");
+
+            toast(
+                data.message || "Your previous email address has been restored.",
+                "success"
+            );
+        } catch (error) {
+            toast(
+                error.message || "Failed to revert the email change.",
+                "error"
+            );
         }
     });
 
     /* ============================================================
-       Cancel from state B (before old verified)
-       ============================================================ */
-    $('#cancelOldVerify').addEventListener('click', async () => {
-        const ok = await confirmDialog({
-            title: 'لغو تغییر ایمیل',
-            message: 'درخواست تغییر ایمیل لغو شود؟',
-            confirmText: 'بله',
-            danger: true,
+     * Email Change: Cancel Before Previous-Email Verification
+     * ============================================================ */
+
+    $("#cancelOldVerify").addEventListener("click", async () => {
+        const confirmed = await confirmDialog({
+            title: "Cancel Email Change",
+            message: "Are you sure you want to cancel the email change request?",
+            confirmText: "Yes, Cancel",
+            danger: true
         });
-        if (!ok) return;
+
+        if (!confirmed) {
+            return;
+        }
 
         try {
-            await api('/api/profile/email/pending', { method: 'DELETE' });
+            await api("/api/profile/email/pending", {
+                method: "DELETE"
+            });
+
             state.user.pendingEmail = null;
-            setEmailState('request');
-            toast('درخواست لغو شد', 'success');
-        } catch (err) {
-            toast(err.message || 'خطا', 'error');
+
+            setEmailState("request");
+
+            toast("Email change request cancelled successfully.", "success");
+        } catch (error) {
+            toast(
+                error.message || "Failed to cancel the email change request.",
+                "error"
+            );
         }
     });
 
     /* ============================================================
-       Password change — Step 1: Request
-       ============================================================ */
-    const newPasswordInput = $('#newPassword');
-    const confirmNewPasswordInput = $('#confirmNewPassword');
+     * Password Change: Password Strength Validation
+     * ============================================================ */
 
-    function evaluatePassword(pw) {
+    const newPasswordInput = $("#newPassword");
+    const confirmNewPasswordInput = $("#confirmNewPassword");
+
+    /**
+     * Evaluates password complexity and updates the strength indicator.
+     *
+     * @param {string} password - The password to evaluate.
+     * @returns {boolean} Whether all password requirements are satisfied.
+     */
+    function evaluatePassword(password) {
         const rules = {
-            length: pw.length >= 8,
-            lower: /[a-z]/.test(pw),
-            upper: /[A-Z]/.test(pw),
-            digit: /\d/.test(pw),
+            length: password.length >= 8,
+            lower: /[a-z]/.test(password),
+            upper: /[A-Z]/.test(password),
+            digit: /\d/.test(password)
         };
 
-        // آپدیت UI
-        Object.entries(rules).forEach(([name, ok]) => {
-            const li = $(`.pw-rules li[data-rule="${name}"]`);
-            if (li) li.classList.toggle('ok', ok);
+        // Update the visual status of each password requirement.
+        Object.entries(rules).forEach(([name, isSatisfied]) => {
+            const ruleElement = $(`.pw-rules li[data-rule="${name}"]`);
+
+            if (ruleElement) {
+                ruleElement.classList.toggle("ok", isSatisfied);
+            }
         });
 
         const score = Object.values(rules).filter(Boolean).length;
-        const strength = $('#newPassword').closest('.field').querySelector('.pw-strength');
-        const label = $('#pwStrengthLabel');
+        const strengthIndicator = $("#newPassword")
+            .closest(".field")
+            .querySelector(".pw-strength");
 
-        strength.classList.remove('weak', 'fair', 'good', 'strong');
-        if (!pw) {
-            label.textContent = '';
+        const strengthLabel = $("#pwStrengthLabel");
+
+        strengthIndicator.classList.remove(
+            "weak",
+            "fair",
+            "good",
+            "strong"
+        );
+
+        if (!password) {
+            strengthLabel.textContent = "";
         } else if (score <= 1) {
-            strength.classList.add('weak');
-            label.textContent = 'ضعیف';
+            strengthIndicator.classList.add("weak");
+            strengthLabel.textContent = "Weak";
         } else if (score === 2) {
-            strength.classList.add('fair');
-            label.textContent = 'متوسط';
+            strengthIndicator.classList.add("fair");
+            strengthLabel.textContent = "Fair";
         } else if (score === 3) {
-            strength.classList.add('good');
-            label.textContent = 'خوب';
+            strengthIndicator.classList.add("good");
+            strengthLabel.textContent = "Good";
         } else {
-            strength.classList.add('strong');
-            label.textContent = 'قوی';
+            strengthIndicator.classList.add("strong");
+            strengthLabel.textContent = "Strong";
         }
 
         return score === 4;
     }
 
-    newPasswordInput.addEventListener('input', () => {
+    newPasswordInput.addEventListener("input", () => {
         evaluatePassword(newPasswordInput.value);
         checkPasswordMatch();
     });
 
-    confirmNewPasswordInput.addEventListener('input', checkPasswordMatch);
+    confirmNewPasswordInput.addEventListener("input", checkPasswordMatch);
 
+    /**
+     * Validates the password confirmation field and updates its error state.
+     */
     function checkPasswordMatch() {
-        const errEl = $('#matchError');
+        const errorElement = $("#matchError");
+        const confirmationField = confirmNewPasswordInput.closest(".field");
+
         if (!confirmNewPasswordInput.value) {
-            errEl.textContent = '';
+            errorElement.textContent = "";
+            errorElement.classList.remove("visible");
+            confirmationField.classList.remove("has-error");
             return;
         }
+
         if (newPasswordInput.value !== confirmNewPasswordInput.value) {
-            errEl.textContent = 'رمز و تکرار آن یکسان نیستند';
-            errEl.classList.add('visible');
-            confirmNewPasswordInput.closest('.field').classList.add('has-error');
+            errorElement.textContent = "Passwords do not match.";
+            errorElement.classList.add("visible");
+            confirmationField.classList.add("has-error");
         } else {
-            errEl.textContent = '';
-            errEl.classList.remove('visible');
-            confirmNewPasswordInput.closest('.field').classList.remove('has-error');
+            errorElement.textContent = "";
+            errorElement.classList.remove("visible");
+            confirmationField.classList.remove("has-error");
         }
     }
 
-    $('#passwordRequestForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    /* ============================================================
+     * Password Change: Step 1 — Request Verification
+     * ============================================================ */
 
-        const currentPassword = $('#currentPassword').value;
+    $("#passwordRequestForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const currentPassword = $("#currentPassword").value;
         const newPassword = newPasswordInput.value;
         const confirmPassword = confirmNewPasswordInput.value;
-
         const errors = {};
-        if (!currentPassword) errors.currentPassword = 'رمز فعلی الزامی است';
-        if (!newPassword || newPassword.length < 8) errors.newPassword = 'رمز جدید باید حداقل ۸ کاراکتر باشد';
-        else if (!evaluatePassword(newPassword)) errors.newPassword = 'رمز جدید به قوانین بالا عمل نمی‌کند';
-        if (newPassword !== confirmPassword) errors.confirmPassword = 'تکرار رمز یکسان نیست';
-        if (currentPassword && newPassword && currentPassword === newPassword) {
-            errors.newPassword = 'رمز جدید نباید با رمز فعلی یکسان باشد';
+
+        if (!currentPassword) {
+            errors.currentPassword = "Your current password is required.";
         }
 
-        if (Object.keys(errors).length) {
-            FormKit.clearAllErrors($('#passwordRequestForm'));
-            if (errors.currentPassword) FormKit.showFieldError($('#currentPassword'), errors.currentPassword);
-            if (errors.newPassword) FormKit.showFieldError(newPasswordInput, errors.newPassword);
-            if (errors.confirmPassword) FormKit.showFieldError(confirmNewPasswordInput, errors.confirmPassword);
+        if (!newPassword || newPassword.length < 8) {
+            errors.newPassword = "The new password must contain at least 8 characters.";
+        } else if (!evaluatePassword(newPassword)) {
+            errors.newPassword = "The new password does not meet all the requirements.";
+        }
+
+        if (newPassword !== confirmPassword) {
+            errors.confirmPassword = "Password confirmation does not match.";
+        }
+
+        if (
+            currentPassword &&
+            newPassword &&
+            currentPassword === newPassword
+        ) {
+            errors.newPassword = "The new password must differ from your current password.";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            FormKit.clearAllErrors($("#passwordRequestForm"));
+
+            if (errors.currentPassword) {
+                FormKit.showFieldError(
+                    $("#currentPassword"),
+                    errors.currentPassword
+                );
+            }
+
+            if (errors.newPassword) {
+                FormKit.showFieldError(
+                    newPasswordInput,
+                    errors.newPassword
+                );
+            }
+
+            if (errors.confirmPassword) {
+                FormKit.showFieldError(
+                    confirmNewPasswordInput,
+                    errors.confirmPassword
+                );
+            }
+
             return;
         }
 
-        FormKit.clearAllErrors($('#passwordRequestForm'));
+        FormKit.clearAllErrors($("#passwordRequestForm"));
 
-        const btn = $('#requestPwBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال ارسال…';
+        const button = $("#requestPwBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Sending...";
 
         try {
-            const data = await api('/api/profile/password/request', {
-                method: 'POST',
-                body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+            const data = await api("/api/profile/password/request", {
+                method: "POST",
+                body: JSON.stringify({
+                    currentPassword,
+                    newPassword,
+                    confirmPassword
+                })
             });
 
-            // ذخیره رمز جدید برای مرحله بعد
-            state.newPasswordPlain = { newPassword, confirmPassword };
+            // Retain the password values only for the current verification flow.
+            state.newPasswordPlain = {
+                newPassword,
+                confirmPassword
+            };
 
-            // نمایش کارت تایید
-            $('#passwordRequestForm').closest('.st-card').style.display = 'none';
-            $('#confirmPasswordCard').style.display = '';
-            $('#pwEmailHint').textContent = `کد ۶ رقمی به ${data.email} ارسال شد`;
+            // Display the OTP confirmation form.
+            $("#passwordRequestForm").closest(".st-card").style.display = "none";
+            $("#confirmPasswordCard").style.display = "";
 
-            // Set hidden inputs
+            $("#pwEmailHint").textContent =
+                `A 6-digit verification code has been sent to ${data.email}.`;
+
+            // Populate the hidden confirmation fields.
             $('#passwordConfirmForm [name="newPassword"]').value = newPassword;
             $('#passwordConfirmForm [name="confirmPassword"]').value = confirmPassword;
 
-            setTimeout(() => $('#passwordCode').focus(), 300);
-        } catch (err) {
-            if (err.field) {
-                const el = $(`[name="${err.field}"]`);
-                if (el) FormKit.showFieldError(el, err.message);
+            setTimeout(() => {
+                $("#passwordCode").focus();
+            }, 300);
+        } catch (error) {
+            if (error.field) {
+                const field = $(`[name="${error.field}"]`);
+
+                if (field) {
+                    FormKit.showFieldError(field, error.message);
+                }
             }
-            toast(err.message || 'خطا', 'error');
+
+            toast(
+                error.message || "Failed to initiate the password change.",
+                "error"
+            );
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
+    /* ============================================================
+     * Password Change: Reset Workflow
+     * ============================================================ */
+
+    /**
+     * Restores the initial password change form and clears temporary values.
+     */
     function resetPasswordFlow() {
-        $('#passwordRequestForm').closest('.st-card').style.display = '';
-        $('#confirmPasswordCard').style.display = 'none';
-        $('#passwordRequestForm').reset();
-        $('#passwordConfirmForm').reset();
-        $('#pwStrengthLabel').textContent = '';
-        $('#matchError').textContent = '';
-        $$('.pw-rules li').forEach((li) => li.classList.remove('ok'));
-        const strength = $('#newPassword').closest('.field').querySelector('.pw-strength');
-        strength.classList.remove('weak', 'fair', 'good', 'strong');
+        $("#passwordRequestForm").closest(".st-card").style.display = "";
+        $("#confirmPasswordCard").style.display = "none";
+
+        $("#passwordRequestForm").reset();
+        $("#passwordConfirmForm").reset();
+
+        $("#pwStrengthLabel").textContent = "";
+        $("#matchError").textContent = "";
+        $("#matchError").classList.remove("visible");
+
+        $$(".pw-rules li").forEach((item) => {
+            item.classList.remove("ok");
+        });
+
+        const strengthIndicator = $("#newPassword")
+            .closest(".field")
+            .querySelector(".pw-strength");
+
+        strengthIndicator.classList.remove(
+            "weak",
+            "fair",
+            "good",
+            "strong"
+        );
+
+        confirmNewPasswordInput.closest(".field").classList.remove("has-error");
+
         state.newPasswordPlain = null;
     }
 
     /* ============================================================
-       Password change — Step 2: Confirm
-       ============================================================ */
-    $('#passwordConfirmForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+     * Password Change: Step 2 — Confirm and Apply
+     * ============================================================ */
 
-        const code = $('#passwordCode').value.trim();
-        const newPassword = $('#passwordConfirmForm [name="newPassword"]').value;
-        const confirmPassword = $('#passwordConfirmForm [name="confirmPassword"]').value;
+    $("#passwordConfirmForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const code = $("#passwordCode").value.trim();
+
+        const newPassword =
+            $('#passwordConfirmForm [name="newPassword"]').value;
+
+        const confirmPassword =
+            $('#passwordConfirmForm [name="confirmPassword"]').value;
 
         if (!/^\d{6}$/.test(code)) {
-            return FormKit.showFieldError($('#passwordCode'), 'کد باید ۶ رقم باشد');
+            return FormKit.showFieldError(
+                $("#passwordCode"),
+                "The verification code must contain exactly 6 digits."
+            );
         }
+
         if (!newPassword) {
-            toast('رمز جدید گم شده، لطفاً از ابتدا شروع کنید', 'error');
+            toast(
+                "The new password is no longer available. Please restart the process.",
+                "error"
+            );
+
             return resetPasswordFlow();
         }
 
-        FormKit.clearAllErrors($('#passwordConfirmForm'));
+        FormKit.clearAllErrors($("#passwordConfirmForm"));
 
-        const btn = $('#confirmPwBtn');
-        btn.disabled = true;
-        const original = btn.textContent;
-        btn.textContent = 'در حال تغییر…';
+        const button = $("#confirmPwBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Updating...";
 
         try {
-            const data = await api('/api/profile/password/confirm', {
-                method: 'POST',
-                body: JSON.stringify({ code, newPassword, confirmPassword }),
+            const data = await api("/api/profile/password/confirm", {
+                method: "POST",
+                body: JSON.stringify({
+                    code,
+                    newPassword,
+                    confirmPassword
+                })
             });
 
-            toast('رمز عبور با موفقیت تغییر کرد', 'success');
+            toast("Password changed successfully.", "success");
 
-            const msg = data.revokedSessions
-                ? `از ${data.revokedSessions} دستگاه دیگر خارج شدید`
-                : 'شما از همه دستگاه‌ها خارج شدید';
+            const message = data.revokedSessions
+                ? `You have been signed out from ${data.revokedSessions} other device(s).`
+                : "You have been signed out from all devices.";
 
             await confirmDialog({
-                title: 'تغییر رمز موفق',
-                message: msg,
-                confirmText: 'متوجه شدم',
-                danger: false,
+                title: "Password Changed Successfully",
+                message,
+                confirmText: "Got It",
+                danger: false
             });
 
             resetPasswordFlow();
-        } catch (err) {
-            FormKit.showFieldError($('#passwordCode'), err.message);
+        } catch (error) {
+            FormKit.showFieldError(
+                $("#passwordCode"),
+                error.message
+            );
         } finally {
-            btn.disabled = false;
-            btn.textContent = original;
+            button.disabled = false;
+            button.textContent = originalText;
         }
     });
 
-    $('#cancelPasswordChange').addEventListener('click', () => {
+    $("#cancelPasswordChange").addEventListener("click", () => {
         resetPasswordFlow();
     });
 
     /* ============================================================
-       Logout all
-       ============================================================ */
-    $('#logoutAllBtn').addEventListener('click', async () => {
-        const ok = await confirmDialog({
-            title: 'خروج از همه دستگاه‌ها',
-            message: 'تمام سشن‌های فعال شما بسته می‌شوند. ادامه می‌دهید؟',
-            confirmText: 'بله، همه را ببند',
-            danger: true,
+     * Session Management — Sign Out All Devices
+     * ============================================================ */
+
+    $("#logoutAllBtn").addEventListener("click", async () => {
+        const confirmed = await confirmDialog({
+            title: "Sign Out of All Devices",
+            message: "All your active sessions will be terminated. Do you want to continue?",
+            confirmText: "Yes, Sign Out Everywhere",
+            danger: true
         });
-        if (!ok) return;
+
+        if (!confirmed) {
+            return;
+        }
 
         try {
-            await api('/api/auth/logout-all', { method: 'POST' });
-            location.href = '/';
-        } catch (err) {
-            toast(err.message || 'خطا', 'error');
+            await api("/api/auth/logout-all", {
+                method: "POST"
+            });
+
+            location.href = "/";
+        } catch (error) {
+            toast(
+                error.message || "Failed to sign out of all devices.",
+                "error"
+            );
         }
     });
 
     /* ============================================================
-       Password visibility toggle (از auth.js قابل استفاده)
-       ============================================================ */
-    document.querySelectorAll('.toggle-pass').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const input = document.getElementById(btn.dataset.target);
-            if (!input) return;
-            const isPwd = input.type === 'password';
-            input.type = isPwd ? 'text' : 'password';
-            btn.classList.toggle('active', isPwd);
-            btn.setAttribute('aria-label', isPwd ? 'پنهان کردن رمز' : 'نمایش رمز');
+     * Password Visibility Toggle
+     * ============================================================ */
+
+    document.querySelectorAll(".toggle-pass").forEach((button) => {
+        button.addEventListener("click", () => {
+            const input = document.getElementById(button.dataset.target);
+
+            if (!input) {
+                return;
+            }
+
+            const isPassword = input.type === "password";
+
+            input.type = isPassword ? "text" : "password";
+
+            button.classList.toggle("active", isPassword);
+
+            button.setAttribute(
+                "aria-label",
+                isPassword ? "Hide password" : "Show password"
+            );
         });
     });
 
     /* ============================================================
-       Helpers
-       ============================================================ */
-    function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+     * HTML Escaping Utility
+     * ============================================================ */
+
+    /**
+     * Escapes HTML-sensitive characters before inserting untrusted text into HTML.
+     *
+     * @param {*} value - The value to escape.
+     * @returns {string} The escaped string.
+     */
+    function escapeHtml(value) {
+        if (value == null) {
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
     /* ============================================================
-       Init
-       ============================================================ */
+     * Initialization
+     * ============================================================ */
+
     loadUser();
 });
 
