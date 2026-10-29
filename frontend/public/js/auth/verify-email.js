@@ -385,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (data?.user && !data.user.emailVerified) {
                         // Request a verification session for the authenticated user.
                         const resendResponse = await fetch(
-                            "/api/auth/resend-verification-for-me",
+                            "/api/auth/resend-verification",
                             {
                                 method: "POST",
                                 credentials: "include"
@@ -416,6 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        console.log("🚀 ~ init ~ state:", state)
         if (!state) {
             // A valid verification session could not be established.
             showDialogAndRedirect(
