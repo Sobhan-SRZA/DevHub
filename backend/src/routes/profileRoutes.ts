@@ -1,29 +1,47 @@
-import { mwUploadAvatar } from "../middleware/upload";
-import { requireAuth } from "../middleware/auth";
 import { Router } from "express";
 import * as ctrl from "../controllers/profileController";
+import { requireAuth } from "../middleware/auth";
+import { mwUploadAvatar } from "../middleware/upload";
 
 const router = Router();
 
-// همه روت‌ها نیاز به لاگین دارن
+/**
+ * All profile routes require an authenticated user.
+ * This protects personal information and account modification endpoints.
+ */
 router.use(requireAuth);
 
-/* ---------- Base ---------- */
+/* -------------------------------------------------------------------------- */
+/*                            Profile Management                              */
+/* -------------------------------------------------------------------------- */
+
 router.get("/me", ctrl.getMe);
 router.patch("/me", ctrl.updateProfile);
 router.patch("/username", ctrl.changeUsername);
 
-/* ---------- Avatar ---------- */
+/* -------------------------------------------------------------------------- */
+/*                              Avatar Management                             */
+/* -------------------------------------------------------------------------- */
+
+// Apply avatar-specific upload middleware before processing the uploaded file.
 router.post("/avatar", mwUploadAvatar, ctrl.uploadAvatar);
 router.delete("/avatar", ctrl.deleteAvatar);
 
-/* ---------- Email change ---------- */
+/* -------------------------------------------------------------------------- */
+/*                              Email Management                              */
+/* -------------------------------------------------------------------------- */
+
+// Email changes use dedicated request, verification, and cancellation steps.
 router.post("/email/request", ctrl.requestEmailChange);
 router.post("/email/verify", ctrl.verifyEmailChange);
-router.post('/email/verify-old', ctrl.verifyOldEmailForChange);
+router.post("/email/verify-old", ctrl.verifyOldEmailForChange);
 router.delete("/email/pending", ctrl.cancelEmailChange);
 
-/* ---------- Password change ---------- */
+/* -------------------------------------------------------------------------- */
+/*                            Password Management                             */
+/* -------------------------------------------------------------------------- */
+
+// Separate password change requests from their confirmation step.
 router.post("/password/request", ctrl.requestPasswordChange);
 router.post("/password/confirm", ctrl.confirmPasswordChange);
 
