@@ -1,12 +1,19 @@
-import { redirectProfile } from "../../middleware/auth";
 import { Router } from "express";
+import { redirectProfile } from "../../middleware/auth";
 import noCache from "../../middleware/noCache";
 
 const router = Router();
 
-router.get("/forgot-password", noCache, redirectProfile, (req, res) => {
-    return res.render("auth/forgot-password");
-});
+/* -------------------- Forgot Password Page -------------------- */
+
+router.get(
+    "/forgot-password",
+    noCache,
+    redirectProfile,
+    (req, res) => {
+        return res.render("auth/forgot-password");
+    }
+);
 
 export default router;
 
