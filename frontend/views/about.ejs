@@ -1,53 +1,84 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
   <%- include("components/seo-head", {
-    title: "درباره DevHub",
-    description: "DevHub پلتفرمی برای کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز است — ترکیبی از GitHub و Product Hunt با تمرکز روی کیفیت واقعی.",
-    canonicalPath: "/about",
-    keywords: "درباره DevHub, متن‌باز, اپن سورس, پلتفرم توسعه‌دهندگان"
-  }) %>
+        title: "About DevHub",
+        description: "DevHub is a platform for discovering, reviewing, and sharing open-source projects. Combining the discovery experience of GitHub and Product Hunt, DevHub focuses on real project quality and community feedback.",
+        canonicalPath: "/about",
+        keywords: "about DevHub, open source, open-source projects, developer platform, software discovery"
+    }) %>
 </head>
 
 <body>
   <%- include("components/header") %>
 
   <main class="static-page about-page">
-    <h1>درباره DevHub</h1>
+    <h1>About DevHub</h1>
+
     <p class="lead">
-      DevHub جایی است برای <strong>کشف، بررسی و اشتراک‌گذاری</strong> پروژه‌های برنامه‌نویسی —
-      با تمرکز روی کیفیت واقعی، نه فقط تعداد ستاره.
+      DevHub is a platform for
+      <strong>discovering, reviewing, and sharing</strong>
+      software projects, with a focus on real-world quality rather
+      than just the number of stars a project receives.
     </p>
 
     <div class="static-card">
-      <h2 style="margin-top:0">چرا DevHub؟</h2>
+      <h2 style="margin-top: 0">Why DevHub?</h2>
+
       <ul>
-        <li>کشف پروژه‌های خوب سخت است؛ ستاره‌های GitHub همیشه کیفیت را نشان نمی‌دهند.</li>
-        <li>بازخورد سازنده‌ها کم است؛ اینجا امتیاز، رضایت و نظر مفصل داریم.</li>
-        <li>دمو، دانلود و مستندات را در یک صفحه جمع می‌کنیم.</li>
+        <li>
+          Discovering great projects can be difficult.
+          GitHub stars do not always reflect a project's actual quality.
+        </li>
+        <li>
+          Constructive feedback is often limited.
+          DevHub provides ratings, satisfaction scores, and detailed reviews.
+        </li>
+        <li>
+          Demos, downloads, and documentation are brought together
+          in one convenient place.
+        </li>
       </ul>
     </div>
 
-    <h2>برای چه کسانی؟</h2>
+    <h2>Who Is DevHub For?</h2>
+
     <div class="static-card">
-      <p><strong>توسعه‌دهنده‌ها</strong> — پیدا کردن پروژه‌های مشابه قبل از شروع کار جدید</p>
-      <p><strong>صاحبان پروژه</strong> — گرفتن بازخورد واقعی و دیده شدن</p>
-      <p style="margin-bottom:0"><strong>کاوشگرها</strong> — کشف ابزارها و پروژه‌های خوب</p>
+      <p>
+        <strong>Developers</strong> — Discover similar projects
+        before starting something new.
+      </p>
+
+      <p>
+        <strong>Project Owners</strong> — Receive meaningful feedback
+        and increase your project's visibility.
+      </p>
+
+      <p style="margin-bottom: 0">
+        <strong>Explorers</strong> — Discover useful tools,
+        innovative ideas, and high-quality projects.
+      </p>
     </div>
 
-    <h2>امکانات اصلی</h2>
+    <h2>Core Features</h2>
+
     <ul>
-      <li>سینک خودکار با GitHub</li>
-      <li>ریویو با امتیاز و رضایت درصدی</li>
-      <li>کامنت تو در تو</li>
-      <li>کاوش با الگوریتم Hot Score</li>
-      <li>تگ و دسته‌بندی</li>
+      <li>Automatic synchronization with GitHub</li>
+      <li>Reviews with ratings and percentage-based satisfaction scores</li>
+      <li>Nested comments and threaded discussions</li>
+      <li>Project discovery powered by a Hot Score algorithm</li>
+      <li>Tags and categories for organized project discovery</li>
     </ul>
 
-    <p style="margin-top:28px">
-      <a href="/explore" class="btn-primary">شروع کاوش</a>
-      <a href="/contact" class="btn-outline" style="margin-right:10px">تماس با ما</a>
+    <p style="margin-top: 28px">
+      <a href="/explore" class="btn-primary">
+        Start Exploring
+      </a>
+
+      <a href="/contact" class="btn-outline" style="margin-left: 10px">
+        Contact Us
+      </a>
     </p>
   </main>
 
