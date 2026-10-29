@@ -1,0 +1,467 @@
+/* ============================================================
+   PUBLIC USERS DIRECTORY
+   ============================================================
+   Styles for the /users index page: hero header, search toolbar,
+   result meta, user card grid, empty state, loading state, and
+   pagination.
+   ============================================================ */
+
+/* ---------- Page container ---------- */
+.users-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    color: #ccc;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.users-hero {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid #141414;
+    margin-bottom: 24px;
+}
+
+.users-hero__inner {
+    max-width: 680px;
+}
+
+.users-hero__badge {
+    display: inline-block;
+    padding: 5px 12px;
+    margin-bottom: 14px;
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+    border-radius: 999px;
+    color: #6ebbff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.users-hero__title {
+    font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+}
+
+.users-hero__sub {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: #999;
+    margin: 0;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.users-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+/* Search input with leading icon */
+.users-toolbar__search {
+    position: relative;
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    align-items: center;
+}
+
+.users-toolbar__search svg {
+    position: absolute;
+    left: 13px;
+    color: #666;
+    pointer-events: none;
+}
+
+.users-toolbar__search input {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.users-toolbar__search input::placeholder {
+    color: #666;
+}
+
+.users-toolbar__search input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.users-toolbar__search input::-webkit-search-cancel-button {
+    filter: invert(0.6);
+}
+
+/* Sort select */
+.users-toolbar__select {
+    min-width: 180px;
+    padding: 11px 36px 11px 14px;
+    background-color: #0e0e0e;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #666 50%),
+        linear-gradient(135deg, #666 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) calc(50% - 2px),
+        calc(100% - 13px) calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    color: #ddd;
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.users-toolbar__select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.users-toolbar__select option {
+    background: #0e0e0e;
+    color: #ddd;
+}
+
+/* ============================================================
+   RESULT META
+   ============================================================ */
+.users-meta {
+    color: #777;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+    min-height: 18px;
+}
+
+/* ============================================================
+   USER GRID
+   ============================================================ */
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    min-height: 200px;
+}
+
+/* ============================================================
+   USER CARD
+   ============================================================ */
+.uc {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    outline: none;
+}
+
+.uc:hover {
+    transform: translateY(-3px);
+    border-color: #2a2a2a;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.uc:focus-visible {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Card top row: avatar + identity */
+.uc__top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.uc__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #161616;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1px solid #262626;
+    overflow: hidden;
+}
+
+/* When no avatar image is set, a gradient background fills the circle. */
+.uc__avatar:not([style*="background-image"]) {
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+}
+
+.uc__top>div:last-child {
+    min-width: 0;
+    flex: 1;
+}
+
+.uc__name {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uc__username {
+    color: #777;
+    font-size: 0.78rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Bio */
+.uc__bio {
+    color: #999;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
+}
+
+/* Stats footer */
+.uc__stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    margin-top: auto;
+    border-top: 1px solid #161616;
+    color: #888;
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.list-empty {
+    grid-column: 1 / -1;
+    padding: 48px 20px;
+    text-align: center;
+    color: #777;
+    font-size: 0.95rem;
+    background: #0a0a0a;
+    border: 1px dashed #1f1f1f;
+    border-radius: 14px;
+}
+
+/* ============================================================
+   LOADING STATE
+   ============================================================ */
+.home-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: #777;
+    font-size: 0.88rem;
+}
+
+.home-loading__spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid #1f1f1f;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: users-spin 0.8s linear infinite;
+}
+
+@keyframes users-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.users-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 32px;
+}
+
+.users-pagination button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: #0e0e0e;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    color: #ccc;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.users-pagination button:hover:not(:disabled):not(.active) {
+    background: #161616;
+    border-color: #2a2a2a;
+    color: #fff;
+}
+
+.users-pagination button.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+    cursor: default;
+}
+
+.users-pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.users-pagination button:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .users-page {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 0;
+    }
+
+    .users-hero {
+        padding: 32px 0 24px;
+    }
+
+    .users-hero__sub {
+        font-size: 0.92rem;
+    }
+
+    .users-toolbar {
+        flex-direction: column;
+    }
+
+    .users-toolbar__select {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .users-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+    }
+
+    .uc {
+        padding: 14px;
+    }
+
+    .uc__avatar {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+
+    .uc__name {
+        font-size: 0.88rem;
+    }
+
+    .users-pagination button {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 9px;
+        font-size: 0.78rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    .uc,
+    .users-pagination button,
+    .users-toolbar__search input,
+    .users-toolbar__select {
+        transition: none;
+    }
+
+    .home-loading__spinner {
+        animation-duration: 2s;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
