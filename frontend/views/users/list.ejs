@@ -1,44 +1,56 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- SEO metadata -->
   <%- include("../components/seo-head", {
-    title: "کاربران",
-    description: "فهرست توسعه‌دهندگان و سازندگان پروژه در DevHub.",
+    title: "Users",
+    description: "A directory of developers and project creators on DevHub.",
     canonicalPath: "/users",
-    keywords: "کاربران DevHub, توسعه‌دهنده, پروفایل"
+    keywords: "DevHub users, developers, profiles"
   }) %>
 </head>
 
 <body>
+  <!-- Site header -->
   <%- include("../components/header") %>
 
   <main class="list-page users-page">
+    <!-- Page header -->
     <div class="list-page__head">
-      <h1 class="list-page__title">کاربران</h1>
-      <p class="list-page__sub">توسعه‌دهندگان و سازندگان پروژه‌های متن‌باز</p>
+      <h1 class="list-page__title">Users</h1>
+      <p class="list-page__sub">Developers and creators of open-source projects</p>
     </div>
 
+    <!-- Search and sorting controls -->
     <div class="list-toolbar">
-      <input type="search" id="usersSearch" placeholder="جستجوی نام یا نام کاربری…" autocomplete="off">
+      <input type="search" id="usersSearch" placeholder="Search by name or username…" autocomplete="off">
       <select id="usersSort">
-        <option value="recent">جدیدترین</option>
-        <option value="name">نام</option>
-        <option value="projects">بیشترین پروژه</option>
+        <option value="recent">Newest</option>
+        <option value="name">Name</option>
+        <option value="projects">Most projects</option>
       </select>
     </div>
 
+    <!-- Results metadata -->
     <div class="list-meta" id="usersMeta"></div>
+
+    <!-- User grid -->
     <div class="list-grid" id="usersGrid">
       <div class="home-loading" style="grid-column:1/-1">
         <div class="home-loading__spinner"></div>
-        <p>در حال بارگذاری…</p>
+        <p>Loading…</p>
       </div>
     </div>
+
+    <!-- Pagination -->
     <div class="list-pagination" id="usersPagination"></div>
   </main>
 
+  <!-- Page script -->
   <script defer src="/js/pages/users-list.js"></script>
+
+  <!-- Site footer -->
   <%- include("../components/footer") %>
 </body>
 
