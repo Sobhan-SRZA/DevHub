@@ -1,3 +1,4 @@
+
 import { VerificationCode } from "../models/VerificationCode";
 import { TagType } from "../models/TagType";
 import { Project } from "../models/Project";
@@ -5,54 +6,92 @@ import { Session } from "../models/Session";
 import { User } from "../models/User";
 import { Tag } from "../models/Tag";
 
-export async function syncAllIndexes() {
-    console.log("🔄 Syncing database indexes…");
+/**
+ * Synchronizes database indexes across all registered models.
+ *
+ * Removes the legacy TTL index from the VerificationCode collection when
+ * its expiration configuration differs from the expected value, then
+ * synchronizes indexes for all supported models.
+ */
+export async function syncAllIndexes(): Promise<void> {
+    console.log("Synchronizing database indexes...");
 
     try {
-        // 1. حذف ایندکس قدیمی TTL از VerificationCode
+        // Remove the legacy TTL index if its expiration configuration is outdated.
         try {
             const indexes = await VerificationCode.collection.indexes();
-            const oldTtl = indexes.find((i) => i.name === "expiresAt_1");
+            const legacyTtlIndex = indexes.find(
+                (index) => index.name === "expiresAt_1"
+            );
 
-            if (oldTtl && (oldTtl as any).expireAfterSeconds !== 0) {
-                console.log("🗑️  Dropping old TTL index from VerificationCode…");
+            if (
+                legacyTtlIndex &&
+                legacyTtlIndex.expireAfterSeconds !== 0
+            ) {
+                console.log(
+                    "Removing the legacy TTL index from VerificationCode..."
+                );
+
                 await VerificationCode.collection.dropIndex("expiresAt_1");
             }
-        }
+        } catch (error: unknown) {
+            const indexError = error as {
+                code?: number;
+                message?: string;
+            };
 
-        catch (err: any) {
-            if (err.code !== 27) {  // 27 = IndexNotFound
-                console.warn("index drop warning:", err.message);
+            // MongoDB error code 27 indicates that the requested index was not found.
+            if (indexError.code !== 27) {
+                console.warn(
+                    "Failed to remove the legacy TTL index:",
+                    indexError.message ?? error
+                );
             }
         }
 
-        // 2. syncIndexes روی همه مدل‌ها
+        // Synchronize indexes across all registered models.
         await Promise.all([
             VerificationCode.syncIndexes(),
             User.syncIndexes(),
             Session.syncIndexes(),
             Tag.syncIndexes(),
             TagType.syncIndexes(),
-            Project.syncIndexes()
+            Project.syncIndexes(),
         ]);
 
-        console.log("✅ All indexes synced");
-    }
-
-    catch (err) {
-        console.error("❌ syncIndexes failed:", err);
+        console.log("Database index synchronization completed successfully.");
+    } catch (error: unknown) {
+        console.error("Database index synchronization failed:", error);
     }
 }
 
-export async function cleanupVerificationCodes() {
+/**
+ * Deletes expired and consumed verification codes.
+ *
+ * Expired codes are removed regardless of their consumption status.
+ * Consumed codes are also removed to prevent previously used codes from
+ * accumulating in the database.
+ *
+ * @returns The number of expired and consumed verification codes deleted.
+ */
+export async function cleanupVerificationCodes(): Promise<{
+    expired: number;
+    consumed: number;
+}> {
     const now = new Date();
 
     const [expired, consumed] = await Promise.all([
-        VerificationCode.deleteMany({ expiresAt: { $lte: now } }),
-        VerificationCode.deleteMany({ consumedAt: { $ne: null } }),
+        VerificationCode.deleteMany({
+            expiresAt: { $lte: now },
+        }),
+        VerificationCode.deleteMany({
+            consumedAt: { $ne: null },
+        }),
     ]);
 
-    console.log(`🧹 Cleanup: ${expired.deletedCount} expired, ${consumed.deletedCount} consumed`);
+    console.log(
+        `Verification code cleanup completed: ${expired.deletedCount} expired, ${consumed.deletedCount} consumed.`
+    );
 
     return {
         expired: expired.deletedCount,
