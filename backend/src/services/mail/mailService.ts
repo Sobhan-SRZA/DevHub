@@ -1,3 +1,4 @@
+
 import {
     smtpTransport,
     verifySmtpTransport,
@@ -18,13 +19,14 @@ import { RateLimiter } from "./rateLimiter";
 import { ErrorCodes } from "../../utils/errorCodes";
 import { AppError } from "../../utils/AppError";
 
-/* ==================================================================
-   MailService
-   ================================================================== */
+/**
+ * Centralized mail service responsible for message validation,
+ * recipient-level rate limiting, transport selection, and delivery.
+ */
 class MailService {
     private rateLimiter = new RateLimiter({
-        maxPerWindow: 5,           // ۵ ایمیل
-        windowMs: 60_000          // در ۱ دقیقه (per recipient)
+        maxPerWindow: 5,
+        windowMs: 60_000
     });
 
     private config: MailConfig;
@@ -35,110 +37,147 @@ class MailService {
     }
 
     /**
-     * ارسال یک ایمیل. اگه mode=log باشه، فقط چاپ می‌شه.
-     * اگه mode=smtp باشه، واقعاً ارسال می‌شه.
+     * Validates and sends an email using the configured transport.
+     *
+     * In log mode, messages are written to the console without being sent.
+     * In SMTP mode, messages are delivered through the configured mail server.
+     *
+     * @throws {AppError} If a recipient is invalid, the rate limit is exceeded,
+     * or message delivery fails.
      */
     async send(opts: SendMailOptions): Promise<SendMailResult> {
-        // 1) اعتبارسنجی
+        // Validate the message before processing its recipients.
         this.validate(opts);
 
         const recipients = normalizeRecipients(opts.to);
 
-        // 2) rate limit per recipient
-        for (const r of recipients) {
-            if (!isValidEmail(r.address)) {
+        // Enforce rate limits independently for each recipient.
+        for (const recipient of recipients) {
+            if (!isValidEmail(recipient.address)) {
                 throw new AppError(
                     400,
                     ErrorCodes.EMAIL_INVALID,
-                    `ایمیل نامعتبر: ${r.address}`
+                    `Invalid email address: ${recipient.address}`
                 );
             }
 
-            const check = this.rateLimiter.consume(r.address.toLowerCase());
+            const check = this.rateLimiter.consume(
+                recipient.address.toLowerCase()
+            );
+
             if (!check.ok) {
-                const sec = Math.ceil((check.retryAfterMs || 60_000) / 1000);
+                const retryAfterSeconds = Math.ceil(
+                    (check.retryAfterMs || 60_000) / 1000
+                );
 
                 throw new AppError(
                     429,
                     ErrorCodes.TOO_MANY_ATTEMPTS,
-                    `ایمیل بیش از حد ارسال شده. ${sec} ثانیه دیگر تلاش کنید`
+                    `Email sending limit exceeded. Please try again in ${retryAfterSeconds} seconds.`
                 );
             }
         }
 
-        // 3) انتخاب transport
-        const transport = this.config.mode === "smtp" ? smtpTransport : logTransport;
+        // Select the transport according to the configured delivery mode.
+        const transport =
+            this.config.mode === "smtp"
+                ? smtpTransport
+                : logTransport;
 
-        // 4) ارسال
         try {
             const result = await transport.send(opts, this.config);
 
             if (this.config.mode === "smtp") {
                 console.log(
-                    `📧 [MAIL] sent → ${recipients.map((r) => r.address).join(", ")}` +
-                    ` | id: ${result.messageId}`
+                    `[MAIL] Email sent to ${recipients
+                        .map((recipient) => recipient.address)
+                        .join(", ")} | Message-ID: ${result.messageId}`
                 );
             }
 
             return result;
-        }
+        } catch (err: unknown) {
+            const error = err as {
+                code?: string;
+                message?: string;
+            };
 
-        catch (err: any) {
-            console.error("🔴 [MAIL] send failed:", {
+            console.error("[MAIL] Email delivery failed:", {
                 mode: this.config.mode,
-                to: recipients.map((r) => r.address),
-                code: err?.code,
-                message: err?.message
+                recipients: recipients.map(
+                    (recipient) => recipient.address
+                ),
+                code: error?.code,
+                message: error?.message
             });
 
-            // پیام عمومی — جزئیات داخلی لو نره
+            // Return a generic error to avoid exposing internal details.
             throw new AppError(
                 500,
                 ErrorCodes.INTERNAL_ERROR,
                 this.config.mode === "smtp"
-                    ? "ارسال ایمیل ناموفق بود. لطفاً دوباره تلاش کنید"
-                    : "خطا در ارسال ایمیل"
+                    ? "Failed to send the email. Please try again later."
+                    : "An error occurred while processing the email."
             );
         }
     }
 
-    private validate(opts: SendMailOptions) {
-        if (!opts.to)
-            throw new Error("mail: to is required");
+    /**
+     * Validates required message fields and enforces payload size limits.
+     *
+     * @throws {Error} If required fields are missing or exceed their limits.
+     */
+    private validate(opts: SendMailOptions): void {
+        if (!opts.to) {
+            throw new Error("Mail recipient is required.");
+        }
 
-        if (!opts.subject)
-            throw new Error("mail: subject is required");
+        if (!opts.subject) {
+            throw new Error("Mail subject is required.");
+        }
 
-        if (!opts.html)
-            throw new Error("mail: html body is required");
+        if (!opts.html) {
+            throw new Error("HTML email body is required.");
+        }
 
         if (opts.subject.length > 200) {
-            throw new Error("mail: subject too long (max 200 chars)");
+            throw new Error(
+                "Mail subject exceeds the maximum length of 200 characters."
+            );
         }
 
         if (opts.html.length > 500_000) {
-            throw new Error("mail: html too large (max 500KB)");
+            throw new Error(
+                "HTML email body exceeds the maximum size of 500 KB."
+            );
         }
     }
 
     /**
-     * اطمینان از آمادگی SMTP (فقط بار اول)
+     * Verifies SMTP connectivity during application startup.
+     *
+     * Verification is skipped when log mode is enabled or the connection
+     * has already been verified successfully.
      */
     async verifyOnStartup(): Promise<void> {
-        if (this.config.mode !== "smtp")
+        if (this.config.mode !== "smtp" || this.smtpReady) {
             return;
-
-        if (this.smtpReady)
-            return;
+        }
 
         try {
             await verifySmtpTransport(this.config);
             this.smtpReady = true;
-            console.log("✅ [MAIL] SMTP connection verified");
-        }
 
-        catch (err: any) {
-            console.error("❌ [MAIL] SMTP verify failed:", err?.message || err);
+            console.log("[MAIL] SMTP connection verified successfully.");
+        } catch (err: unknown) {
+            const error = err as { message?: string };
+
+            console.error(
+                "[MAIL] SMTP verification failed:",
+                error?.message || error
+            );
+
+            // Optionally terminate startup when SMTP availability is mandatory.
             if (process.env.MAIL_FAIL_FAST === "true") {
                 process.exit(1);
             }
@@ -146,18 +185,19 @@ class MailService {
     }
 
     /**
-     * برای graceful shutdown
+     * Releases rate-limiter resources and closes SMTP connections.
+     *
+     * Intended to be called during graceful application shutdown.
      */
     shutdown(): void {
         this.rateLimiter.dispose();
-
         closeSmtpTransport();
     }
 }
 
-/* ==================================================================
-   Singleton
-   ================================================================== */
+/**
+ * Shared mail service instance used throughout the application.
+ */
 export const mailer = new MailService();
 
 /**
