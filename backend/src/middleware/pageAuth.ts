@@ -9,11 +9,13 @@ import { User } from "../models/User";
 export async function pageAuth(req: any, res: Response, next: NextFunction) {
     try {
         const token = req.cookies?.access_token;
+
         if (!token) {
             return res.redirect("/auth/login");
         }
 
         const payload = verifyToken(token);
+
         if (payload.typ !== "access") {
             return res.redirect("/auth/login");
         }
@@ -22,6 +24,7 @@ export async function pageAuth(req: any, res: Response, next: NextFunction) {
             sessionId: payload.sid,
             expiresAt: { $gt: new Date() }
         });
+
         if (!session) {
             return res.redirect("/auth/login");
         }
@@ -36,19 +39,17 @@ export async function pageAuth(req: any, res: Response, next: NextFunction) {
         }
 
         if (user.isBanned) {
-            res.clearCookie('access_token');
-            res.clearCookie('refresh_token');
-            
-            return res.redirect('/auth/login');
+            res.clearCookie("access_token");
+            res.clearCookie("refresh_token");
+
+            return res.redirect("/auth/login");
         }
 
         req.user = user;
         req.session = session;
 
         return next();
-    }
-
-    catch {
+    } catch {
         return res.redirect("/auth/login");
     }
 }
