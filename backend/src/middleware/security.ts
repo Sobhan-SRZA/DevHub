@@ -1,9 +1,15 @@
-import type { Request, Response, NextFunction, RequestHandler } from "express";
+import type {
+    Request,
+    Response,
+    NextFunction,
+    RequestHandler
+} from "express";
 import zlib from "zlib";
 
 /* ==================================================================
-   Security headers (helmet-like, zero dependency)
+   Security Headers (Helmet-like, Zero Dependencies)
    ================================================================== */
+
 export function securityHeaders(): RequestHandler {
     const isProd = process.env.NODE_ENV === "production";
 
@@ -14,10 +20,12 @@ export function securityHeaders(): RequestHandler {
         res.setHeader("X-DNS-Prefetch-Control", "off");
         res.setHeader("X-Download-Options", "noopen");
         res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+
         res.setHeader(
             "Permissions-Policy",
             "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
         );
+
         res.setHeader(
             "Content-Security-Policy",
             [
@@ -32,25 +40,28 @@ export function securityHeaders(): RequestHandler {
                 "base-uri 'self'",
                 "form-action 'self'",
                 "object-src 'none'",
-                isProd ? "upgrade-insecure-requests" : "",
+                isProd ? "upgrade-insecure-requests" : ""
             ]
                 .filter(Boolean)
                 .join("; ")
         );
+
         if (isProd) {
             res.setHeader(
                 "Strict-Transport-Security",
                 "max-age=15552000; includeSubDomains"
             );
         }
+
         res.removeHeader("X-Powered-By");
         next();
     };
 }
 
 /* ==================================================================
-   Path traversal / null-byte rejection
+   Path Traversal and Null-Byte Protection
    ================================================================== */
+
 export function rejectSuspiciousPaths(
     req: Request,
     res: Response,
@@ -58,13 +69,14 @@ export function rejectSuspiciousPaths(
 ) {
     const raw = req.url || "";
     let decoded = raw;
+
     try {
         decoded = decodeURIComponent(raw.split("?")[0] || "");
     } catch {
         return res.status(400).json({
             ok: false,
             code: "BAD_REQUEST",
-            message: "درخواست نامعتبر است",
+            message: "Invalid request"
         });
     }
 
@@ -76,16 +88,21 @@ export function rejectSuspiciousPaths(
         return res.status(400).json({
             ok: false,
             code: "BAD_REQUEST",
-            message: "درخواست نامعتبر است",
+            message: "Invalid request"
         });
     }
+
     return next();
 }
 
 /* ==================================================================
-   In-memory rate limiter
+   In-Memory Rate Limiter
    ================================================================== */
-type Bucket = { count: number; resetAt: number };
+
+type Bucket = {
+    count: number;
+    resetAt: number;
+};
 
 function createLimiter(options: {
     windowMs: number;
@@ -97,11 +114,17 @@ function createLimiter(options: {
 
     const timer = setInterval(() => {
         const now = Date.now();
-        for (const [k, b] of buckets) {
-            if (b.resetAt <= now) buckets.delete(k);
+
+        for (const [key, bucket] of buckets) {
+            if (bucket.resetAt <= now) {
+                buckets.delete(key);
+            }
         }
     }, Math.min(windowMs, 60_000));
-    if (typeof (timer as any).unref === "function") (timer as any).unref();
+
+    if (typeof (timer as any).unref === "function") {
+        (timer as any).unref();
+    }
 
     return (req, res, next) => {
         const key =
@@ -112,8 +135,13 @@ function createLimiter(options: {
 
         const now = Date.now();
         let bucket = buckets.get(key);
+
         if (!bucket || bucket.resetAt <= now) {
-            bucket = { count: 0, resetAt: now + windowMs };
+            bucket = {
+                count: 0,
+                resetAt: now + windowMs
+            };
+
             buckets.set(key, bucket);
         }
 
@@ -134,12 +162,14 @@ function createLimiter(options: {
                 "Retry-After",
                 String(Math.ceil((bucket.resetAt - now) / 1000))
             );
+
             return res.status(429).json({
                 ok: false,
                 code: "RATE_LIMITED",
-                message,
+                message
             });
         }
+
         return next();
     };
 }
@@ -147,29 +177,36 @@ function createLimiter(options: {
 export const apiLimiter = createLimiter({
     windowMs: 15 * 60 * 1000,
     max: 400,
-    message: "تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.",
+    message: "Too many requests. Please try again shortly."
 });
 
 export const authLimiter = createLimiter({
     windowMs: 15 * 60 * 1000,
     max: 30,
-    message: "تلاش‌های ورود/ثبت‌نام زیاد است. ۱۵ دقیقه دیگر تلاش کنید.",
+    message: "Too many login or registration attempts. Please try again in 15 minutes."
 });
 
 export const sensitiveLimiter = createLimiter({
     windowMs: 60 * 60 * 1000,
     max: 10,
-    message: "درخواست‌های حساس بیش از حد مجاز است. بعداً تلاش کنید.",
+    message: "Too many sensitive requests. Please try again later."
 });
 
 /* ==================================================================
-   Compression — use `compression` package if installed, else zlib
+   Response Compression
+   Uses the compression package when available; otherwise, falls
+   back to native zlib compression.
    ================================================================== */
+
 export function compressionMiddleware(): RequestHandler {
     try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const compression = require("compression");
-        return compression({ threshold: 1024, level: 6 });
+
+        return compression({
+            threshold: 1024,
+            level: 6
+        });
     } catch {
         return nativeCompression();
     }
@@ -178,6 +215,7 @@ export function compressionMiddleware(): RequestHandler {
 function nativeCompression(): RequestHandler {
     return (req, res, next) => {
         const accept = req.headers["accept-encoding"] || "";
+
         if (
             req.method === "HEAD" ||
             req.headers["x-no-compress"] ||
@@ -200,20 +238,23 @@ function nativeCompression(): RequestHandler {
                         : Buffer.from(chunk, encodingOrCb)
                 );
             }
-            if (typeof encodingOrCb === "function") 
+
+            if (typeof encodingOrCb === "function") {
                 encodingOrCb();
-            
-            else if (typeof cb === "function") 
+            } else if (typeof cb === "function") {
                 cb();
+            }
 
             return true;
         };
 
         (res as any).end = (chunk?: any, encodingOrCb?: any, cb?: any) => {
-            if (ended) 
+            if (ended) {
                 return res;
+            }
 
             ended = true;
+
             if (chunk) {
                 chunks.push(
                     Buffer.isBuffer(chunk)
@@ -237,21 +278,33 @@ function nativeCompression(): RequestHandler {
                 );
 
             if (alreadyEncoded || tooSmall || uncompressible) {
-                if (typeof encodingOrCb === "function")
+                if (typeof encodingOrCb === "function") {
                     return rawEnd(body, encodingOrCb);
-                if (typeof cb === "function") return rawEnd(body, cb);
+                }
+
+                if (typeof cb === "function") {
+                    return rawEnd(body, cb);
+                }
+
                 return rawEnd(body);
             }
 
             const compressFn =
                 encoding === "gzip" ? zlib.gzipSync : zlib.deflateSync;
+
             let compressed: Buffer;
+
             try {
                 compressed = compressFn(body, { level: 6 });
             } catch {
-                if (typeof encodingOrCb === "function")
+                if (typeof encodingOrCb === "function") {
                     return rawEnd(body, encodingOrCb);
-                if (typeof cb === "function") return rawEnd(body, cb);
+                }
+
+                if (typeof cb === "function") {
+                    return rawEnd(body, cb);
+                }
+
                 return rawEnd(body);
             }
 
@@ -260,9 +313,14 @@ function nativeCompression(): RequestHandler {
             res.removeHeader("Content-Length");
             res.setHeader("Content-Length", String(compressed.length));
 
-            if (typeof encodingOrCb === "function")
+            if (typeof encodingOrCb === "function") {
                 return rawEnd(compressed, encodingOrCb);
-            if (typeof cb === "function") return rawEnd(compressed, cb);
+            }
+
+            if (typeof cb === "function") {
+                return rawEnd(compressed, cb);
+            }
+
             return rawEnd(compressed);
         };
 
