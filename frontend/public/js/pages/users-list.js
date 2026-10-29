@@ -77,26 +77,25 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `background-image:url('${escapeHtml(u.avatar.url)}')`
             : '';
 
-        // Strip common Markdown markers from the bio before truncating.
         const bio = (u.bio || '').replace(/[#*_`]/g, '').slice(0, 120);
         const projects = u.projectsCount ?? u.stats?.projects ?? 0;
 
         return `
-        <article class="uc" data-href="/users/${escapeHtml(u.username)}" role="link" tabindex="0">
-            <div class="uc__top">
-                <div class="uc__avatar" style="${avatarStyle}">${avatarStyle ? '' : escapeHtml(initial)}</div>
-                <div>
-                    <p class="uc__name">${escapeHtml(name)}</p>
-                    <div class="uc__username">@${escapeHtml(u.username || '')}</div>
-                </div>
+    <a class="uc" href="/users/${escapeHtml(u.username)}" role="listitem">
+        <div class="uc__top">
+            <div class="uc__avatar" style="${avatarStyle}">${avatarStyle ? '' : escapeHtml(initial)}</div>
+            <div>
+                <p class="uc__name">${escapeHtml(name)}</p>
+                <div class="uc__username">@${escapeHtml(u.username || '')}</div>
             </div>
-            ${bio ? `<p class="uc__bio">${escapeHtml(bio)}</p>` : ''}
-            <div class="uc__stats">
-                <span>${Number(projects).toLocaleString('en-US')} project${Number(projects) === 1 ? '' : 's'}</span>
-            </div>
-        </article>`;
+        </div>
+        ${bio ? `<p class="uc__bio">${escapeHtml(bio)}</p>` : ''}
+        <div class="uc__stats">
+            <span>${Number(projects).toLocaleString('en-US')} project${Number(projects) === 1 ? '' : 's'}</span>
+        </div>
+    </a>`;
     }
-
+    
     /**
      * Attach navigation handlers to the rendered user cards. Enter
      * and Space activate a card for keyboard users.
