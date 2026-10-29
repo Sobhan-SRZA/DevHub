@@ -13,43 +13,46 @@ const router = Router();
 /*                         Public Authentication Routes                       */
 /* -------------------------------------------------------------------------- */
 
-// Apply rate limiting to authentication endpoints to mitigate brute-force
-// attacks and reduce abuse.
 router.post("/register", authLimiter, ctrl.register);
 router.post("/login", authLimiter, ctrl.login);
 router.post("/refresh", authLimiter, ctrl.refresh);
 router.post("/logout", ctrl.logout);
 
-// Apply stricter rate limits to password recovery endpoints.
-router.post(
-    "/forgot-password",
-    sensitiveLimiter,
-    ctrl.forgotPassword,
-);
+router.post("/forgot-password", sensitiveLimiter, ctrl.forgotPassword);
+router.post("/reset-password", sensitiveLimiter, ctrl.resetPassword);
+router.post("/resend-password-reset", sensitiveLimiter, ctrl.resendPasswordReset);
 
-router.post(
-    "/reset-password",
-    sensitiveLimiter,
-    ctrl.resetPassword,
-);
+/* -------------------------------------------------------------------------- */
+/*                        Email Verification Routes                           */
+/* -------------------------------------------------------------------------- */
 
-router.post(
-    "/resend-password-reset",
-    sensitiveLimiter,
-    ctrl.resendPasswordReset,
-);
-
-// Email verification endpoints require authentication to prevent unauthenticated
-// users from manipulating verification flows. Disable caching to avoid storing
-// sensitive verification responses.
+/*
+ * The POST /verify-email route is intentionally public. The signed
+ * `verifyToken` in the request body is the sole proof of identity — it
+ * cannot be forged and is scoped to a single user and email address.
+ *
+ * Requiring an additional session cookie here would prevent users from
+ * verifying their email after their session expires (e.g. after closing
+ * the browser mid-flow), which is the primary bug this route addresses.
+ *
+ * On successful verification the controller issues a fresh session and
+ * sets authentication cookies, so the user lands authenticated on the
+ * dashboard.
+ */
 router.post(
     "/verify-email",
     noCache,
-    requireAuth,
     sensitiveLimiter,
     ctrl.verifyEmail,
 );
 
+/*
+ * Resend is available both to authenticated users (uses req.user._id —
+ * this is the recovery path the frontend relies on when restoring a
+ * verification state) and to callers holding a valid verifyToken.
+ * requireAuth is kept so req.user is populated in the common case;
+ * the controller transparently falls back to the token when needed.
+ */
 router.post(
     "/resend-verification",
     noCache,
@@ -62,7 +65,6 @@ router.post(
 /*                       Protected Authentication Routes                      */
 /* -------------------------------------------------------------------------- */
 
-// Require an authenticated session before accessing account or session data.
 router.get("/me", requireAuth, ctrl.me);
 router.post("/logout-all", requireAuth, ctrl.logoutAll);
 router.get("/sessions", requireAuth, ctrl.listSessions);
