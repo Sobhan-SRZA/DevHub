@@ -9,16 +9,16 @@ export interface IReview {
     project: Types.ObjectId;
     user: Types.ObjectId;
 
-    rating: number;         // 0..5 (step 0.5 مثلاً)
-    satisfaction: number;   // 0..100
+    rating: number; // Rating from 0 to 5, optionally in 0.5 increments.
+    satisfaction: number; // Satisfaction score from 0 to 100.
 
-    title?: string;         // "خیلی خوب بود"
-    body?: string;          // متن نظر
+    title?: string; // Optional review title.
+    body?: string; // Optional review content.
 
     isEdited: boolean;
     editedAt?: Date | null;
 
-    /* برای آینده: واکنش‌ها به ریویو */
+    /* Reserved for future review reactions and feedback. */
     helpfulCount: number;
 
     createdAt: Date;
@@ -42,29 +42,61 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
             index: true
         },
 
-        rating: { type: Number, required: true, min: 0, max: 5 },
-        satisfaction: { type: Number, required: true, min: 0, max: 100 },
+        rating: {
+            type: Number,
+            required: true,
+            min: 0,
+            max: 5
+        },
+        satisfaction: {
+            type: Number,
+            required: true,
+            min: 0,
+            max: 100
+        },
 
-        title: { type: String, trim: true, maxlength: 100 },
-        body: { type: String, trim: true, maxlength: 3000 },
+        title: {
+            type: String,
+            trim: true,
+            maxlength: 100
+        },
+        body: {
+            type: String,
+            trim: true,
+            maxlength: 3000
+        },
 
-        isEdited: { type: Boolean, default: false },
-        editedAt: { type: Date, default: null },
+        isEdited: {
+            type: Boolean,
+            default: false
+        },
+        editedAt: {
+            type: Date,
+            default: null
+        },
 
-        helpfulCount: { type: Number, default: 0, min: 0 }
+        helpfulCount: {
+            type: Number,
+            default: 0,
+            min: 0
+        }
     },
     { timestamps: true }
 );
 
-/* ---------------- indexes ---------------- */
-// هر کاربر فقط یک ریویو برای هر پروژه
+/* -------------------- Indexes -------------------- */
+
+// Ensures each user can submit only one review per project.
 reviewSchema.index({ project: 1, user: 1 }, { unique: true });
 
-// برای مرتب‌سازی (helpful first)
+// Supports sorting reviews by helpfulness and recency.
 reviewSchema.index({ project: 1, helpfulCount: -1, createdAt: -1 });
 reviewSchema.index({ project: 1, createdAt: -1 });
 
-export const Review = model<IReview, ReviewModel>("Review", reviewSchema);
+export const Review = model<IReview, ReviewModel>(
+    "Review",
+    reviewSchema
+);
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
