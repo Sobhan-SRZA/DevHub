@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- SEO metadata for the registration page -->
   <%- include("../components/seo-head", {
-    title: "ثبت‌نام",
-    description: "ساخت حساب کاربری در DevHub و شروع انتشار پروژه‌های متن‌باز",
+    title: "Sign Up",
+    description: "Create a DevHub account and start publishing open-source projects.",
     noindex: true,
     canonicalPath: "/auth/register",
     extraStyles: ["/styles/auth.css", "/styles/form-errors.css"]
@@ -12,62 +13,68 @@
 </head>
 
 <body>
+  <!-- Site header and global error dialog -->
   <%- include("../components/header") %>
   <%- include("../components/dialogError") %>
 
   <section class="container auth">
     <div class="auth-card">
+      <h2 class="auth-title">Create a New Account</h2>
+      <p class="auth-sub">It only takes a few seconds.</p>
 
-      <h2 class="auth-title">ساخت حساب جدید</h2>
-      <p class="auth-sub">چند ثانیه بیشتر طول نمی‌کشد</p>
-
+      <!-- Registration form -->
       <form class="auth-form" id="registerForm" action="/api/auth/register" method="POST">
-
+        <!-- Full name -->
         <div class="field">
-          <label for="reg-name">نام و نام خانوادگی</label>
-          <input id="reg-name" type="text" name="name" placeholder="علی رضایی" autocomplete="name" required>
+          <label for="reg-name">Full Name</label>
+          <input id="reg-name" type="text" name="name" placeholder="John Smith" autocomplete="name" required>
         </div>
 
+        <!-- Username -->
         <div class="field">
-          <label for="reg-username">نام کاربری</label>
-          <input id="reg-username" type="text" name="username" placeholder="ali_reza" autocomplete="username" required>
+          <label for="reg-username">Username</label>
+          <input id="reg-username" type="text" name="username" placeholder="john_smith" autocomplete="username" required>
         </div>
 
+        <!-- Email address -->
         <div class="field">
-          <label for="reg-email">ایمیل</label>
+          <label for="reg-email">Email</label>
           <input id="reg-email" type="email" name="email" placeholder="example@mail.com" autocomplete="email" required>
         </div>
 
+        <!-- Password with visibility toggle -->
         <div class="field">
-          <label for="reg-password">رمز عبور</label>
+          <label for="reg-password">Password</label>
           <div class="password-wrap">
             <input id="reg-password" type="password" name="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
-            <button type="button" class="toggle-pass" data-target="reg-password" aria-label="نمایش رمز"></button>
+            <button type="button" class="toggle-pass" data-target="reg-password" aria-label="Show password"></button>
           </div>
         </div>
 
+        <!-- Password confirmation with visibility toggle -->
         <div class="field">
-          <label for="reg-confirm">تکرار رمز عبور</label>
+          <label for="reg-confirm">Confirm Password</label>
           <div class="password-wrap">
             <input id="reg-confirm" type="password" name="confirmPassword" placeholder="••••••••" autocomplete="new-password" minlength="6" required>
-            <button type="button" class="toggle-pass" data-target="reg-confirm" aria-label="نمایش رمز"></button>
+            <button type="button" class="toggle-pass" data-target="reg-confirm" aria-label="Show password"></button>
           </div>
-          <small class="field-error" id="confirm-error">رمز عبور و تکرار آن یکسان نیستند.</small>
+          <small class="field-error" id="confirm-error">The password and its confirmation do not match.</small>
         </div>
 
+        <!-- Terms of service acceptance -->
         <label class="checkbox">
           <input type="checkbox" name="terms" required>
-          <span>با <a href="/terms" class="auth-link">قوانین</a> موافقم</span>
+          <span>I agree to the <a href="/terms" class="auth-link">Terms</a></span>
         </label>
 
-        <button type="submit" class="auth-btn">ثبت نام</button>
+        <button type="submit" class="auth-btn">Sign Up</button>
 
+        <!-- Link to the login page -->
         <p class="auth-foot">
-          قبلاً ثبت نام کردی؟
-          <a href="/auth/login" class="auth-link">وارد شو</a>
+          Already registered?
+          <a href="/auth/login" class="auth-link">Sign in</a>
         </p>
       </form>
-
     </div>
   </section>
 </body>
