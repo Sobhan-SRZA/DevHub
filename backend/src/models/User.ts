@@ -6,10 +6,12 @@ import {
 } from "mongoose";
 import bcrypt from "bcrypt";
 
-/* ---------------- قخمثس ---------------- */
+/* -------------------- User Roles -------------------- */
+
 export type UserRole = "user" | "admin" | "developer";
 
-/* ---------------- avatar ---------------- */
+/* -------------------- Avatar -------------------- */
+
 export interface IUserAvatar {
     url: string;
     filename: string;
@@ -18,16 +20,18 @@ export interface IUserAvatar {
     uploadedAt: Date;
 }
 
-/* ---------------- pending email change ---------------- */
+/* -------------------- Pending Email Change -------------------- */
+
 export interface IPendingEmail {
     newEmail: string;
-    previousEmail: string;       // ✅ برای بازگشت
-    oldVerified: boolean;         // ✅ آیا مرحله ۱ تمام شد؟
+    previousEmail: string; // Previous email address, retained for rollback.
+    oldVerified: boolean; // Indicates whether the initial verification step is complete.
     expiresAt: Date;
     requestedAt: Date;
 }
 
-/* ---------------- main ---------------- */
+/* -------------------- Main User Interface -------------------- */
+
 export interface IUser {
     name: string;
     username: string;
@@ -39,19 +43,21 @@ export interface IUser {
     emailVerified: boolean;
     emailVerifiedAt: Date | null;
 
-    bio: string;                 // توضیحات پروفایل (Markdown)
+    bio: string; // Profile biography, supporting Markdown.
     avatar: IUserAvatar | null;
 
     isBanned: boolean;
 
     role: UserRole;
-    // نقش توسط کی داده شد؟
+
+    /* Role assignment audit information */
     roleChangedBy?: Types.ObjectId | null;
     roleChangedAt?: Date | null;
     roleChangeReason?: string | null;
 
     createdAt: Date;
     updatedAt: Date;
+
     pendingPassword?: string | null;
     pendingPasswordExpiresAt?: Date | null;
 }
@@ -62,34 +68,75 @@ export interface IUserMethods {
 
 type UserModel = Model<IUser, {}, IUserMethods>;
 
-/* ---------------- sub-schemas ---------------- */
+/* -------------------- Subschemas -------------------- */
+
 const avatarSchema = new Schema<IUserAvatar>(
     {
-        url: { type: String, required: true },
-        filename: { type: String, required: true },
-        mimeType: { type: String, required: true },
-        size: { type: Number, required: true },
-        uploadedAt: { type: Date, default: () => new Date() }
+        url: {
+            type: String,
+            required: true
+        },
+        filename: {
+            type: String,
+            required: true
+        },
+        mimeType: {
+            type: String,
+            required: true
+        },
+        size: {
+            type: Number,
+            required: true
+        },
+        uploadedAt: {
+            type: Date,
+            default: () => new Date()
+        }
     },
     { _id: false }
 );
 
 const pendingEmailSchema = new Schema<IPendingEmail>(
     {
-        newEmail: { type: String, required: true, lowercase: true, trim: true },
-        previousEmail: { type: String, required: true, lowercase: true, trim: true },
-        oldVerified: { type: Boolean, default: false },
-        expiresAt: { type: Date, required: true },
-        requestedAt: { type: Date, default: () => new Date() }
+        newEmail: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true
+        },
+        previousEmail: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true
+        },
+        oldVerified: {
+            type: Boolean,
+            default: false
+        },
+        expiresAt: {
+            type: Date,
+            required: true
+        },
+        requestedAt: {
+            type: Date,
+            default: () => new Date()
+        }
     },
     { _id: false }
 );
 
+/* -------------------- Main User Schema -------------------- */
 
-/* ---------------- main schema ---------------- */
 const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     {
-        name: { type: String, required: true, trim: true, minlength: 2, maxlength: 60 },
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 2,
+            maxlength: 60
+        },
 
         username: {
             type: String,
@@ -117,9 +164,15 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
             trim: true
         },
 
-        emailVerified: { type: Boolean, default: false },
+        emailVerified: {
+            type: Boolean,
+            default: false
+        },
 
-        emailVerifiedAt: { type: Date, default: null },
+        emailVerifiedAt: {
+            type: Date,
+            default: null
+        },
 
         password: {
             type: String,
@@ -143,9 +196,15 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
             default: ""
         },
 
-        avatar: { type: avatarSchema, default: null },
+        avatar: {
+            type: avatarSchema,
+            default: null
+        },
 
-        pendingEmail: { type: pendingEmailSchema, default: null },
+        pendingEmail: {
+            type: pendingEmailSchema,
+            default: null
+        },
 
         role: {
             type: String,
@@ -159,15 +218,26 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
             ref: "User",
             default: null
         },
-        roleChangedAt: { type: Date, default: null },
-        roleChangeReason: { type: String, maxlength: 300, default: null },
+        roleChangedAt: {
+            type: Date,
+            default: null
+        },
+        roleChangeReason: {
+            type: String,
+            maxlength: 300,
+            default: null
+        },
 
-        isBanned: { type: Boolean, default: false }
+        isBanned: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );
 
-/* ---------------- hooks ---------------- */
+/* -------------------- Middleware Hooks -------------------- */
+
 userSchema.pre("validate", function () {
     if (this.isModified("username") || !this.usernameLower) {
         this.usernameLower = (this.username || "").toLowerCase().trim();
@@ -185,6 +255,8 @@ userSchema.pre("save", async function () {
         this.pendingPassword = await bcrypt.hash(this.pendingPassword, salt);
     }
 });
+
+/* -------------------- Instance Methods -------------------- */
 
 userSchema.method("comparePassword", async function (candidate: string) {
     return bcrypt.compare(candidate, this.password);
