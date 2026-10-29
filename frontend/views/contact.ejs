@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
   <%- include("components/seo-head", {
-    title: "تماس با ما",
-    description: "ارتباط با تیم DevHub — پیشنهاد، گزارش باگ و همکاری.",
-    canonicalPath: "/contact"
-  }) %>
+        title: "Contact Us",
+        description: "Get in touch with the DevHub team to share suggestions, report bugs, or discuss collaboration opportunities.",
+        canonicalPath: "/contact"
+    }) %>
 </head>
 
 <body>
@@ -14,59 +14,87 @@
   <%- include("components/dialogError") %>
 
   <main class="static-page contact-page">
-    <h1>تماس با ما</h1>
+    <h1>Contact Us</h1>
+
     <p class="lead">
-      پیشنهاد، گزارش مشکل یا همکاری دارید؟ پیام بفرستید.
-      در نسخه فعلی پیام‌ها در مرورگر ثبت می‌شوند و راهنمای ارتباط مستقیم نمایش داده می‌شود.
+      Have a suggestion, found a bug, or interested in collaborating?
+      Send us a message.
+      In the current version, submissions are handled in the browser,
+      and guidance for contacting the team directly is provided below.
     </p>
 
     <div class="static-card">
       <form class="contact-form" id="contactForm" novalidate>
         <div>
-          <label for="cName">نام</label>
-          <input id="cName" name="name" type="text" required maxlength="80" placeholder="نام شما" autocomplete="name">
+          <label for="cName">Name</label>
+          <input id="cName" name="name" type="text" required maxlength="80" placeholder="Your name" autocomplete="name">
         </div>
+
         <div>
-          <label for="cEmail">ایمیل</label>
+          <label for="cEmail">Email Address</label>
           <input id="cEmail" name="email" type="email" required maxlength="120" placeholder="you@example.com" autocomplete="email" dir="ltr">
         </div>
+
         <div>
-          <label for="cSubject">موضوع</label>
-          <input id="cSubject" name="subject" type="text" required maxlength="120" placeholder="موضوع پیام">
+          <label for="cSubject">Subject</label>
+          <input id="cSubject" name="subject" type="text" required maxlength="120" placeholder="Message subject">
         </div>
+
         <div>
-          <label for="cMessage">پیام</label>
-          <textarea id="cMessage" name="message" required maxlength="2000" placeholder="متن پیام…"></textarea>
+          <label for="cMessage">Message</label>
+          <textarea id="cMessage" name="message" required maxlength="2000" placeholder="Write your message here..."></textarea>
         </div>
-        <button type="submit" class="btn-primary" id="cSubmit">ارسال پیام</button>
-        <p class="contact-note" id="cNote">پس از اتصال ایمیل سرور، پیام‌ها مستقیم به تیم ارسال می‌شوند.</p>
+
+        <button type="submit" class="btn-primary" id="cSubmit">
+          Send Message
+        </button>
+
+        <p class="contact-note" id="cNote">
+          Once server-side email delivery is configured,
+          messages can be sent directly to the DevHub team.
+        </p>
       </form>
     </div>
 
     <div class="static-card">
-      <h2 style="margin-top:0">راه‌های دیگر</h2>
-      <p>ریپازیتوری و مسائل فنی را در GitHub پروژه دنبال کنید.</p>
-      <p style="margin-bottom:0">برای گزارش امنیتی به فایل <code>SECURITY.md</code> مراجعه کنید.</p>
+      <h2 style="margin-top: 0">Other Ways to Connect</h2>
+
+      <p>
+        Follow the project's repository and technical discussions on GitHub.
+      </p>
+
+      <p style="margin-bottom: 0">
+        For security-related reports, please refer to
+        the <code>SECURITY.md</code> file.
+      </p>
     </div>
   </main>
 
   <script>
-    document.getElementById('contactForm')?.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var name = document.getElementById('cName').value.trim();
-      var email = document.getElementById('cEmail').value.trim();
-      var subject = document.getElementById('cSubject').value.trim();
-      var message = document.getElementById('cMessage').value.trim();
+    document.getElementById("contactForm")?.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById("cName").value.trim();
+      const email = document.getElementById("cEmail").value.trim();
+      const subject = document.getElementById("cSubject").value.trim();
+      const message = document.getElementById("cMessage").value.trim();
+
       if (!name || !email || !subject || !message) {
-        alert('لطفاً همه فیلدها را پر کنید.');
+        alert("Please complete all required fields.");
         return;
       }
-      var note = document.getElementById('cNote');
-      note.textContent = 'پیام شما ثبت شد. از تماس‌تان ممنونیم — به‌زودی پاسخ می‌دهیم.';
-      note.style.color = 'var(--accent)';
-      e.target.reset();
+
+      const note = document.getElementById("cNote");
+
+      note.textContent =
+        "Your message has been recorded. Thank you for reaching out! We'll get back to you soon.";
+
+      note.style.color = "var(--accent)";
+
+      event.target.reset();
     });
   </script>
+
   <%- include("components/footer") %>
 </body>
 
