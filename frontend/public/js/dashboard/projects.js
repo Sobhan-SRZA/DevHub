@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ` : ""}
 
                 <div class="p-card__head">
-                    <h3 class="p-card__title">${escapeHtml(p.title)}</h3>
+                    <h3 class="p-card__title"><a href="/projects/${p.slug || p._id}">${escapeHtml(p.title)}</a></h3>
                     <span class="p-card__status p-card__status--${p.status}">
                         ${statusMap[p.status] || p.status}
                     </span>
