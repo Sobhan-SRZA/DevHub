@@ -167,33 +167,49 @@ function getDeviceHints(req: Request) {
 /* ========================================================================== */
 
 /**
- * Resends an email verification code using a signed verification token.
+ * Resends an email verification code.
  *
- * Intended for unauthenticated callers or clients that have lost session
- * state but still possess a valid verification token from registration.
+ * Supports two access patterns:
+ *   1. Authenticated session (via `requireAuth`): uses `req.user._id`
+ *      directly — no token required in the body. This is the path used
+ *      by the frontend when restoring a verification session on page load.
+ *   2. Token-based: when no session is present, falls back to a signed
+ *      `verifyToken` supplied in the request body.
  *
  * @route POST /auth/resend-verification
- * @access Public (requires a valid verification token)
+ * @access Authenticated OR valid verification token
  */
 export const resendVerification = asyncHandler(
-    async (req: Request, res: Response) => {
-        const data = validate(resendVerifyEmailSchema, req.body);
+    async (req: any, res: Response) => {
+        let user;
 
-        let payload;
+        /* ------------------------------------------------------------
+           Resolve the target user.
+           Priority 1: authenticated session (set by requireAuth).
+           Priority 2: signed verifyToken supplied in the body.
+           ------------------------------------------------------------ */
+        if (req.user) {
+            user = await User.findById(req.user._id).select(
+                "email name emailVerified"
+            );
+        } else {
+            const data = validate(resendVerifyEmailSchema, req.body);
 
-        try {
-            payload = verifyEmailVerifyToken(data.verifyToken);
-        } catch {
-            throw new AppError(
-                401,
-                ErrorCodes.INVALID_TOKEN,
-                "The email verification token has expired or is invalid."
+            let payload;
+            try {
+                payload = verifyEmailVerifyToken(data.verifyToken);
+            } catch {
+                throw new AppError(
+                    401,
+                    ErrorCodes.INVALID_TOKEN,
+                    "The email verification token has expired or is invalid."
+                );
+            }
+
+            user = await User.findById(payload.sub).select(
+                "email name emailVerified"
             );
         }
-
-        const user = await User.findById(payload.sub).select(
-            "email name emailVerified"
-        );
 
         if (!user) {
             throw new AppError(
@@ -211,6 +227,9 @@ export const resendVerification = asyncHandler(
             );
         }
 
+        /* ------------------------------------------------------------
+           Issue a fresh code and a matching verification token.
+           ------------------------------------------------------------ */
         await createVerificationCode({
             userId: user._id,
             purpose: "verify_email",
@@ -220,7 +239,6 @@ export const resendVerification = asyncHandler(
             ttlMinutes: 10
         });
 
-        // Generate a fresh token so the client receives an updated expiration.
         const verifyToken = signEmailVerifyToken(
             user._id.toString(),
             user.email
@@ -287,26 +305,39 @@ export const verifyEmail = asyncHandler(
             targetEmail: user.email
         });
 
-        // Mark the email address as verified and clear any pending change.
+        /* ------------------------------------------------------------
+           Mark the email as verified first — this is the critical
+           state transition. Session creation is best-effort.
+           ------------------------------------------------------------ */
         user.emailVerified = true;
         user.emailVerifiedAt = new Date();
         user.pendingEmail = null;
 
         await user.save();
 
-        // Create an authenticated session after successful verification.
+        /* ------------------------------------------------------------
+           Attempt to create a session. If this fails, the user can
+           still log in manually with their existing password.
+           ------------------------------------------------------------ */
         const hints = getDeviceHints(req);
 
-        const { access, refresh } = await startSession(user._id, req, {
-            ...hints,
-            ttlDays: 7
-        });
+        try {
+            const { access, refresh } = await startSession(user._id, req, {
+                ...hints,
+                ttlDays: 7
+            });
 
-        setAuthCookies(res, access, refresh, true);
+            setAuthCookies(res, access, refresh, true);
 
-        console.log(
-            `[EMAIL VERIFIED] user=${user._id} email=${user.email}`
-        );
+            console.log(
+                `[EMAIL VERIFIED] user=${user._id} email=${user.email}`
+            );
+        } catch (err: any) {
+            console.warn(
+                "[verifyEmail] Session creation failed:",
+                err?.message
+            );
+        }
 
         res.json({
             ok: true,
