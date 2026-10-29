@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { Types } from "mongoose";
 import { User } from "../../models/User";
+import noCache from "../../middleware/noCache";
+import { optionalAuth } from "../../middleware/auth";
 
 const router = Router();
 
@@ -67,7 +69,7 @@ router.get("/:idOrUsername", async (req, res) => {
     });
 });
 
-router.get("/", (req, res) => {
+router.get("/", optionalAuth, noCache, (req, res) => {
     res.render("pages/users/list", { req });
 });
 
