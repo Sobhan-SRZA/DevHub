@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <%- include("../components/seo-head", {
+    title: "تایید ایمیل",
+    description: "تایید آدرس ایمیل حساب کاربری DevHub",
+    noindex: true,
+    canonicalPath: "/auth/verify-email",
+    extraStyles: ["/styles/dialog.css", "/styles/form-errors.css", "/styles/auth.css", "/styles/auth/password-reset.css"]
+  }) %>
+</head>
+
+<body>
+  <%- include("../components/header") %>
+  <%- include("../components/dialogError") %>
+
+  <section class="container auth">
+    <div class="auth-card pr-card">
+
+      <!-- icon -->
+      <div class="pr-icon pr-icon--verify">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+          <path d="M22 6l-10 7L2 6"></path>
+          <path d="M9 14l2 2 4-4" stroke-width="2.5"></path>
+        </svg>
+      </div>
+
+      <h2 class="pr-title">تایید ایمیل</h2>
+      <p class="pr-sub">
+        کد ۶ رقمی ارسال‌شده به ایمیل زیر را وارد کنید تا حساب شما فعال شود
+      </p>
+
+      <div class="pr-email-display" id="emailDisplay">—</div>
+
+      <!-- form -->
+      <form class="pr-form" id="verifyForm" novalidate>
+        <div class="field">
+          <label for="otpCode">کد تایید <span class="req">*</span></label>
+          <input id="otpCode" type="text" name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr" required>
+        </div>
+
+        <button type="submit" class="auth-btn" id="submitBtn">
+          تایید ایمیل
+        </button>
+      </form>
+
+      <!-- resend -->
+      <div class="pr-resend">
+        <span>کد را دریافت نکردید؟</span>
+        <button type="button" class="auth-link pr-resend-btn" id="resendBtn">
+          ارسال دوباره
+        </button>
+        <span class="pr-resend-timer" id="resendTimer" style="display:none;">
+          (<span id="resendCountdown">60</span> ثانیه)
+        </span>
+      </div>
+
+      <!-- hint -->
+      <p class="pr-hint">
+        ایمیل را در پوشه <strong>Spam</strong> هم چک کنید.
+        کد تا <strong>۱۵ دقیقه</strong> معتبر است.
+      </p>
+
+      <!-- footer -->
+      <p class="pr-foot">
+        ایمیل اشتباه است؟
+        <a href="/auth/login" class="auth-link">بازگشت به ورود</a>
+      </p>
+    </div>
+  </section>
+
+  <script src="/js/form-errors.js"></script>
+  <script src="/js/auth/verify-email.js"></script>
+</body>
+
+</html>
