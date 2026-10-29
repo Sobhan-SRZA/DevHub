@@ -18,7 +18,7 @@ export default async function loadRoutes(
             entry.name
         );
 
-        // Load JavaScript route files
+        // Load JavaScript and TypeScript route modules.
         if (
             entry.isFile() &&
             (
@@ -30,7 +30,9 @@ export default async function loadRoutes(
                 pathToFileURL(fullPath).href
             );
 
-            const router = entry.name.endsWith(".ts") ? module.default : module.default.default;
+            const router = entry.name.endsWith(".ts")
+                ? module.default
+                : module.default.default;
 
             if (!router) {
                 console.warn(
@@ -52,7 +54,7 @@ export default async function loadRoutes(
             continue;
         }
 
-        // Recursively load directories
+        // Recursively discover and load routes from nested directories.
         if (entry.isDirectory()) {
             await loadRoutes(
                 app,
