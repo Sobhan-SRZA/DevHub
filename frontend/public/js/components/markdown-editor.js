@@ -1,12 +1,22 @@
 /* ============================================================
-   Markdown Editor — GitHub-like with safe HTML
+   Markdown Editor — GitHub-like with Safe HTML Rendering
+   ============================================================
+   A self-contained Markdown editor with a live preview, a
+   formatting toolbar, keyboard shortcuts, and a whitelist-based
+   HTML sanitizer. All rendered HTML passes through the sanitizer
+   before being injected into the preview pane.
    ============================================================ */
 
 (function (global) {
     'use strict';
 
     /* ============================================================
-       SANITIZER — whitelist approach like GitHub
+       SANITIZER — Whitelist-Based, Similar to GitHub
+       ============================================================
+       Only explicitly allowed tags and attributes survive
+       sanitization. Disallowed containers are unwrapped so their
+       text content is preserved, while dangerous elements are
+       removed entirely.
        ============================================================ */
     const ALLOWED_TAGS = new Set([
         'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
@@ -18,11 +28,11 @@
         'A', 'IMG',
         'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD', 'CAPTION',
         'DETAILS', 'SUMMARY',
-        'INPUT', // only checkbox
+        'INPUT', // Restricted to checkboxes only.
         'FIGURE', 'FIGCAPTION'
     ]);
 
-    // attribute های مجاز به تفکیک tag
+    /* Per-tag attribute allowlist. The `*` entry applies to every tag. */
     const ALLOWED_ATTRS = {
         '*': ['class', 'id', 'title', 'dir', 'lang'],
         'A': ['href', 'title', 'target', 'rel'],
@@ -39,10 +49,17 @@
     };
 
     /**
-     * HTML رو با استفاده از DOMParser پاک‌سازی می‌کنه.
-     * - تگ‌های غیرمجاز رو unwrap می‌کنه (محتوا حفظ می‌شه)
-     * - attributeهای خطرناک (on*, javascript:, data:, ...) رو حذف می‌کنه
-     * - لینک‌های خارجی رو ایمن می‌کنه
+     * Sanitize an HTML string using DOMParser and the allowlists above.
+     *
+     * Behaviour:
+     *   - Dangerous elements (script, style, iframe, …) are removed
+     *     entirely, along with their contents.
+     *   - Other disallowed tags are unwrapped so their children
+     *     are preserved.
+     *   - Event handler attributes, dangerous URL schemes, and the
+     *     `style` attribute are stripped.
+     *   - External links are hardened with `rel` and `target`.
+     *   - Images are marked `loading="lazy"`.
      */
     function sanitizeHtml(html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -51,7 +68,7 @@
             if (node.nodeType === Node.TEXT_NODE)
                 return;
 
-            // حذف کامل comment ها
+            // Remove HTML comments entirely.
             if (node.nodeType === Node.COMMENT_NODE) {
                 node.parentNode.removeChild(node);
 
@@ -62,9 +79,9 @@
 
             const tag = node.tagName.toUpperCase();
 
-            /* ---------- تگ غیرمجاز → unwrap ---------- */
+            /* ---------- Disallowed tag → unwrap (preserve children) ---------- */
             if (!ALLOWED_TAGS.has(tag)) {
-                // اگه script/style/iframe بود، کاملاً حذف کن (نه unwrap)
+                // These tags are removed entirely rather than unwrapped.
                 if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'META', 'LINK', 'BASE', 'SVG', 'MATH'].includes(tag)) {
                     node.parentNode.removeChild(node);
 
@@ -80,20 +97,20 @@
                 return;
             }
 
-            /* ---------- پاک‌سازی attributeها ---------- */
+            /* ---------- Attribute sanitization ---------- */
             const attrs = Array.from(node.attributes);
             for (const attr of attrs) {
                 const name = attr.name.toLowerCase();
                 const value = String(attr.value || '');
 
-                // event handlers
+                // Strip event handler attributes (onclick, onerror, …).
                 if (name.startsWith('on')) {
                     node.removeAttribute(attr.name);
 
                     continue;
                 }
 
-                // URL های خطرناک
+                // Strip dangerous URL schemes.
                 if ((name === 'href' || name === 'src' || name === 'xlink:href')) {
                     const trimmed = value.trim().toLowerCase();
                     if (
@@ -107,14 +124,14 @@
                     }
                 }
 
-                // style attribute ممنوع (برای جلوگیری از XSS)
+                // The `style` attribute is disallowed to prevent CSS-based XSS.
                 if (name === 'style') {
                     node.removeAttribute(attr.name);
 
                     continue;
                 }
 
-                // whitelist
+                // Enforce the allowlist.
                 const allowedForTag = ALLOWED_ATTRS[tag] || [];
                 const allowedCommon = ALLOWED_ATTRS['*'] || [];
                 if (!allowedForTag.includes(name) && !allowedCommon.includes(name)) {
@@ -122,7 +139,7 @@
                 }
             }
 
-            /* ---------- محدودیت INPUT ---------- */
+            /* ---------- Restrict INPUT to disabled checkboxes ---------- */
             if (tag === 'INPUT') {
                 if (node.getAttribute('type') !== 'checkbox') {
                     node.parentNode.removeChild(node);
@@ -133,22 +150,23 @@
                 node.setAttribute('disabled', '');
             }
 
-            /* ---------- ایمن کردن لینک‌ها ---------- */
+            /* ---------- Harden external links ---------- */
             if (tag === 'A') {
                 const href = node.getAttribute('href') || '';
-                // لینک‌های نسبی رو نگه دار، خارجی‌ها رو با rel ایمن کن
+
+                // Keep relative links as-is; harden absolute and protocol-relative links.
                 if (/^https?:\/\//i.test(href) || href.startsWith('//')) {
                     node.setAttribute('target', '_blank');
                     node.setAttribute('rel', 'noopener noreferrer nofollow');
                 }
             }
 
-            /* ---------- lazy load برای تصاویر ---------- */
+            /* ---------- Enable lazy loading for images ---------- */
             if (tag === 'IMG') {
                 node.setAttribute('loading', 'lazy');
             }
 
-            // بازگشت به فرزندان (بعد از تغییرات، چون ممکنه حذف شده باشن)
+            // Recurse into children after modifications; some may have been removed.
             Array.from(node.childNodes).forEach(walk);
         }
 
@@ -158,8 +176,10 @@
     }
 
     /* ============================================================
-       Markdown parser
+       Markdown Parser
        ============================================================ */
+
+    /* Escape text destined for raw HTML interpolation. */
     function escapeHtml(s) {
         return String(s)
             .replace(/&/g, '&amp;')
@@ -170,24 +190,33 @@
     }
 
     /**
-     * بررسی اینکه آیا این خط HTML block هست یا نه
+     * Determine whether a line is a raw HTML block, based on its
+     * leading tag-like syntax.
      */
     function isHtmlBlock(line) {
         return /^\s*<\/?[a-z][\s\S]*>/i.test(line.trim());
     }
 
+    /**
+     * Convert Markdown source into sanitized HTML.
+     *
+     * Code fences and inline code are extracted first so their
+     * contents are not processed by later rules. The resulting HTML
+     * is passed through `sanitizeHtml` before being returned.
+     */
     function parseMarkdown(md) {
         if (!md)
             return '';
 
         let html = md.replace(/\r\n?/g, '\n');
 
-        /* ---------- 1) Code fences (قبل از هر پردازش) ---------- */
+        /* ---------- 1) Fenced code blocks (processed first) ---------- */
         const codeBlocks = [];
         html = html.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
             const idx = codeBlocks.length;
             const langAttr = lang ? ` data-lang="${escapeHtml(lang)}"` : '';
             const cls = lang ? ` class="language-${escapeHtml(lang)}"` : '';
+
             codeBlocks.push(
                 `<pre${langAttr}><code${cls}>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`
             );
@@ -195,7 +224,7 @@
             return `\u0000CB${idx}\u0000`;
         });
 
-        /* ---------- 2) Inline code (قبل از HTML) ---------- */
+        /* ---------- 2) Inline code (processed before HTML) ---------- */
         const inlineCodes = [];
         html = html.replace(/`([^`\n]+)`/g, (_, code) => {
             const idx = inlineCodes.length;
@@ -212,7 +241,7 @@
         html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
         html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
 
-        /* ---------- 4) HR ---------- */
+        /* ---------- 4) Horizontal rule ---------- */
         html = html.replace(/^(?:\*{3,}|-{3,}|_{3,})\s*$/gm, '<hr>');
 
         /* ---------- 5) Blockquote ---------- */
@@ -231,6 +260,7 @@
                 let t = '<table><thead><tr>';
                 t += headers.map((h) => `<th>${h}</th>`).join('');
                 t += '</tr></thead><tbody>';
+
                 for (const row of rows) {
                     t += '<tr>' + row.map((c) => `<td>${c}</td>`).join('') + '</tr>';
                 }
@@ -252,7 +282,7 @@
         html = html.replace(/^(\s*)[-*+]\s+(.+)$/gm, '$1<li>$2</li>');
         html = html.replace(/^(\s*)\d+\.\s+(.+)$/gm, '$1<li data-ordered>$2</li>');
 
-        // wrap li
+        // Wrap consecutive list items in a `ul` or `ol` container.
         html = html.replace(/((?:<li[^>]*>[\s\S]*?<\/li>\n?)+)/g, (match) => {
             const isOrdered = match.includes('data-ordered');
             const tag = isOrdered ? 'ol' : 'ul';
@@ -260,7 +290,7 @@
             return `<${tag}>${match.replace(/ data-ordered/g, '')}</${tag}>`;
         });
 
-        /* ---------- 9) Bold / Italic / Strike ---------- */
+        /* ---------- 9) Inline emphasis and decorations ---------- */
         html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
@@ -269,31 +299,32 @@
         html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
         html = html.replace(/==(.+?)==/g, '<mark>$1</mark>');
 
-        /* ---------- 10) Links + Images ---------- */
+        /* ---------- 10) Links and images ---------- */
         html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
-            '<img src="$2" alt="$1"${3 ? ` title="$3"` : \'\'}>');
-        html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
-            '<a href="$2"${3 ? ` title="$3"` : \'\'}>$1</a>');
+            `<img src="$2" alt="$1"${3 ? ` title="$3"` : ''}>`);
 
-        /* ---------- 11) Line breaks ---------- */
+        html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
+            `<a href="$2"${3 ? ` title="$3"` : ''}>$1</a>`);
+
+        /* ---------- 11) Explicit line breaks ---------- */
         html = html.replace(/ {2,}\n/g, '<br>\n');
 
-        /* ---------- 12) Paragraphs ---------- */
-        // خطوط رو دسته‌بندی می‌کنیم
+        /* ---------- 12) Paragraph grouping ---------- */
         const lines = html.split('\n');
         const out = [];
         let para = [];
 
+        /* Determine whether a line begins with a block-level tag. */
         const isBlockLine = (l) => {
             const t = l.trim();
             if (!t)
                 return false;
 
-            // block tags
+            // Block tags.
             if (/^<\/?(?:h[1-6]|hr|blockquote|pre|ul|ol|table|details|li|div|p|figure|section|article|header|footer|nav|aside|main)/i.test(t))
                 return true;
 
-            // self-closing
+            // Self-closing tags.
             if (/^<(?:hr|br)\b/i.test(t))
                 return true;
 
@@ -303,6 +334,7 @@
         const flushPara = () => {
             if (para.length) {
                 const text = para.join(' ').trim();
+
                 if (text)
                     out.push(`<p>${text}</p>`);
 
@@ -312,6 +344,7 @@
 
         for (const line of lines) {
             const trimmed = line.trim();
+
             if (!trimmed) {
                 flushPara();
 
@@ -321,15 +354,11 @@
             if (isBlockLine(line)) {
                 flushPara();
                 out.push(line);
-            }
-
-            else if (isHtmlBlock(line) && trimmed.startsWith('<')) {
-                // HTML بلاک (مثل <div>...</div>)
+            } else if (isHtmlBlock(line) && trimmed.startsWith('<')) {
+                // Raw HTML block (e.g., `<div>...</div>`).
                 flushPara();
                 out.push(line);
-            }
-
-            else {
+            } else {
                 para.push(line);
             }
         }
@@ -338,18 +367,18 @@
 
         html = out.join('\n');
 
-        /* ---------- 13) Restore code ---------- */
+        /* ---------- 13) Restore code blocks ---------- */
         html = html.replace(/\u0000CB(\d+)\u0000/g, (_, i) => codeBlocks[Number(i)]);
         html = html.replace(/\u0000IC(\d+)\u0000/g, (_, i) => inlineCodes[Number(i)]);
 
-        /* ---------- 14) Sanitize (مثل GitHub) ---------- */
+        /* ---------- 14) Sanitize (matching GitHub's model) ---------- */
         html = sanitizeHtml(html);
 
         return html;
     }
 
     /* ============================================================
-       SVG Icons
+       Toolbar Icons
        ============================================================ */
     const ICONS = {
         bold: `<svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>`,
@@ -374,7 +403,10 @@
     };
 
     /* ============================================================
-       Class
+       MarkdownEditor Class
+       ============================================================
+       Builds the editor UI inside the supplied container, binds
+       all interactions, and exposes a small imperative API.
        ============================================================ */
     class MarkdownEditor {
         constructor(target, options = {}) {
@@ -384,16 +416,17 @@
 
             this.name = options.name || 'content';
             this.value = options.value || '';
-            this.placeholder = options.placeholder || 'شرح را اینجا بنویسید... (Markdown + HTML پشتیبانی می‌شود)';
+            this.placeholder = options.placeholder || 'Write your description here… (Markdown and HTML are supported)';
             this.minHeight = options.minHeight || 260;
             this.onChange = options.onChange || (() => { });
-            this.maxLength = options.maxLength || 100000;   // ✅ soft limit — نه hard
+            this.maxLength = options.maxLength || 100000;   // Soft limit — not enforced as a hard cap.
 
             this._build();
             this._bind();
             this._updatePreview();
         }
 
+        /* Render the editor's DOM structure and cache element references. */
         _build() {
             this.root.innerHTML = `
                 <div class="md-editor">
@@ -404,14 +437,14 @@
                                     <path d="M12 20h9"></path>
                                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                                 </svg>
-                                نوشتن
+                                Write
                             </button>
                             <button type="button" class="md-tab" data-tab="preview">
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
-                                پیش‌نمایش
+                                Preview
                             </button>
                         </div>
 
@@ -470,10 +503,10 @@
 
                     <div class="md-editor__footer">
                         <div class="md-editor__footer-right">
-                            <span data-role="wordcount">0 کلمه</span>
-                            <span data-role="charcount" style="color:#888">0 کاراکتر</span>
+                            <span data-role="wordcount">0 words</span>
+                            <span data-role="charcount" style="color:#888">0 characters</span>
                         </div>
-                        <span>Markdown + HTML مجاز (مثل GitHub)</span>
+                        <span>Markdown and HTML allowed (GitHub-style)</span>
                     </div>
                 </div>
             `;
@@ -493,6 +526,7 @@
             this._updateCounter();
         }
 
+        /* Wire up input, tab, toolbar, and keyboard handlers. */
         _bind() {
             const ta = this.els.textarea;
 
@@ -521,22 +555,17 @@
 
                 if (ctrl && e.key.toLowerCase() === 'b') {
                     e.preventDefault(); this._applyAction('bold');
-                }
-
-                else if (ctrl && e.key.toLowerCase() === 'i') {
+                } else if (ctrl && e.key.toLowerCase() === 'i') {
                     e.preventDefault(); this._applyAction('italic');
-                }
-
-                else if (ctrl && e.key.toLowerCase() === 'k') {
+                } else if (ctrl && e.key.toLowerCase() === 'k') {
                     e.preventDefault(); this._applyAction('link');
-                }
-
-                else if (e.key === 'Tab') {
+                } else if (e.key === 'Tab') {
                     e.preventDefault(); this._insertText('  ');
                 }
             });
         }
 
+        /* Switch between the write and preview panes. */
         _setTab(tab) {
             this.els.tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
 
@@ -544,34 +573,36 @@
                 this._updatePreview();
                 this.els.write.classList.add('hidden');
                 this.els.preview.classList.add('active');
-            }
-
-            else {
+            } else {
                 this.els.write.classList.remove('hidden');
                 this.els.preview.classList.remove('active');
                 this.els.textarea.focus();
             }
         }
 
+        /* Re-render the preview pane from the current Markdown value. */
         _updatePreview() {
             const html = parseMarkdown(this.value);
-            this.els.previewContent.innerHTML = html || '<div class="md-empty">چیزی برای نمایش نیست — شروع به نوشتن کنید</div>';
+
+            this.els.previewContent.innerHTML = html ||
+                '<div class="md-empty">Nothing to display — start writing.</div>';
         }
 
+        /* Refresh the word and character counters, applying colour cues. */
         _updateCounter() {
             const text = this.value.trim();
             const words = text ? text.split(/\s+/).length : 0;
             const chars = this.value.length;
 
             if (this.els.wordcount) {
-                this.els.wordcount.textContent = `${words.toLocaleString('fa-IR')} کلمه`;
+                this.els.wordcount.textContent = `${words.toLocaleString('en-US')} words`;
             }
 
             if (this.els.charcount) {
                 const countEl = this.els.charcount;
-                countEl.textContent = `${chars.toLocaleString('fa-IR')} کاراکتر`;
+                countEl.textContent = `${chars.toLocaleString('en-US')} characters`;
 
-                // رنگ‌بندی هوشمند
+                // Colour cues based on proximity to the soft limit.
                 if (this.maxLength && chars > this.maxLength) {
                     countEl.style.color = '#fb923c';
                 } else if (this.maxLength && chars > this.maxLength * 0.8) {
@@ -582,6 +613,10 @@
             }
         }
 
+        /**
+         * Wrap the current selection (or insert at the caret) with the
+         * given prefix and suffix.
+         */
         _insertText(before, after = '') {
             const ta = this.els.textarea;
             const start = ta.selectionStart;
@@ -599,6 +634,11 @@
             ta.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
+        /**
+         * Toggle a line-level prefix across the lines touching the
+         * current selection. Any existing block-level prefix on those
+         * lines is removed before the new prefix is applied.
+         */
         _toggleLinePrefix(prefix) {
             const ta = this.els.textarea;
             const start = ta.selectionStart;
@@ -626,6 +666,7 @@
             ta.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
+        /* Dispatch a toolbar action to the appropriate insertion helper. */
         _applyAction(action) {
             const ta = this.els.textarea;
             ta.focus();
@@ -654,13 +695,13 @@
 
                 case 'table':
                     this._insertText(
-                        '\n| ستون ۱ | ستون ۲ | ستون ۳ |\n|--------|--------|--------|\n|        |        |        |\n'
+                        '\n| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n|          |          |          |\n'
                     );
                     break;
 
                 case 'details':
                     this._insertText(
-                        '\n<details>\n<summary>عنوان</summary>\n\nمحتوا...\n\n</details>\n'
+                        '\n<details>\n<summary>Title</summary>\n\nContent…\n\n</details>\n'
                     );
                     break;
 
@@ -670,11 +711,14 @@
             }
         }
 
-        /* API */
+        /* ---------- Public API ---------- */
+
+        /* Return the current Markdown source. */
         getValue() {
             return this.value;
         }
 
+        /* Replace the editor contents and refresh the preview. */
         setValue(v) {
             this.value = v || '';
             this.els.textarea.value = this.value;
@@ -682,16 +726,18 @@
             this._updateCounter();
         }
 
+        /* Move focus to the underlying textarea. */
         focus() {
             this.els.textarea.focus();
         }
 
+        /* Expose the underlying textarea for advanced integrations. */
         getTextarea() {
             return this.els.textarea;
         }
     }
 
-    /* ---------- Expose ---------- */
+    /* ---------- Expose Public API ---------- */
     global.MarkdownEditor = MarkdownEditor;
     global.parseMarkdown = parseMarkdown;
     global.sanitizeHtml = sanitizeHtml;
