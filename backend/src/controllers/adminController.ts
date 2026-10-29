@@ -1,23 +1,41 @@
-import { changeUserRole } from "../services/roleService";
+
 import type { Response } from "express";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ErrorCodes } from "../utils/errorCodes";
-import { AppError } from "../utils/AppError";
-import { validate } from "../utils/validate";
-import { User } from "../models/User";
 import { z } from "zod";
 
-/* ==================================================================
-   Schema
-   ================================================================== */
+import { User } from "../models/User";
+import { changeUserRole } from "../services/roleService";
+import { AppError } from "../utils/AppError";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ErrorCodes } from "../utils/errorCodes";
+import { validate } from "../utils/validate";
+
+/* ========================================================================== */
+/* Validation Schemas                                                         */
+/* ========================================================================== */
+
+/**
+ * Validates user role update requests.
+ *
+ * The optional reason field is trimmed and limited to 300 characters.
+ */
 const changeRoleSchema = z.object({
     role: z.enum(["user", "admin", "developer"]),
     reason: z.string().trim().max(300).optional()
 });
 
-/* ==================================================================
-   LIST USERS — ادمین
-   ================================================================== */
+/* ========================================================================== */
+/* User Management — List Users                                               */
+/* ========================================================================== */
+
+/**
+ * Retrieves a paginated list of users with optional search and role filters.
+ *
+ * Supports searching by name, username, or email address.
+ * Results are sorted by creation date in descending order.
+ *
+ * @route GET /users
+ * @access Admin
+ */
 export const listUsers = asyncHandler(async (req: any, res: Response) => {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 20);
@@ -25,6 +43,7 @@ export const listUsers = asyncHandler(async (req: any, res: Response) => {
     const role = String(req.query.role || "").trim();
 
     const filter: Record<string, any> = {};
+
     if (search) {
         filter.$or = [
             { name: { $regex: search, $options: "i" } },
@@ -32,7 +51,8 @@ export const listUsers = asyncHandler(async (req: any, res: Response) => {
             { email: { $regex: search, $options: "i" } }
         ];
     }
-    if (role && ["user", "admin", "developer"].includes(role)) {
+
+    if (["user", "admin", "developer"].includes(role)) {
         filter.role = role;
     }
 
@@ -59,9 +79,19 @@ export const listUsers = asyncHandler(async (req: any, res: Response) => {
     });
 });
 
-/* ==================================================================
-   CHANGE ROLE — ادمین/دولوپر
-   ================================================================== */
+/* ========================================================================== */
+/* User Management — Change Role                                             */
+/* ========================================================================== */
+
+/**
+ * Updates a user's role through the centralized role management service.
+ *
+ * The service is responsible for applying role-change rules and any
+ * associated business logic.
+ *
+ * @route PATCH /users/:id/role
+ * @access Admin, Developer
+ */
 export const changeRole = asyncHandler(async (req: any, res: Response) => {
     const data = validate(changeRoleSchema, req.body);
 
@@ -74,26 +104,47 @@ export const changeRole = asyncHandler(async (req: any, res: Response) => {
 
     res.json({
         ok: true,
-        message: `نقش کاربر به ${data.role} تغییر کرد`,
+        message: `User role successfully changed to "${data.role}".`,
         ...result
     });
 });
 
-/* ==================================================================
-   BAN / UNBAN — ادمین
-   ================================================================== */
+/* ========================================================================== */
+/* User Management — Ban / Unban                                              */
+/* ========================================================================== */
+
+/**
+ * Toggles a user's ban status.
+ *
+ * Users cannot ban themselves. Only developers are permitted to ban
+ * accounts that have the developer role.
+ *
+ * @route PATCH /users/:id/ban
+ * @access Admin, Developer
+ */
 export const toggleBan = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findById(req.params.id);
-    if (!user) throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
 
-    // نمی‌تونی خودت رو بن کنی
-    if (String(user._id) === String(req.user._id)) {
-        throw new AppError(403, ErrorCodes.PROJECT_NOT_OWNED, "نمی‌توانید خودتان را بن کنید");
+    if (!user) {
+        throw new AppError(404, ErrorCodes.UNAUTHENTICATED);
     }
 
-    // ادمین نمی‌تونه دولوپر رو بن کنه
+    // Prevent users from banning their own accounts.
+    if (String(user._id) === String(req.user._id)) {
+        throw new AppError(
+            403,
+            ErrorCodes.PROJECT_NOT_OWNED,
+            "You cannot ban your own account."
+        );
+    }
+
+    // Only developers can ban accounts with the developer role.
     if (user.role === "developer" && req.user.role !== "developer") {
-        throw new AppError(403, ErrorCodes.PROJECT_NOT_OWNED, "فقط developer می‌تواند developer را بن کند");
+        throw new AppError(
+            403,
+            ErrorCodes.PROJECT_NOT_OWNED,
+            "Only developers can ban accounts with the developer role."
+        );
     }
 
     user.isBanned = !user.isBanned;
@@ -102,7 +153,9 @@ export const toggleBan = asyncHandler(async (req: any, res: Response) => {
     res.json({
         ok: true,
         isBanned: user.isBanned,
-        message: user.isBanned ? "کاربر بن شد" : "کاربر آنبن شد"
+        message: user.isBanned
+            ? "User has been banned successfully."
+            : "User has been unbanned successfully."
     });
 });
 
