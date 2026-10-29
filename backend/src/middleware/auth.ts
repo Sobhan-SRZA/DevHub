@@ -21,11 +21,10 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
         }
 
         let payload;
+
         try {
             payload = verifyToken(token);
-        }
-
-        catch (jwtErr: any) {
+        } catch (jwtErr: any) {
             return next(jwtErr);
         }
 
@@ -35,14 +34,17 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
 
         const session = await Session.findOne({
             sessionId: payload.sid,
-            expiresAt: { $gt: new Date() },
+            expiresAt: { $gt: new Date() }
         });
 
         if (!session) {
             return next(new AppError(401, ErrorCodes.SESSION_NOT_FOUND));
         }
 
-        const user = await User.findById(payload.sub).select("-password").lean();
+        const user = await User.findById(payload.sub)
+            .select("-password")
+            .lean();
+
         if (!user) {
             return next(new AppError(401, ErrorCodes.UNAUTHENTICATED));
         }
@@ -54,18 +56,16 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
         req.user = user;
         req.session = session;
 
-        // fire-and-forget
+        // Update the session activity timestamp without blocking the request.
         Session.updateOne(
             { _id: session._id },
             { lastActiveAt: new Date() }
         ).catch((err) => {
-            console.warn("[requireAuth] touch failed:", err?.message);
+            console.warn("[requireAuth] Failed to update session activity:", err?.message);
         });
 
         return next();
-    }
-
-    catch (err) {
+    } catch (err) {
         return next(err);
     }
 }
@@ -73,29 +73,36 @@ export async function requireAuth(req: any, res: Response, next: NextFunction) {
 export async function optionalAuth(req: any, _res: Response, next: NextFunction) {
     try {
         const token = req.cookies?.access_token as string | undefined;
-        if (!token)
+
+        if (!token) {
             return next();
+        }
 
         const payload = verifyToken(token);
-        if (payload.typ !== "access")
+
+        if (payload.typ !== "access") {
             return next();
+        }
 
         const session = await Session.findOne({
             sessionId: payload.sid,
-            expiresAt: { $gt: new Date() },
+            expiresAt: { $gt: new Date() }
         });
-        if (!session)
-            return next();
 
-        const user = await User.findById(payload.sub).select("-password").lean();
+        if (!session) {
+            return next();
+        }
+
+        const user = await User.findById(payload.sub)
+            .select("-password")
+            .lean();
+
         if (user && !(user as any).isBanned) {
             req.user = user;
             req.session = session;
         }
-    }
-
-    catch (err) {
-        console.debug("[optionalAuth] ignored:", (err as Error)?.message);
+    } catch (err) {
+        console.debug("[optionalAuth] Ignoring authentication error:", (err as Error)?.message);
     }
 
     return next();
@@ -104,38 +111,47 @@ export async function optionalAuth(req: any, _res: Response, next: NextFunction)
 export async function redirectProfile(req: any, res: Response, next: NextFunction) {
     try {
         const token = req.cookies?.access_token as string | undefined;
-        if (!token) return next();
 
-        /* -------- verify token -------- */
-        let payload;
-        try {
-            payload = verifyToken(token);
-        }
-
-        catch {
+        if (!token) {
             return next();
         }
 
-        if (payload.typ !== "access") return next();
+        /* ---------- Verify the access token ---------- */
 
-        /* -------- session check -------- */
+        let payload;
+
+        try {
+            payload = verifyToken(token);
+        } catch {
+            return next();
+        }
+
+        if (payload.typ !== "access") {
+            return next();
+        }
+
+        /* ---------- Validate the session ---------- */
+
         const session = await Session.findOne({
             sessionId: payload.sid,
             expiresAt: { $gt: new Date() }
         });
-        if (!session)
-            return next();
 
-        /* -------- user check -------- */
-        const user = await User.findById(payload.sub).lean();
-        if (!user)
+        if (!session) {
             return next();
+        }
+
+        /* ---------- Validate the user ---------- */
+
+        const user = await User.findById(payload.sub).lean();
+
+        if (!user) {
+            return next();
+        }
 
         return res.redirect("/dashboard/profile");
-    }
-
-    catch (err) {
-        console.debug("[redirectProfile] ignored:", (err as Error)?.message);
+    } catch (err) {
+        console.debug("[redirectProfile] Ignoring authentication error:", (err as Error)?.message);
         return next();
     }
 }
