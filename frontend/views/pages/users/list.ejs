@@ -2,55 +2,85 @@
 <html lang="en" dir="ltr">
 
 <head>
-  <!-- SEO metadata -->
+  <!-- ============ SEO METADATA ============ -->
   <%- include("../../components/seo-head", {
-    title: "Users",
-    description: "A directory of developers and project creators on DevHub.",
+    title: "Users — DevHub",
+    description: "Browse developers and project creators on DevHub. Discover profiles, projects, and open-source work from the community.",
     canonicalPath: "/users",
-    keywords: "DevHub users, developers, profiles"
+    keywords: "DevHub users, developers, profiles, open-source contributors",
+    ogType: "website",
+    extraStyles: [
+      "/styles/form-errors.css",
+      "/styles/users.css"
+    ],
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "DevHub Users",
+      "description": "A directory of developers and project creators on DevHub.",
+      "url": "/users"
+    }
   }) %>
 </head>
 
 <body>
-  <!-- Site header -->
+  <!-- ============ SITE HEADER ============ -->
   <%- include("../../components/header") %>
+  <%- include("../../components/dialogError") %>
 
-  <main class="list-page users-page">
-    <!-- Page header -->
-    <div class="list-page__head">
-      <h1 class="list-page__title">Users</h1>
-      <p class="list-page__sub">Developers and creators of open-source projects</p>
-    </div>
+  <main class="users-page">
 
-    <!-- Search and sorting controls -->
-    <div class="list-toolbar">
-      <input type="search" id="usersSearch" placeholder="Search by name or username…" autocomplete="off">
-      <select id="usersSort">
+    <!-- ============ PAGE HEADER ============ -->
+    <header class="users-hero">
+      <div class="users-hero__inner">
+        <span class="users-hero__badge">Community</span>
+
+        <h1 class="users-hero__title">Users</h1>
+
+        <p class="users-hero__sub">
+          Developers and creators of open-source projects.
+          Browse profiles, discover work, and connect with the community.
+        </p>
+      </div>
+    </header>
+
+    <!-- ============ TOOLBAR ============ -->
+    <section class="users-toolbar" aria-label="Search and filter users">
+      <div class="users-toolbar__search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" id="usersSearch" placeholder="Search by name or username…" autocomplete="off" aria-label="Search users by name or username">
+      </div>
+
+      <select id="usersSort" class="users-toolbar__select" aria-label="Sort users">
         <option value="recent">Newest</option>
-        <option value="name">Name</option>
+        <option value="name">Name (A–Z)</option>
         <option value="projects">Most projects</option>
       </select>
-    </div>
+    </section>
 
-    <!-- Results metadata -->
-    <div class="list-meta" id="usersMeta"></div>
+    <!-- ============ RESULT META ============ -->
+    <div class="users-meta" id="usersMeta" aria-live="polite"></div>
 
-    <!-- User grid -->
-    <div class="list-grid" id="usersGrid">
+    <!-- ============ USER GRID ============ -->
+    <div class="users-grid" id="usersGrid" role="list">
       <div class="home-loading" style="grid-column:1/-1">
         <div class="home-loading__spinner"></div>
-        <p>Loading…</p>
+        <p>Loading users…</p>
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div class="list-pagination" id="usersPagination"></div>
+    <!-- ============ PAGINATION ============ -->
+    <nav class="users-pagination" id="usersPagination" aria-label="User directory pagination"></nav>
+
   </main>
 
-  <!-- Page script -->
+  <!-- ============ PAGE SCRIPT ============ -->
   <script defer src="/js/pages/users-list.js"></script>
 
-  <!-- Site footer -->
+  <!-- ============ SITE FOOTER ============ -->
   <%- include("../../components/footer") %>
 </body>
 
