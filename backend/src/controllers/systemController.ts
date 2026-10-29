@@ -16,7 +16,7 @@ import os from "os";
 import fs from "fs";
 
 /* ==================================================================
-   GET /api/system/stats
+   GET /api/system/stats — Retrieve system and application statistics
    ================================================================== */
 export const getSystemStats = asyncHandler(async (_req: Request, res: Response) => {
     const mem = process.memoryUsage();
@@ -24,10 +24,12 @@ export const getSystemStats = asyncHandler(async (_req: Request, res: Response) 
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
 
-    /* ---------- database ---------- */
+    /* ---------- Database statistics ---------- */
     let dbInfo: any = { connected: false };
+
     try {
         const conn = mongoose.connection;
+
         if (conn.readyState === 1 && conn.db) {
             const [collections, stats] = await Promise.all([
                 conn.db.listCollections().toArray(),
@@ -40,7 +42,7 @@ export const getSystemStats = asyncHandler(async (_req: Request, res: Response) 
                 host: conn.host,
                 port: conn.port,
                 collections: collections.length,
-                collectionNames: collections.map((c) => c.name),
+                collectionNames: collections.map((collection) => collection.name),
                 documents: stats.objects,
                 dataSize: stats.dataSize,
                 storageSize: stats.storageSize,
@@ -48,13 +50,14 @@ export const getSystemStats = asyncHandler(async (_req: Request, res: Response) 
                 avgObjSize: Math.round(stats.avgObjSize || 0)
             };
         }
-    }
-    
-    catch (err) {
-        dbInfo = { connected: false, error: (err as Error).message };
+    } catch (err) {
+        dbInfo = {
+            connected: false,
+            error: (err as Error).message
+        };
     }
 
-    /* ---------- response ---------- */
+    /* ---------- System information response ---------- */
     res.json({
         ok: true,
         timestamp: new Date().toISOString(),
@@ -103,32 +106,41 @@ export const getSystemStats = asyncHandler(async (_req: Request, res: Response) 
 });
 
 /* ==================================================================
-   GET /api/system/logs
+   GET /api/system/logs — Retrieve application log entries
    ================================================================== */
 export const getLogs = asyncHandler(async (req: Request, res: Response) => {
-    const limit = Math.min(1000, Math.max(1, parseInt(String(req.query.limit || "200"), 10)));
+    const limit = Math.min(
+        1000,
+        Math.max(1, parseInt(String(req.query.limit || "200"), 10))
+    );
+
     const level = (req.query.level as string) || "";
     const search = String(req.query.search || "");
     const file = req.query.file as string | undefined;
 
-    /* ---------- از فایل (تاریخی) ---------- */
+    /* ---------- Retrieve and filter archived log entries ---------- */
     let entries;
+
     if (file && file !== "live") {
         entries = logger.readFile(file, limit);
 
         if (level && level !== "all") {
-            entries = entries.filter((e) => e.level === level);
+            entries = entries.filter((entry) => entry.level === level);
         }
 
         if (search) {
-            const s = search.toLowerCase();
-            entries = entries.filter((e) => e.message.toLowerCase().includes(s));
+            const searchTerm = search.toLowerCase();
+
+            entries = entries.filter((entry) =>
+                entry.message.toLowerCase().includes(searchTerm)
+            );
         }
-    } 
-    
-    else {
-        /* ---------- از buffer زنده ---------- */
-        const validLevel = (level && level !== "all") ? (level as any) : undefined;
+    } else {
+        /* ---------- Retrieve recent log entries from the live buffer ---------- */
+        const validLevel = level && level !== "all"
+            ? (level as any)
+            : undefined;
+
         entries = logger.getRecent(limit, validLevel, search || undefined);
     }
 
@@ -142,41 +154,59 @@ export const getLogs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ==================================================================
-   GET /api/system/logs/download
+   GET /api/system/logs/download — Download an archived log file
    ================================================================== */
 export const downloadLogs = asyncHandler(async (req: Request, res: Response) => {
     const file = req.query.file as string;
 
     if (!file) {
-        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "پارامتر file الزامی است");
+        throw new AppError(
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+            "The file parameter is required."
+        );
     }
 
     const safeName = path.basename(file);
+
     if (!/^app-\d{4}-\d{2}-\d{2}\.log$/.test(safeName)) {
-        throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "نام فایل نامعتبر است");
+        throw new AppError(
+            400,
+            ErrorCodes.VALIDATION_ERROR,
+            "Invalid log file name."
+        );
     }
 
     const filePath = path.join(LOG_DIR, safeName);
+
     if (!fs.existsSync(filePath)) {
-        throw new AppError(404, ErrorCodes.INTERNAL_ERROR, "فایل یافت نشد");
+        throw new AppError(
+            404,
+            ErrorCodes.INTERNAL_ERROR,
+            "Log file not found."
+        );
     }
 
     res.download(filePath, safeName);
 });
 
 /* ==================================================================
-   POST /api/system/logs/clear
+   POST /api/system/logs/clear — Clear in-memory log entries
    ================================================================== */
 export const clearLogs = asyncHandler(async (_req: Request, res: Response) => {
     logger.clear();
-    res.json({ ok: true, message: "لاگ‌های حافظه پاک شدند" });
+
+    res.json({
+        ok: true,
+        message: "In-memory logs cleared successfully."
+    });
 });
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
  * Licensed under the BSD 3-Clause License.
- * See the LICENSE file in the project root for license information.
+ * See the LICENSE file in the project root for licensing details.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
