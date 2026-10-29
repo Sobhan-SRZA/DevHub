@@ -1,16 +1,28 @@
 /* ============================================================
    DevHub Theme Controller
-   mode: system | light | dark
-   accent: blue | violet | emerald | amber | rose | cyan
+   ============================================================
+   Manages the application's colour mode and accent palette.
+   Preferences are persisted in localStorage and applied to the
+   document root as `data-mode` and `data-accent` attributes.
+
+   Supported modes:   system | light | dark
+   Supported accents: blue | violet | emerald | amber | rose | cyan
    ============================================================ */
 (function () {
     'use strict';
 
+    /* Storage keys and the set of valid option values. */
     var STORAGE_MODE = 'dh-mode';
     var STORAGE_ACCENT = 'dh-accent';
     var ACCENTS = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan'];
     var MODES = ['system', 'light', 'dark'];
 
+    /* --------------------------------------------------------
+       Safe Storage Access
+       --------------------------------------------------------
+       Wraps localStorage reads and writes so that private-browsing
+       modes or storage-quota errors cannot break the page.
+       -------------------------------------------------------- */
     function safeGet(key, fallback) {
         try {
             var v = localStorage.getItem(key);
@@ -23,9 +35,14 @@
     function safeSet(key, value) {
         try {
             localStorage.setItem(key, value);
-        } catch (e) { /* private mode */ }
+        } catch (e) { /* Ignore storage errors in private mode. */ }
     }
 
+    /* --------------------------------------------------------
+       Mode Resolution
+       -------------------------------------------------------- */
+
+    /* Determine the operating system's current colour preference. */
     function systemMode() {
         try {
             return window.matchMedia('(prefers-color-scheme: light)').matches
@@ -36,21 +53,31 @@
         }
     }
 
+    /* Resolve the stored preference to a concrete mode. */
     function resolveMode(mode) {
         return mode === 'system' ? systemMode() : mode;
     }
 
+    /* --------------------------------------------------------
+       Theme Application
+       --------------------------------------------------------
+       Applies the resolved mode and accent to the document root,
+       synchronises the browser's `color-scheme` and the optional
+       theme-color meta tag, and dispatches a `dh:theme` event so
+       other modules can react to theme changes.
+       -------------------------------------------------------- */
     function applyTheme(modePref, accent) {
         if (MODES.indexOf(modePref) === -1) modePref = 'system';
         if (ACCENTS.indexOf(accent) === -1) accent = 'blue';
 
         var resolved = resolveMode(modePref);
         var root = document.documentElement;
+
         root.setAttribute('data-mode', resolved);
         root.setAttribute('data-accent', accent);
         root.style.colorScheme = resolved;
 
-        // Keep meta theme-color in sync when present
+        // Keep the theme-color meta tag in sync when present.
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
             meta.setAttribute('content', resolved === 'light' ? '#f8fafc' : '#070b12');
@@ -61,6 +88,7 @@
         }));
     }
 
+    /* Read the persisted mode and accent preferences. */
     function getState() {
         return {
             mode: safeGet(STORAGE_MODE, 'system'),
@@ -68,20 +96,30 @@
         };
     }
 
+    /* Persist a new mode preference and re-apply the theme. */
     function setMode(mode) {
         if (MODES.indexOf(mode) === -1) return;
+
         safeSet(STORAGE_MODE, mode);
         applyTheme(mode, getState().accent);
         syncUI();
     }
 
+    /* Persist a new accent preference and re-apply the theme. */
     function setAccent(accent) {
         if (ACCENTS.indexOf(accent) === -1) return;
+
         safeSet(STORAGE_ACCENT, accent);
         applyTheme(getState().mode, accent);
         syncUI();
     }
 
+    /* --------------------------------------------------------
+       UI Synchronisation
+       --------------------------------------------------------
+       Reflects the current theme state in the mode and accent
+       toggle buttons, and updates the trigger's icon and labels.
+       -------------------------------------------------------- */
     function syncUI() {
         var state = getState();
         var resolved = resolveMode(state.mode);
@@ -101,15 +139,17 @@
         var trigger = document.getElementById('themeBtn');
         if (trigger) {
             var label =
-                (state.mode === 'system' ? 'سیستم' : state.mode === 'light' ? 'روز' : 'شب') +
+                (state.mode === 'system' ? 'System' : state.mode === 'light' ? 'Light' : 'Dark') +
                 ' · ' +
                 state.accent;
-            trigger.setAttribute('title', 'تم: ' + label);
-            trigger.setAttribute('aria-label', 'انتخاب تم (' + label + ')');
 
-            // Swap icon sun/moon based on resolved mode
+            trigger.setAttribute('title', 'Theme: ' + label);
+            trigger.setAttribute('aria-label', 'Choose theme (' + label + ')');
+
+            // Swap the sun and moon icons according to the resolved mode.
             var sun = trigger.querySelector('[data-icon="sun"]');
             var moon = trigger.querySelector('[data-icon="moon"]');
+
             if (sun && moon) {
                 sun.style.display = resolved === 'light' ? 'none' : 'block';
                 moon.style.display = resolved === 'light' ? 'block' : 'none';
@@ -117,9 +157,13 @@
         }
     }
 
+    /* --------------------------------------------------------
+       Panel Visibility
+       -------------------------------------------------------- */
     function closePanel() {
         var panel = document.getElementById('themePanel');
         var btn = document.getElementById('themeBtn');
+
         if (panel) panel.classList.remove('is-open');
         if (btn) btn.setAttribute('aria-expanded', 'false');
     }
@@ -128,16 +172,27 @@
         var panel = document.getElementById('themePanel');
         var btn = document.getElementById('themeBtn');
         if (!panel || !btn) return;
+
         var open = !panel.classList.contains('is-open');
+
         panel.classList.toggle('is-open', open);
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
         if (open) {
-            // close other menus if present
+            // Close any other open menus for a cleaner interaction.
             var profileMenu = document.getElementById('profileMenu');
+
             if (profileMenu) profileMenu.classList.remove('open', 'is-open', 'show');
         }
     }
 
+    /* --------------------------------------------------------
+       Event Binding
+       --------------------------------------------------------
+       Wires up the trigger, panel, outside-click and Escape-key
+       handlers, and subscribes to OS theme changes so that
+       "system" mode updates reactively.
+       -------------------------------------------------------- */
     function bind() {
         var btn = document.getElementById('themeBtn');
         var panel = document.getElementById('themePanel');
@@ -150,11 +205,13 @@
 
         panel.addEventListener('click', function (e) {
             e.stopPropagation();
+
             var modeBtn = e.target.closest('.theme-mode-btn');
             if (modeBtn) {
                 setMode(modeBtn.getAttribute('data-mode'));
                 return;
             }
+
             var accentBtn = e.target.closest('.theme-accent-btn');
             if (accentBtn) {
                 setAccent(accentBtn.getAttribute('data-accent'));
@@ -169,7 +226,7 @@
             if (e.key === 'Escape') closePanel();
         });
 
-        // React to OS theme changes when mode=system
+        // React to OS-level theme changes while in "system" mode.
         try {
             var mq = window.matchMedia('(prefers-color-scheme: light)');
             var onChange = function () {
@@ -178,14 +235,21 @@
                     syncUI();
                 }
             };
+
             if (mq.addEventListener) mq.addEventListener('change', onChange);
             else if (mq.addListener) mq.addListener(onChange);
-        } catch (e) { /* ignore */ }
+        } catch (e) { /* Ignore environments without matchMedia support. */ }
 
         syncUI();
     }
 
-    // Apply immediately (boot script may have run already)
+    /* --------------------------------------------------------
+       Bootstrapping
+       --------------------------------------------------------
+       Apply the persisted theme immediately — the inline boot
+       script may already have run — then bind UI interactions
+       once the DOM is ready.
+       -------------------------------------------------------- */
     applyTheme(getState().mode, getState().accent);
 
     if (document.readyState === 'loading') {
@@ -194,12 +258,17 @@
         bind();
     }
 
-    // Public API
+    /* --------------------------------------------------------
+       Public API
+       --------------------------------------------------------
+       Exposed as `window.DevHubTheme` for programmatic control.
+       -------------------------------------------------------- */
     window.DevHubTheme = {
         setMode: setMode,
         setAccent: setAccent,
         getState: function () {
             var s = getState();
+
             return {
                 mode: s.mode,
                 accent: s.accent,
