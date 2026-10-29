@@ -1,37 +1,47 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint to prevent flashing. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/system.css">
-  <title>وضعیت سیستم</title>
+
+  <title>System Status</title>
 </head>
 
 <body>
@@ -39,27 +49,29 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: "وضعیت سیستم" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "System Status" }) %>
 
     <main class="dash-main sys-main">
-      <!-- ============ HEAD ============ -->
+      <!-- ============ PAGE HEADER ============ -->
       <div class="dash-head">
         <div>
-          <h2 class="dash-title">وضعیت سیستم</h2>
-          <p class="dash-sub">اطلاعات لحظه‌ای سرور، حافظه، پردازنده و دیتابیس</p>
+          <h2 class="dash-title">System Status</h2>
+          <p class="dash-sub">Real-time information about the server, memory, CPU, and database.</p>
         </div>
+
         <div class="sys-head-actions">
           <label class="sys-auto-refresh">
             <input type="checkbox" id="autoRefreshToggle" checked>
-            <span>به‌روزرسانی خودکار (۵s)</span>
+            <span>Auto-refresh (5s)</span>
           </label>
+
           <button type="button" class="btn-ghost" id="refreshBtn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            رفرش
+            Refresh
           </button>
         </div>
       </div>
@@ -67,16 +79,18 @@
       <!-- ============ HEALTH BANNER ============ -->
       <div class="sys-health" id="healthBanner" data-status="loading">
         <div class="sys-health__icon" id="healthIcon">…</div>
+
         <div class="sys-health__body">
-          <strong id="healthTitle">در حال بررسی…</strong>
-          <small id="healthSub">اتصال به سرور</small>
+          <strong id="healthTitle">Checking…</strong>
+          <small id="healthSub">Connecting to the server</small>
         </div>
+
         <div class="sys-health__last-update" id="lastUpdate">—</div>
       </div>
 
-      <!-- ============ PROCESS + OS ============ -->
+      <!-- ============ PROCESS + OPERATING SYSTEM ============ -->
       <div class="sys-grid sys-grid--2">
-
+        <!-- Process information -->
         <div class="sys-card">
           <div class="sys-card__head">
             <div class="sys-card__icon" style="--c:#6ebbff">
@@ -86,13 +100,15 @@
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
             </div>
-            <h3 class="sys-card__title">پروسه (Process)</h3>
+            <h3 class="sys-card__title">Process</h3>
           </div>
+
           <div class="sys-info-list" id="processList">
             <div class="sys-loading">…</div>
           </div>
         </div>
 
+        <!-- Operating system information -->
         <div class="sys-card">
           <div class="sys-card__head">
             <div class="sys-card__icon" style="--c:#34d399">
@@ -102,8 +118,9 @@
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
               </svg>
             </div>
-            <h3 class="sys-card__title">سیستم‌عامل</h3>
+            <h3 class="sys-card__title">Operating System</h3>
           </div>
+
           <div class="sys-info-list" id="osList">
             <div class="sys-loading">…</div>
           </div>
@@ -127,8 +144,9 @@
               <line x1="1" y1="14" x2="4" y2="14"></line>
             </svg>
           </div>
-          <h3 class="sys-card__title">حافظه</h3>
+          <h3 class="sys-card__title">Memory</h3>
         </div>
+
         <div class="sys-memory" id="memoryPanel">
           <div class="sys-loading">…</div>
         </div>
@@ -143,8 +161,9 @@
               <rect x="9" y="9" width="6" height="6"></rect>
             </svg>
           </div>
-          <h3 class="sys-card__title">پردازنده (CPU)</h3>
+          <h3 class="sys-card__title">CPU</h3>
         </div>
+
         <div class="sys-info-list" id="cpuList">
           <div class="sys-loading">…</div>
         </div>
@@ -160,14 +179,14 @@
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
             </svg>
           </div>
-          <h3 class="sys-card__title">دیتابیس</h3>
+          <h3 class="sys-card__title">Database</h3>
           <span class="sys-card__badge" id="dbBadge">—</span>
         </div>
+
         <div id="dbPanel">
           <div class="sys-loading">…</div>
         </div>
       </div>
-
     </main>
   </div>
 
