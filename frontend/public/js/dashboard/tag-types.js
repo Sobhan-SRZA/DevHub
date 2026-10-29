@@ -5,17 +5,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     /* ---------------- State ---------------- */
     const state = {
-        view: 'approved',       // 'approved' | 'pending'
+        view: 'approved', // 'approved' | 'pending'
         types: [],
         pendingTypes: [],
         search: '',
         sort: 'order',
     };
 
-    const $ = (s, r = document) => r.querySelector(s);
-    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-    /* ---------------- Refs ---------------- */
+    /* ---------------- DOM References ---------------- */
     const grid = $('#typesGrid');
     const searchInput = $('#ttSearch');
     const sortSelect = $('#ttSort');
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageSub = $('#pageSub');
     const tabs = $$('.tt-tab');
 
-    /* Modal */
+    /* Create/Edit Modal */
     const modal = $('#typeModal');
     const modalBackdrop = $('#typeModalBackdrop');
     const modalTitle = $('#typeModalTitle');
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalSubmit = $('#typeModalSubmit');
     const form = $('#typeForm');
 
-    /* Detail modal */
+    /* Category Details Modal */
     const detailModal = $('#detailModal');
     const detailBackdrop = $('#detailBackdrop');
     const detailClose = $('#detailClose');
@@ -47,27 +47,45 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        API
        ============================================================ */
+
+    /**
+     * Sends an authenticated API request and parses the JSON response.
+     *
+     * @param {string} path - The API endpoint.
+     * @param {RequestInit} opts - Additional fetch options.
+     * @returns {Promise<any>} The parsed API response.
+     * @throws {Error} If the request fails.
+     */
     async function api(path, opts = {}) {
         const res = await fetch(path, {
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             ...opts,
         });
+
         let data = null;
-        try { data = await res.json(); } catch { }
+
+        try {
+            data = await res.json();
+        } catch {
+            // The response may not contain valid JSON.
+        }
+
         if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
+            const err = new Error(data?.message || 'An error occurred.');
             Object.assign(err, data, { status: res.status });
             throw err;
         }
+
         return data;
     }
 
     /* ============================================================
-       Load data
+       Load Data
        ============================================================ */
+
     async function loadAll() {
-        grid.innerHTML = `<div class="dash-loading">در حال بارگذاری…</div>`;
+        grid.innerHTML = `<div class="dash-loading">Loading...</div>`;
 
         try {
             const [approved, pending] = await Promise.all([
@@ -81,12 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCounts();
             render();
         } catch (err) {
-            grid.innerHTML = `<div class="tt-empty">
-                <div class="tt-empty__icon">⚠️</div>
-                <h3 class="tt-empty__title">خطا در بارگذاری</h3>
-                <p class="tt-empty__sub">${escapeHtml(err.message || '')}</p>
-                <button class="btn-primary" onclick="location.reload()">تلاش مجدد</button>
-            </div>`;
+            grid.innerHTML = `
+                <div class="tt-empty">
+                    <div class="tt-empty__icon">⚠️</div>
+                    <h3 class="tt-empty__title">Failed to Load Categories</h3>
+                    <p class="tt-empty__sub">${escapeHtml(err.message || '')}</p>
+                    <button class="btn-primary" onclick="location.reload()">Try Again</button>
+                </div>
+            `;
         }
     }
 
@@ -94,10 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#approvedCount').textContent = state.types.length;
         $('#pendingCount').textContent = state.pendingTypes.length;
 
-        // مخفی کردن تب pending اگه خالی
+        // Hide the pending tab when there are no pending categories.
         const pendingTab = $('#pendingTab');
+
         if (state.pendingTypes.length === 0) {
             pendingTab.style.display = 'none';
+
             if (state.view === 'pending') {
                 state.view = 'approved';
                 setView('approved');
@@ -108,24 +130,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       View switching
+       View Switching
        ============================================================ */
+
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => setView(tab.dataset.view));
     });
 
     function setView(view) {
         state.view = view;
-        tabs.forEach((t) => t.classList.toggle('active', t.dataset.view === view));
+
+        tabs.forEach((tab) => {
+            tab.classList.toggle('active', tab.dataset.view === view);
+        });
 
         if (view === 'pending') {
-            pageTitle.textContent = 'در انتظار تایید';
-            pageSub.textContent = 'کتگوری‌هایی که کاربران ساخته‌اند و نیاز به تایید دارند';
+            pageTitle.textContent = 'Pending Approval';
+            pageSub.textContent = 'User-submitted categories awaiting review and approval.';
             btnNew.style.display = 'none';
             filtersRow.style.display = 'none';
         } else {
-            pageTitle.textContent = 'کتگوری‌های تگ';
-            pageSub.textContent = 'مدیریت دسته‌بندی تگ‌ها (مثل GitHub Topics)';
+            pageTitle.textContent = 'Tag Categories';
+            pageSub.textContent = 'Manage tag categories, similar to GitHub Topics.';
             btnNew.style.display = '';
             filtersRow.style.display = '';
         }
@@ -134,41 +160,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       Render
+       Render Categories
        ============================================================ */
-    function render() {
-        const source = state.view === 'pending' ? state.pendingTypes : state.types;
 
-        /* filter */
+    function render() {
+        const source = state.view === 'pending'
+            ? state.pendingTypes
+            : state.types;
+
+        /* Filter categories */
         let items = source.slice();
+
         if (state.search && state.view !== 'pending') {
-            const q = state.search.toLowerCase();
-            items = items.filter(
-                (t) =>
-                    t.name.toLowerCase().includes(q) ||
-                    t.slug.toLowerCase().includes(q)
+            const query = state.search.toLowerCase();
+
+            items = items.filter((type) =>
+                type.name.toLowerCase().includes(query) ||
+                type.slug.toLowerCase().includes(query)
             );
         }
 
-        /* sort (فقط در approved) */
+        /* Sort approved categories */
         if (state.view === 'approved') {
             const sortMap = {
-                order: (a, b) => (a.order || 0) - (b.order || 0) || a.name.localeCompare(b.name),
+                order: (a, b) =>
+                    (a.order || 0) - (b.order || 0) ||
+                    a.name.localeCompare(b.name),
                 name: (a, b) => a.name.localeCompare(b.name),
                 usage: (a, b) => (b.tagCount || 0) - (a.tagCount || 0),
                 recent: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
             };
+
             items.sort(sortMap[state.sort] || sortMap.order);
         }
 
         if (!items.length) {
             const isPending = state.view === 'pending';
-            grid.innerHTML = `<div class="tt-empty">
-                <div class="tt-empty__icon">${isPending ? '✅' : '🏷️'}</div>
-                <h3 class="tt-empty__title">${isPending ? 'همه تایید شده‌اند' : 'هیچ کتگوری‌ای وجود ندارد'}</h3>
-                <p class="tt-empty__sub">${isPending ? 'کتگوری در انتظار تایید نیست' : 'اولین کتگوری را بسازید'}</p>
-                ${!isPending ? `<button class="btn-primary" onclick="document.getElementById('btnNewType').click()">ساخت کتگوری</button>` : ''}
-            </div>`;
+
+            grid.innerHTML = `
+                <div class="tt-empty">
+                    <div class="tt-empty__icon">${isPending ? '✅' : '🏷️'}</div>
+                    <h3 class="tt-empty__title">
+                        ${isPending ? 'All Caught Up!' : 'No Categories Found'}
+                    </h3>
+                    <p class="tt-empty__sub">
+                        ${isPending
+                    ? 'There are no categories awaiting approval.'
+                    : 'Create your first category to get started.'}
+                    </p>
+                    ${!isPending
+                    ? `<button class="btn-primary" onclick="document.getElementById('btnNewType').click()">Create Category</button>`
+                    : ''}
+                </div>
+            `;
+
             return;
         }
 
@@ -176,24 +221,26 @@ document.addEventListener('DOMContentLoaded', () => {
         bindCardActions();
     }
 
-    function renderCard(t) {
+    function renderCard(type) {
         const isPending = state.view === 'pending';
-        const isSystem = !!t.isSystem;
-        const canEdit = true; // سرور چک می‌کنه
-        const canDelete = !isSystem || true; // سرور چک می‌کنه
+        const isSystem = Boolean(type.isSystem);
+
+        // The server enforces edit and deletion permissions.
+        const canEdit = true;
+        const canDelete = !isSystem || true;
 
         return `
-            <div class="tt-card" style="--tt-color:${t.color}" data-id="${t._id}">
+            <div class="tt-card" style="--tt-color:${type.color}" data-id="${type._id}">
                 <div class="tt-card__head">
-                    <div class="tt-card__icon">${escapeHtml(t.icon || '🏷')}</div>
+                    <div class="tt-card__icon">${escapeHtml(type.icon || '🏷')}</div>
                     <div class="tt-card__title-wrap">
-                        <h3 class="tt-card__title">${escapeHtml(t.name)}</h3>
-                        <div class="tt-card__slug">${escapeHtml(t.slug)}</div>
+                        <h3 class="tt-card__title">${escapeHtml(type.name)}</h3>
+                        <div class="tt-card__slug">${escapeHtml(type.slug)}</div>
                     </div>
                 </div>
 
                 <p class="tt-card__desc">
-                    ${escapeHtml(t.description || 'بدون توضیح')}
+                    ${escapeHtml(type.description || 'No description provided.')}
                 </p>
 
                 <div class="tt-card__meta">
@@ -201,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                         </svg>
-                        ${t.tagCount || 0} تگ
+                        ${type.tagCount || 0} tags
                     </span>
 
                     ${isSystem ? `
@@ -209,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                             </svg>
-                            سیستمی
+                            System
                         </span>
                     ` : ''}
 
@@ -219,17 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
-                            در انتظار تایید
+                            Pending Approval
                         </span>
                     ` : ''}
 
-                    ${!t.allowUserTags ? `
+                    ${!type.allowUserTags ? `
                         <span class="tt-chip tt-chip--locked">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
-                            فقط ادمین
+                            Admin Only
                         </span>
                     ` : ''}
                 </div>
@@ -240,14 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
-                            تایید
+                            Approve
                         </button>
                         <button type="button" class="tt-action tt-action--danger" data-action="delete">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
                             </svg>
-                            رد
+                            Reject
                         </button>
                     ` : `
                         <button type="button" class="tt-action" data-action="view">
@@ -255,21 +302,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
-                            تگ‌ها
+                            View Tags
                         </button>
                         <button type="button" class="tt-action" data-action="edit">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                            ویرایش
+                            Edit
                         </button>
                         <button type="button" class="tt-action tt-action--danger" data-action="delete">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
                             </svg>
-                            حذف
+                            Delete
                         </button>
                     `}
                 </div>
@@ -280,10 +327,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function bindCardActions() {
         $$('.tt-card').forEach((card) => {
             const id = card.dataset.id;
+
             card.querySelectorAll('[data-action]').forEach((btn) => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+
                     const action = btn.dataset.action;
+
                     if (action === 'edit') openEdit(id);
                     else if (action === 'delete') remove(id);
                     else if (action === 'approve') approve(id);
@@ -294,8 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       Modal — create / edit
+       Create/Edit Modal
        ============================================================ */
+
     function openModal() {
         modal.classList.add('open');
         modalBackdrop.classList.add('open');
@@ -306,7 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('open');
         modalBackdrop.classList.remove('open');
         document.body.style.overflow = '';
+
         state.editingId = null;
+
         form.reset();
         FormKit.clearAllErrors(form);
         updatePreview();
@@ -315,52 +368,61 @@ document.addEventListener('DOMContentLoaded', () => {
     modalClose.addEventListener('click', closeModal);
     modalCancel.addEventListener('click', closeModal);
     modalBackdrop.addEventListener('click', closeModal);
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+            closeModal();
+        }
     });
 
     btnNew.addEventListener('click', () => {
         state.editingId = null;
+
         form.reset();
         form.elements.color.value = '#6ebbff';
         form.elements.order.value = 0;
         form.elements.allowUserTags.checked = true;
         form.elements.icon.value = '';
-        modalTitle.textContent = 'کتگوری جدید';
-        modalSubtitle.textContent = 'یک کتگوری برای گروه‌بندی تگ‌ها بسازید';
-        modalSubmit.textContent = 'ساخت کتگوری';
+
+        modalTitle.textContent = 'Create Category';
+        modalSubtitle.textContent = 'Create a category to organize related tags.';
+        modalSubmit.textContent = 'Create Category';
+
         updatePreview();
         openModal();
+
         setTimeout(() => form.elements.name.focus(), 200);
     });
 
     function openEdit(id) {
-        const t = state.types.find((x) => x._id === id);
-        if (!t) return;
+        const type = state.types.find((item) => item._id === id);
+        if (!type) return;
 
         state.editingId = id;
-        modalTitle.textContent = 'ویرایش کتگوری';
-        modalSubtitle.textContent = t.name;
-        modalSubmit.textContent = 'ذخیره تغییرات';
 
-        form.elements._id.value = t._id;
-        form.elements.name.value = t.name;
-        form.elements.slug.value = t.slug;
-        form.elements.icon.value = t.icon || '';
-        form.elements.color.value = t.color || '#6ebbff';
-        form.elements.description.value = t.description || '';
-        form.elements.order.value = t.order || 0;
-        form.elements.allowUserTags.checked = t.allowUserTags !== false;
+        modalTitle.textContent = 'Edit Category';
+        modalSubtitle.textContent = type.name;
+        modalSubmit.textContent = 'Save Changes';
+
+        form.elements._id.value = type._id;
+        form.elements.name.value = type.name;
+        form.elements.slug.value = type.slug;
+        form.elements.icon.value = type.icon || '';
+        form.elements.color.value = type.color || '#6ebbff';
+        form.elements.description.value = type.description || '';
+        form.elements.order.value = type.order || 0;
+        form.elements.allowUserTags.checked = type.allowUserTags !== false;
 
         updatePreview();
         openModal();
     }
 
     /* ============================================================
-       Preview
+       Category Preview
        ============================================================ */
+
     function updatePreview() {
-        const name = form.elements.name.value.trim() || 'نام کتگوری';
+        const name = form.elements.name.value.trim() || 'Category Name';
         const icon = form.elements.icon.value.trim() || '🏷';
         const color = form.elements.color.value || '#6ebbff';
 
@@ -375,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.elements.icon?.addEventListener('input', updatePreview);
     form.elements.color?.addEventListener('input', updatePreview);
 
-    /* color presets */
+    /* Color Presets */
     $$('.tt-color-dot').forEach((btn) => {
         btn.addEventListener('click', () => {
             form.elements.color.value = btn.dataset.color;
@@ -384,10 +446,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
-       Submit
+       Submit Form
        ============================================================ */
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
         const values = {
             name: form.elements.name.value.trim(),
@@ -400,27 +463,44 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (!values.name || values.name.length < 2) {
-            return FormKit.showFieldError(form.elements.name, 'نام باید حداقل ۲ کاراکتر باشد');
+            return FormKit.showFieldError(
+                form.elements.name,
+                'The name must contain at least 2 characters.'
+            );
         }
 
         FormKit.clearAllErrors(form);
+
         modalSubmit.disabled = true;
+
         const originalText = modalSubmit.textContent;
-        modalSubmit.textContent = 'در حال ذخیره…';
+        modalSubmit.textContent = 'Saving...';
 
         try {
-            const isEdit = !!state.editingId;
-            const url = isEdit ? `/api/tag-types/${state.editingId}` : '/api/tag-types';
+            const isEdit = Boolean(state.editingId);
+            const url = isEdit
+                ? `/api/tag-types/${state.editingId}`
+                : '/api/tag-types';
             const method = isEdit ? 'PUT' : 'POST';
 
-            await api(url, { method, body: JSON.stringify(values) });
+            await api(url, {
+                method,
+                body: JSON.stringify(values),
+            });
 
-            toast(isEdit ? 'کتگوری ویرایش شد' : 'کتگوری ساخته شد', 'success');
+            toast(
+                isEdit ? 'Category updated successfully.' : 'Category created successfully.',
+                'success'
+            );
+
             closeModal();
             await loadAll();
         } catch (err) {
-            if (err.details || err.field) FormKit.applyServerErrors(form, err);
-            toast(err.message || 'خطا در ذخیره', 'error');
+            if (err.details || err.field) {
+                FormKit.applyServerErrors(form, err);
+            }
+
+            toast(err.message || 'Failed to save the category.', 'error');
         } finally {
             modalSubmit.disabled = false;
             modalSubmit.textContent = originalText;
@@ -428,52 +508,64 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
-       Delete / Approve
+       Delete / Approve Categories
        ============================================================ */
+
     async function remove(id) {
-        const source = state.view === 'pending' ? state.pendingTypes : state.types;
-        const t = source.find((x) => x._id === id);
+        const source = state.view === 'pending'
+            ? state.pendingTypes
+            : state.types;
+
+        const type = source.find((item) => item._id === id);
         const isPending = state.view === 'pending';
 
-        const ok = await confirmDialog({
-            title: isPending ? 'رد کتگوری' : 'حذف کتگوری',
+        const confirmed = await confirmDialog({
+            title: isPending ? 'Reject Category' : 'Delete Category',
             message: isPending
-                ? `کتگوری «${t?.name}» رد شود؟`
-                : `کتگوری «${t?.name}» حذف شود؟ (فقط اگه تگی نداشته باشه)`,
-            confirmText: isPending ? 'بله، رد کن' : 'بله، حذف کن',
+                ? `Are you sure you want to reject "${type?.name}"?`
+                : `Are you sure you want to delete "${type?.name}"? Categories can only be deleted if they have no associated tags.`,
+            confirmText: isPending ? 'Yes, Reject' : 'Yes, Delete',
             danger: true,
         });
-        if (!ok) return;
+
+        if (!confirmed) return;
 
         try {
             await api(`/api/tag-types/${id}`, { method: 'DELETE' });
-            toast(isPending ? 'کتگوری رد شد' : 'کتگوری حذف شد', 'success');
+
+            toast(
+                isPending ? 'Category rejected successfully.' : 'Category deleted successfully.',
+                'success'
+            );
+
             await loadAll();
         } catch (err) {
-            toast(err.message || 'خطا', 'error');
+            toast(err.message || 'An error occurred.', 'error');
         }
     }
 
     async function approve(id) {
         try {
             await api(`/api/tag-types/${id}/approve`, { method: 'POST' });
-            toast('کتگوری تایید شد', 'success');
+
+            toast('Category approved successfully.', 'success');
             await loadAll();
         } catch (err) {
-            toast(err.message || 'خطا در تایید', 'error');
+            toast(err.message || 'Failed to approve the category.', 'error');
         }
     }
 
     /* ============================================================
-       Detail modal — show tags in this category
+       Category Details Modal
        ============================================================ */
-    function openDetail(id) {
-        const t = state.types.find((x) => x._id === id);
-        if (!t) return;
 
-        detailTitle.textContent = `${t.icon || '🏷'} ${t.name}`;
-        detailSubtitle.textContent = t.description || t.slug;
-        detailTags.innerHTML = `<div class="dash-loading">در حال بارگذاری…</div>`;
+    function openDetail(id) {
+        const type = state.types.find((item) => item._id === id);
+        if (!type) return;
+
+        detailTitle.textContent = `${type.icon || '🏷'} ${type.name}`;
+        detailSubtitle.textContent = type.description || type.slug;
+        detailTags.innerHTML = `<div class="dash-loading">Loading...</div>`;
 
         detailModal.classList.add('open');
         detailBackdrop.classList.add('open');
@@ -491,8 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
     detailClose.addEventListener('click', closeDetail);
     detailCloseBtn.addEventListener('click', closeDetail);
     detailBackdrop.addEventListener('click', closeDetail);
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && detailModal.classList.contains('open')) closeDetail();
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && detailModal.classList.contains('open')) {
+            closeDetail();
+        }
     });
 
     async function loadDetailTags(id) {
@@ -501,28 +596,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const tags = data.tags || [];
 
             if (!tags.length) {
-                detailTags.innerHTML = `<div class="panel-empty">هیچ تگی در این کتگوری وجود ندارد</div>`;
+                detailTags.innerHTML = `
+                    <div class="panel-empty">
+                        No tags belong to this category yet.
+                    </div>
+                `;
+
                 return;
             }
 
-            detailTags.innerHTML = tags.map((t) => `
+            detailTags.innerHTML = tags.map((tag) => `
                 <div class="detail-tag-row">
-                    <span class="detail-tag-row__swatch" style="background:${t.color}"></span>
-                    <span class="detail-tag-row__name">${escapeHtml(t.name)}</span>
-                    <span class="detail-tag-row__usage">${t.usageCount || 0} استفاده</span>
+                    <span class="detail-tag-row__swatch" style="background:${tag.color}"></span>
+                    <span class="detail-tag-row__name">${escapeHtml(tag.name)}</span>
+                    <span class="detail-tag-row__usage">${tag.usageCount || 0} uses</span>
                 </div>
             `).join('');
-        } catch (err) {
-            detailTags.innerHTML = `<div class="panel-empty">خطا در بارگذاری</div>`;
+        } catch {
+            detailTags.innerHTML = `
+                <div class="panel-empty">Failed to load tags.</div>
+            `;
         }
     }
 
     /* ============================================================
-       Filters
+       Search and Sorting
        ============================================================ */
+
     let searchTimer;
+
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimer);
+
         searchTimer = setTimeout(() => {
             state.search = searchInput.value.trim();
             render();
@@ -537,9 +642,17 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
        Helpers
        ============================================================ */
-    function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s)
+
+    /**
+     * Escapes HTML-sensitive characters to prevent markup injection.
+     *
+     * @param {unknown} value - The value to escape.
+     * @returns {string} The HTML-safe string.
+     */
+    function escapeHtml(value) {
+        if (value == null) return '';
+
+        return String(value)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -548,8 +661,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       Init
+       Initialization
        ============================================================ */
+
     setView('approved');
     loadAll();
 });
