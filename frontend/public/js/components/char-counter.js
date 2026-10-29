@@ -1,33 +1,42 @@
 /* ============================================================
-   CharCounter — شمارنده‌ی هوشمند متن
+   CharCounter — Smart Text Length Counter
+   ============================================================
+   Attaches a live character counter to a text input or textarea,
+   with soft and hard length thresholds, colour-coded feedback,
+   and an optional warning indicator.
    ============================================================ */
 
 (function (global) {
     'use strict';
 
+    /* Colour palette used for each counter level. */
     const STYLES = {
-        ok: { color: '#4ade80' },      // سبز
-        warn: { color: '#fbbf24' },      // زرد
-        over: { color: '#fb923c' },      // نارنجی (soft exceeded)
-        hard: { color: '#ff6b6b' },      // قرمز (hard exceeded)
+        ok: { color: '#4ade80' },      // Green
+        warn: { color: '#fbbf24' },      // Yellow
+        over: { color: '#fb923c' },      // Orange (soft threshold exceeded)
+        hard: { color: '#ff6b6b' },      // Red (hard threshold exceeded)
     };
 
     /**
+     * Attach a live character counter to the given input.
+     *
      * @param {HTMLTextAreaElement|HTMLInputElement} input
+     *   The input or textarea to monitor.
      * @param {Object} opts
-     *   - soft: عدد نرم (توصیه‌شده)
-     *   - hard: عدد سخت (blocking)
-     *   - container: عنصر برای نمایش (اختیاری — خودش می‌سازه)
-     *   - label: پیشوند (اختیاری)
+     *   - soft:      Recommended character limit (soft threshold).
+     *   - hard:      Blocking character limit (hard threshold).
+     *   - container: Optional element in which to render the counter.
+     *                When omitted, a container is created automatically.
+     *   - label:     Optional label suffix displayed after the limits.
      */
     function attach(input, opts = {}) {
         if (!input) return null;
 
         const soft = opts.soft || 5000;
         const hard = opts.hard || 50000;
-        const label = opts.label || 'کاراکتر';
+        const label = opts.label || 'characters';
 
-        // ساخت یا پیدا کردن container
+        // Resolve or create the counter container.
         let counter = opts.container;
         if (!counter) {
             counter = document.createElement('div');
@@ -44,13 +53,13 @@
                 transition: color 0.2s ease;
             `;
 
-            // اگه input داخل .field هست، زیرش بذار
+            // Place the counter beneath the field when possible.
             const field = input.closest('.field');
             if (field) field.appendChild(counter);
             else input.parentElement.appendChild(counter);
         }
 
-        // استایل داخلی
+        // Build the internal structure of the counter.
         counter.innerHTML = `
             <span data-role="count">0</span>
             <span style="opacity:0.5">/</span>
@@ -62,6 +71,11 @@
         const countEl = counter.querySelector('[data-role="count"]');
         const warnEl = counter.querySelector('[data-role="warning"]');
 
+        /**
+         * Recompute the current level and refresh the counter's
+         * visual state, including the warning indicator and the
+         * input's border when the hard limit is exceeded.
+         */
         function update() {
             const len = input.value.length;
 
@@ -78,12 +92,12 @@
 
             warnEl.style.display = level === 'ok' ? 'none' : 'inline';
             warnEl.title = level === 'hard'
-                ? 'متن بیش از حد مجاز است'
+                ? 'The text exceeds the maximum allowed length.'
                 : level === 'over'
-                    ? 'متن از حد توصیه‌شده بیشتر شده'
-                    : 'متن در حال طولانی شدن است';
+                    ? 'The text exceeds the recommended length.'
+                    : 'The text is getting long.';
 
-            // اگه hard exceeded، border قرمز
+            // Outline the input in red when the hard limit is exceeded.
             if (level === 'hard') {
                 input.style.borderColor = '#ff6b6b';
             } else {
@@ -94,7 +108,7 @@
         input.addEventListener('input', update);
         update();
 
-        // API
+        // Public API for the attached counter.
         return {
             update,
             getLength: () => input.value.length,
@@ -103,8 +117,9 @@
         };
     }
 
+    /* Format a number using locale-aware thousands separators. */
     function formatNumber(n) {
-        return Number(n || 0).toLocaleString('fa-IR');
+        return Number(n || 0).toLocaleString('en-US');
     }
 
     global.CharCounter = { attach, formatNumber };
