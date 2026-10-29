@@ -39,6 +39,26 @@ router.get("/users", pageAdminGuard, (req, res) =>
     res.render("pages/dashboard/users"),
 );
 
+router.get(
+    "/tickets",
+    pageAdminGuard,
+    (req: any, res) => {
+        res.render("pages/dashboard/tickets", { req, pageTitle: "Tickets" });
+    }
+);
+
+router.get(
+    "/tickets/:id",
+    pageAdminGuard,
+    (req: any, res) => {
+        res.render("pages/dashboard/ticket-detail", {
+            req,
+            pageTitle: "Ticket",
+            ticketId: req.params.id
+        });
+    }
+);
+
 /* -------------------------------------------------------------------------- */
 /*                            Developer-Only Pages                            */
 /* -------------------------------------------------------------------------- */
