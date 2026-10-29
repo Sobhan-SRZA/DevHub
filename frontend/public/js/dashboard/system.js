@@ -1,44 +1,68 @@
 /* ============================================================
    System Page
+   ============================================================
+   Renders live server diagnostics — health status, process and
+   OS details, memory pressure, CPU load, and database metrics.
+   Supports manual refresh and a five-second auto-refresh cycle.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const $ = (s) => document.querySelector(s);
+    const $ = (selector) => document.querySelector(selector);
 
+    /* --------------------------------------------------------
+       View State
+       --------------------------------------------------------
+       `lastData` retains the most recent server payload for
+       potential reuse; `interval` holds the auto-refresh timer.
+       -------------------------------------------------------- */
     const state = {
         autoRefresh: true,
         interval: null,
         lastData: null,
     };
 
-    /* ---------------- formatters ---------------- */
+    /* --------------------------------------------------------
+       Formatters
+       -------------------------------------------------------- */
+
+    /* Convert a byte count into a human-readable size string. */
     function bytes(b) {
         b = Number(b) || 0;
+
         if (b < 1024) return b + ' B';
         if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
         if (b < 1024 * 1024 * 1024) return (b / 1024 / 1024).toFixed(1) + ' MB';
+
         return (b / 1024 / 1024 / 1024).toFixed(2) + ' GB';
     }
 
+    /* Compute the used-to-total percentage, clamped to 0–100. */
     function pct(used, total) {
         if (!total) return 0;
+
         return Math.min(100, Math.round((used / total) * 100));
     }
 
+    /* Render an uptime in seconds as a human-readable duration. */
     function uptimeHuman(sec) {
         sec = Number(sec) || 0;
+
         const d = Math.floor(sec / 86400);
         const h = Math.floor((sec % 86400) / 3600);
         const m = Math.floor((sec % 3600) / 60);
         const s = Math.floor(sec % 60);
-        if (d > 0) return `${d} روز، ${h} ساعت`;
-        if (h > 0) return `${h} ساعت، ${m} دقیقه`;
-        if (m > 0) return `${m} دقیقه، ${s} ثانیه`;
-        return `${s} ثانیه`;
+
+        if (d > 0) return `${d} day${d === 1 ? '' : 's'}, ${h} hour${h === 1 ? '' : 's'}`;
+        if (h > 0) return `${h} hour${h === 1 ? '' : 's'}, ${m} minute${m === 1 ? '' : 's'}`;
+        if (m > 0) return `${m} minute${m === 1 ? '' : 's'}, ${s} second${s === 1 ? '' : 's'}`;
+
+        return `${s} second${s === 1 ? '' : 's'}`;
     }
 
+    /* Escape user-supplied strings before interpolating them into HTML. */
     function escapeHtml(s) {
         if (s == null) return '';
+
         return String(s)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -47,9 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#39;');
     }
 
+    /* Render a label/value row for a system info list. */
     function infoRow(label, value, opts = {}) {
         const cls = opts.cls ? `sys-info-row__value--${opts.cls}` : '';
         const mono = opts.mono ? 'sys-info-row__value--mono' : '';
+
         return `
             <div class="sys-info-row">
                 <span class="sys-info-row__label">${escapeHtml(label)}</span>
@@ -58,10 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    /* ---------------- memory bar ---------------- */
+    /* --------------------------------------------------------
+       Memory Bar
+       --------------------------------------------------------
+       Renders a labelled progress bar whose colour level is
+       derived from the utilisation percentage.
+       -------------------------------------------------------- */
     function memBar(label, used, total, metaRight = '') {
         const p = pct(used, total);
         const level = p > 85 ? 'danger' : p > 65 ? 'warn' : 'normal';
+
         return `
             <div class="sys-mem-bar">
                 <div class="sys-mem-bar__head">
@@ -76,7 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    /* ---------------- renderers ---------------- */
+    /* --------------------------------------------------------
+       Renderers
+       -------------------------------------------------------- */
+
+    /**
+     * Render the top-level health banner. The overall status is
+     * derived from database connectivity and memory pressure.
+     */
     function renderHealth(data) {
         const banner = $('#healthBanner');
         const icon = $('#healthIcon');
@@ -89,43 +128,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const memSysPct = pct(data.memory.systemUsed, data.memory.systemTotal);
 
         let status = 'ok';
-        let statusLabel = 'سالم';
+        let statusLabel = 'Healthy';
         let statusIcon = '✓';
-        let detail = 'همه سرویس‌ها فعال هستند';
+        let detail = 'All services are operational.';
 
         if (!dbOk) {
             status = 'danger';
-            statusLabel = 'خطا';
+            statusLabel = 'Error';
             statusIcon = '✕';
-            detail = 'اتصال به دیتابیس قطع است';
+            detail = 'The database connection is down.';
         } else if (memHeapPct > 85 || memSysPct > 90) {
             status = 'warn';
-            statusLabel = 'هشدار';
+            statusLabel = 'Warning';
             statusIcon = '!';
-            detail = 'مصرف حافظه بالا است';
+            detail = 'Memory utilisation is high.';
         }
 
         banner.dataset.status = status;
         icon.textContent = statusIcon;
-        title.textContent = `وضعیت سرور: ${statusLabel}`;
+        title.textContent = `Server status: ${statusLabel}`;
         sub.textContent = detail;
-        lastUpdate.textContent = new Date().toLocaleTimeString('fa-IR');
+        lastUpdate.textContent = new Date().toLocaleTimeString('en-US');
     }
 
+    /* Render the process and runtime details. */
     function renderProcess(p) {
         const el = $('#processList');
+
         el.innerHTML = [
             infoRow('Node.js', p.nodeVersion, { mono: true }),
             infoRow('PID', p.pid, { mono: true }),
             infoRow('Uptime', uptimeHuman(p.uptime)),
-            infoRow('محیط', p.env),
-            infoRow('پلتفرم', `${p.platform} / ${p.arch}`, { mono: true }),
+            infoRow('Environment', p.env),
+            infoRow('Platform', `${p.platform} / ${p.arch}`, { mono: true }),
             infoRow('V8', p.versions.v8, { mono: true }),
         ].join('');
     }
 
+    /* Render the operating system details. */
     function renderOS(o) {
         const el = $('#osList');
+
         el.innerHTML = [
             infoRow('Hostname', o.hostname, { mono: true }),
             infoRow('Platform', o.platform, { mono: true }),
@@ -134,10 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ].join('');
     }
 
+    /* Render the heap and system memory bars. */
     function renderMemory(m) {
         const el = $('#memoryPanel');
-        const heapPct = pct(m.heapUsed, m.heapTotal);
-        const sysPct = pct(m.systemUsed, m.systemTotal);
 
         el.innerHTML = `
             ${memBar('Heap (Node.js)', m.heapUsed, m.heapTotal)}
@@ -150,8 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    /* Render the CPU details and load averages. */
     function renderCPU(c) {
         const el = $('#cpuList');
+
         el.innerHTML = [
             infoRow('Cores', c.cores, { mono: true }),
             infoRow('Model', c.model, { mono: true }),
@@ -162,41 +206,53 @@ document.addEventListener('DOMContentLoaded', () => {
         ].join('');
     }
 
+    /**
+     * Render the database panel. When the connection is down, only
+     * the failure state and error message are shown.
+     */
     function renderDB(db) {
         const badge = $('#dbBadge');
         const el = $('#dbPanel');
 
         if (!db?.connected) {
-            badge.textContent = 'قطع';
+            badge.textContent = 'Disconnected';
             badge.className = 'sys-card__badge sys-card__badge--danger';
+
             el.innerHTML = `
                 <div class="sys-info-list">
-                    ${infoRow('وضعیت', 'قطع', { cls: 'danger' })}
-                    ${db?.error ? infoRow('خطا', db.error, { mono: true }) : ''}
+                    ${infoRow('Status', 'Disconnected', { cls: 'danger' })}
+                    ${db?.error ? infoRow('Error', db.error, { mono: true }) : ''}
                 </div>
             `;
+
             return;
         }
 
-        badge.textContent = 'متصل';
+        badge.textContent = 'Connected';
         badge.className = 'sys-card__badge sys-card__badge--ok';
 
         el.innerHTML = `
             <div class="sys-info-list">
-                ${infoRow('وضعیت', 'متصل ✓', { cls: 'ok' })}
-                ${infoRow('نام دیتابیس', db.name, { mono: true })}
+                ${infoRow('Status', 'Connected ✓', { cls: 'ok' })}
+                ${infoRow('Database name', db.name, { mono: true })}
                 ${infoRow('Host', `${db.host}:${db.port}`, { mono: true })}
-                ${infoRow('تعداد Collection', db.collections)}
-                ${infoRow('تعداد Documents', db.documents.toLocaleString('fa-IR'))}
-                ${infoRow('تعداد Index', db.indexes)}
-                ${infoRow('حجم داده', bytes(db.dataSize))}
-                ${infoRow('حجم روی دیسک', bytes(db.storageSize))}
-                ${infoRow('میانگین سایز سند', bytes(db.avgObjSize))}
+                ${infoRow('Collections', db.collections)}
+                ${infoRow('Documents', db.documents.toLocaleString('en-US'))}
+                ${infoRow('Indexes', db.indexes)}
+                ${infoRow('Data size', bytes(db.dataSize))}
+                ${infoRow('Storage size', bytes(db.storageSize))}
+                ${infoRow('Average document size', bytes(db.avgObjSize))}
             </div>
         `;
     }
 
-    /* ---------------- fetch + update ---------------- */
+    /* --------------------------------------------------------
+       Fetch and Update
+       --------------------------------------------------------
+       Retrieves the latest system statistics and dispatches each
+       section to its renderer. Failures update the health banner
+       to reflect the error state.
+       -------------------------------------------------------- */
     async function load() {
         try {
             const res = await fetch('/api/system/stats', { credentials: 'include' });
@@ -213,20 +269,26 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDB(data.database);
         } catch (err) {
             console.error('[system] load failed:', err);
+
             const banner = $('#healthBanner');
             banner.dataset.status = 'danger';
             $('#healthIcon').textContent = '✕';
-            $('#healthTitle').textContent = 'خطا در دریافت داده';
-            $('#healthSub').textContent = err.message || 'اتصال برقرار نشد';
+            $('#healthTitle').textContent = 'Failed to retrieve data';
+            $('#healthSub').textContent = err.message || 'Could not establish a connection.';
         }
     }
 
-    /* ---------------- auto refresh ---------------- */
+    /* --------------------------------------------------------
+       Auto-Refresh
+       -------------------------------------------------------- */
+
+    /* Start the periodic refresh cycle, replacing any existing timer. */
     function startAuto() {
         stopAuto();
         state.interval = setInterval(load, 5000);
     }
 
+    /* Stop the periodic refresh cycle, if one is active. */
     function stopAuto() {
         if (state.interval) {
             clearInterval(state.interval);
@@ -234,16 +296,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* ---------------- events ---------------- */
+    /* --------------------------------------------------------
+       Event Bindings
+       -------------------------------------------------------- */
     $('#autoRefreshToggle').addEventListener('change', (e) => {
         state.autoRefresh = e.target.checked;
+
         if (state.autoRefresh) startAuto();
         else stopAuto();
     });
 
     $('#refreshBtn').addEventListener('click', load);
 
-    /* ---------------- init ---------------- */
+    /* --------------------------------------------------------
+       Initialization
+       -------------------------------------------------------- */
     load();
     startAuto();
 });
