@@ -1,22 +1,23 @@
+import type { Request } from "express";
 import { Project } from "../../models/Project";
 import { Router } from "express";
 import { User } from "../../models/User";
 
 const router = Router();
 
-function baseFromReq(req: any): string {
+function baseFromReq(req: Request): string {
     if (process.env.APP_URL) {
-        return String(process.env.APP_URL).replace(/\/$/, "");
+        return process.env.APP_URL.replace(/\/+$/, "");
     }
 
     const proto = req.get("x-forwarded-proto") || req.protocol || "https";
     const host = req.get("x-forwarded-host") || req.get("host") || "localhost";
 
-    return `${proto}://${host}`.replace(/\/$/, "");
+    return `${proto}://${host}`.replace(/\/+$/, "");
 }
 
-function escapeXml(s: string): string {
-    return String(s)
+function escapeXml(value: string): string {
+    return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -31,11 +32,21 @@ router.get("/", async (req, res) => {
     const staticUrls = [
         { loc: "/", changefreq: "daily", priority: "1.0" },
         { loc: "/explore", changefreq: "hourly", priority: "0.9" },
-        { loc: "/projects", changefreq: "daily", priority: "0.8" }
+        { loc: "/projects", changefreq: "daily", priority: "0.8" },
     ];
 
-    let projectUrls: { loc: string; lastmod?: string; changefreq: string; priority: string }[] = [];
-    let userUrls: { loc: string; changefreq: string; priority: string }[] = [];
+    let projectUrls: {
+        loc: string;
+        lastmod?: string;
+        changefreq: string;
+        priority: string;
+    }[] = [];
+
+    let userUrls: {
+        loc: string;
+        changefreq: string;
+        priority: string;
+    }[] = [];
 
     try {
         const projects = await Project.find({
@@ -47,19 +58,16 @@ router.get("/", async (req, res) => {
             .limit(5000)
             .lean();
 
-        projectUrls = projects.map((p) => ({
-            loc: `/projects/${p.slug}`,
-            lastmod: p.updatedAt
-                ? new Date(p.updatedAt as Date).toISOString()
+        projectUrls = projects.map((project) => ({
+            loc: `/projects/${project.slug}`,
+            lastmod: project.updatedAt
+                ? new Date(project.updatedAt as Date).toISOString()
                 : undefined,
-
             changefreq: "weekly",
-            priority: "0.7"
+            priority: "0.7",
         }));
-    }
-    
-    catch {
-        // ignore
+    } catch {
+        // Continue generating the sitemap if project retrieval fails.
     }
 
     try {
@@ -70,16 +78,14 @@ router.get("/", async (req, res) => {
             .lean();
 
         userUrls = users
-            .filter((u) => u.username)
-            .map((u) => ({
-                loc: `/users/${u.username}`,
+            .filter((user) => user.username)
+            .map((user) => ({
+                loc: `/users/${user.username}`,
                 changefreq: "weekly",
-                priority: "0.5"
+                priority: "0.5",
             }));
-    }
-    
-    catch {
-        // ignore
+    } catch {
+        // Continue generating the sitemap if user retrieval fails.
     }
 
     const all = [...staticUrls, ...projectUrls, ...userUrls];
@@ -88,20 +94,16 @@ router.get("/", async (req, res) => {
         `<?xml version="1.0" encoding="UTF-8"?>\n` +
         `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
         all
-            .map((u) => {
-                let line = `  <url>\n    <loc>${escapeXml(base + u.loc)}</loc>\n`;
-                if ((u as any).lastmod) {
-                    line += `    <lastmod>${(u as any).lastmod}</lastmod>\n`;
-                } 
-                
-                else {
-                    line += `    <lastmod>${now}</lastmod>\n`;
-                }
+            .map((url) => {
+                let line =
+                    `  <url>\n` +
+                    `    <loc>${escapeXml(base + url.loc)}</loc>\n`;
 
-                line += `    <changefreq>${u.changefreq}</changefreq>\n`;
-                line += `    <priority>${u.priority}</priority>\n`;
+                // line += `    <lastmod>${url.lastmod || now}</lastmod>\n`;
+                line += `    <changefreq>${url.changefreq}</changefreq>\n`;
+                line += `    <priority>${url.priority}</priority>\n`;
                 line += `  </url>`;
-                
+
                 return line;
             })
             .join("\n") +
@@ -112,8 +114,7 @@ router.get("/", async (req, res) => {
     res.send(body);
 });
 
-// Alias: /sitemap.xml is loaded as /sitemap from folder name.
-// Also register explicit xml path via middleware in app if needed.
+// The sitemap is available at /sitemap.xml when the application maps this router accordingly.
 export default router;
 
 /**
