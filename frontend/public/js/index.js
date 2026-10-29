@@ -1,6 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    /* --------------------------------------------------------
+       ICON INJECTION
+       --------------------------------------------------------
+       Inject the eye / eye-off icon pair into any password
+       toggle button that does not already contain icons. This
+       keeps markup DRY for buttons declared without inline SVG.
+       -------------------------------------------------------- */
     document.querySelectorAll('.toggle-pass').forEach((btn) => {
-        // فقط اگه آیکون نداره
+        // Skip buttons that already contain icons.
         if (btn.querySelector('.icon')) return;
 
         btn.insertAdjacentHTML('afterbegin', `
@@ -17,6 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* --------------------------------------------------------
        PASSWORD VISIBILITY TOGGLE
+       --------------------------------------------------------
+       Toggle the associated input between `password` and `text`.
+       The `.active` class drives the icon switch in CSS, while
+       ARIA attributes keep the control accessible.
        -------------------------------------------------------- */
     document.querySelectorAll('.toggle-pass').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -25,31 +36,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isPassword = input.type === 'password';
 
-            // سوییچ نوع input
+            // Swap the input type.
             input.type = isPassword ? 'text' : 'password';
 
-            // سوییچ کلاس active (CSS خودش آیکون رو عوض می‌کنه)
+            // Toggle the active state; CSS handles the icon swap.
             btn.classList.toggle('active', isPassword);
 
-            // accessibility
-            btn.setAttribute('aria-label', isPassword ? 'پنهان کردن رمز' : 'نمایش رمز');
+            // Update accessibility attributes.
+            btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
             btn.setAttribute('aria-pressed', String(isPassword));
 
-            // انیمیشن pop
+            // Replay the pop animation.
             btn.classList.remove('pop');
-            // force reflow تا انیمیشن دوباره اجرا بشه
+            // Force a reflow so the animation can restart.
             void btn.offsetWidth;
             btn.classList.add('pop');
             btn.addEventListener('animationend', () => btn.classList.remove('pop'), { once: true });
 
-            // فوکوس روی input تا کاربر بتونه ادامه تایپ کنه
-            // (اختیاری — اگه نمی‌خوای، کامنت کن)
+            // Optional: return focus to the input so typing can continue.
             // input.focus({ preventScroll: true });
         });
 
-        // دسترس‌پذیری: Enter/Space خودکار کار می‌کنه چون button هست
-        // ولی اگه input داخل label بود ممکنه دوبار toggle بشه
-        // پس رویداد pointer رو stopPropagation می‌کنیم
+        // Enter/Space on a <button> already triggers click natively.
+        // If the button sits inside a <label>, a pointer event could
+        // bubble and toggle the input twice — prevent that here.
         btn.addEventListener('pointerdown', (e) => e.preventDefault());
     });
 });
