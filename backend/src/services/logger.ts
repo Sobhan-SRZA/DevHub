@@ -1,3 +1,4 @@
+
 import path from "path";
 import fs from "fs";
 
@@ -11,9 +12,14 @@ export interface LogEntry {
 
 const LOG_DIR = path.resolve(process.cwd(), "logs");
 
+/**
+ * Provides centralized application logging with console interception,
+ * in-memory buffering, file persistence, and log retrieval utilities.
+ */
 class Logger {
     private buffer: LogEntry[] = [];
     private readonly maxBuffer = 2000;
+
     private originalConsole: {
         log: typeof console.log;
         warn: typeof console.warn;
@@ -26,6 +32,7 @@ class Logger {
             fs.mkdirSync(LOG_DIR, { recursive: true });
         }
 
+        // Preserve the original console methods before intercepting them.
         this.originalConsole = {
             log: console.log.bind(console),
             warn: console.warn.bind(console),
@@ -36,15 +43,25 @@ class Logger {
         this.hookConsole();
     }
 
-    /* ---------------- file paths ---------------- */
-    private getLogFile(date?: string): string {
-        const d = date || new Date().toISOString().split("T")[0];
+    /* ---------------- Log File Paths ---------------- */
 
-        return path.join(LOG_DIR, `app-${d}.log`);
+    /**
+     * Returns the log file path for the specified date.
+     * Defaults to the current UTC date.
+     */
+    private getLogFile(date?: string): string {
+        const logDate = date || new Date().toISOString().split("T")[0];
+
+        return path.join(LOG_DIR, `app-${logDate}.log`);
     }
 
-    /* ---------------- console hook ---------------- */
-    private hookConsole() {
+    /* ---------------- Console Interception ---------------- */
+
+    /**
+     * Intercepts console methods to capture log entries while preserving
+     * their original output behavior.
+     */
+    private hookConsole(): void {
         console.log = (...args: any[]) => {
             this.write("info", args);
             this.originalConsole.log(...args);
@@ -66,131 +83,186 @@ class Logger {
         };
     }
 
-    /* ---------------- write ---------------- */
-    private write(level: LogLevel, args: any[]) {
+    /* ---------------- Log Persistence ---------------- */
+
+    /**
+     * Normalizes log arguments, updates the in-memory buffer,
+     * and appends the entry to the current daily log file.
+     */
+    private write(level: LogLevel, args: any[]): void {
         const timestamp = new Date().toISOString();
 
         const message = args
-            .map((a) => {
-                if (typeof a === "string")
-                    return a;
-
-                if (a instanceof Error)
-                    return `${a.name}: ${a.message}\n${a.stack || ""}`;
-
-                try {
-                    return JSON.stringify(a);
+            .map((value) => {
+                if (typeof value === "string") {
+                    return value;
                 }
 
-                catch {
-                    return String(a);
+                if (value instanceof Error) {
+                    return `${value.name}: ${value.message}\n${value.stack || ""}`;
+                }
+
+                try {
+                    const serialized = JSON.stringify(value);
+
+                    return serialized === undefined
+                        ? String(value)
+                        : serialized;
+                } catch {
+                    return String(value);
                 }
             })
             .join(" ");
 
-        // in-memory buffer
+        // Keep the in-memory buffer within its configured capacity.
         this.buffer.push({ timestamp, level, message });
-        if (this.buffer.length > this.maxBuffer)
-            this.buffer.shift();
 
-        // file
+        if (this.buffer.length > this.maxBuffer) {
+            this.buffer.shift();
+        }
+
+        // Persist the entry without interrupting application execution
+        // if the log directory or file is temporarily unavailable.
         try {
             const line = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
+
             fs.appendFileSync(this.getLogFile(), line, "utf8");
+        } catch {
+            // Intentionally ignore file system errors to avoid disrupting
+            // the application's primary execution flow.
         }
+    }
 
-        catch {
-            /* ignore disk errors */
+    /* ---------------- Public Logging API ---------------- */
+
+    info(message: string, meta?: any): void {
+        if (meta !== undefined) {
+            console.log(message, meta);
+        } else {
+            console.log(message);
         }
     }
 
-    /* ---------------- public API ---------------- */
-    info(msg: string, meta?: any) {
-        if (meta !== undefined)
-            console.log(msg, meta);
-
-        else
-            console.log(msg);
+    warn(message: string, meta?: any): void {
+        if (meta !== undefined) {
+            console.warn(message, meta);
+        } else {
+            console.warn(message);
+        }
     }
 
-    warn(msg: string, meta?: any) {
-        if (meta !== undefined)
-            console.warn(msg, meta);
-
-        else
-            console.warn(msg);
+    error(message: string, meta?: any): void {
+        if (meta !== undefined) {
+            console.error(message, meta);
+        } else {
+            console.error(message);
+        }
     }
 
-    error(msg: string, meta?: any) {
-        if (meta !== undefined)
-            console.error(msg, meta);
-
-        else
-            console.error(msg);
+    debug(message: string, meta?: any): void {
+        if (meta !== undefined) {
+            console.debug(message, meta);
+        } else {
+            console.debug(message);
+        }
     }
 
-    debug(msg: string, meta?: any) {
-        if (meta !== undefined)
-            console.debug(msg, meta);
+    /* ---------------- Log Querying ---------------- */
 
-        else
-            console.debug(msg);
-    }
-
-    /* ---------------- query ---------------- */
-    getRecent(limit = 200, level?: LogLevel, search?: string): LogEntry[] {
+    /**
+     * Returns recent in-memory log entries with optional level and
+     * case-insensitive message filters.
+     */
+    getRecent(
+        limit = 200,
+        level?: LogLevel,
+        search?: string
+    ): LogEntry[] {
         let result = this.buffer.slice();
 
-        if (level)
-            result = result.filter((e) => e.level === level);
-
-        if (search) {
-            const s = search.toLowerCase();
-            result = result.filter((e) => e.message.toLowerCase().includes(s));
+        if (level) {
+            result = result.filter((entry) => entry.level === level);
         }
 
-        return result.slice(-limit);
+        if (search) {
+            const normalizedSearch = search.toLowerCase();
+
+            result = result.filter((entry) =>
+                entry.message.toLowerCase().includes(normalizedSearch)
+            );
+        }
+
+        return result.slice(-Math.max(0, limit));
     }
 
+    /**
+     * Returns the number of buffered entries for each log level,
+     * along with the current buffer size and maximum capacity.
+     */
     getStats() {
-        const stats: Record<LogLevel, number> = { debug: 0, info: 0, warn: 0, error: 0 };
-        for (const e of this.buffer)
-            stats[e.level]++;
+        const stats: Record<LogLevel, number> = {
+            debug: 0,
+            info: 0,
+            warn: 0,
+            error: 0,
+        };
+
+        for (const entry of this.buffer) {
+            stats[entry.level]++;
+        }
 
         return {
             ...stats,
             total: this.buffer.length,
-            capacity: this.maxBuffer
+            capacity: this.maxBuffer,
         };
     }
 
-    /* ---------------- files ---------------- */
+    /* ---------------- Log File Management ---------------- */
+
+    /**
+     * Lists available daily application log files in reverse
+     * chronological filename order.
+     */
     getFiles(): string[] {
         try {
             return fs
                 .readdirSync(LOG_DIR)
-                .filter((f) => f.startsWith("app-") && f.endsWith(".log"))
+                .filter(
+                    (filename) =>
+                        filename.startsWith("app-") &&
+                        filename.endsWith(".log")
+                )
                 .sort()
                 .reverse();
-        }
-
-        catch {
+        } catch {
             return [];
         }
     }
 
+    /**
+     * Reads and parses the most recent entries from a log file.
+     *
+     * Uses the file's basename to prevent path traversal outside
+     * the configured log directory.
+     */
     readFile(filename: string, limit = 500): LogEntry[] {
         try {
-            const safeName = path.basename(filename); // ضد path traversal
+            const safeName = path.basename(filename);
             const filePath = path.join(LOG_DIR, safeName);
-            if (!fs.existsSync(filePath))
+
+            if (!fs.existsSync(filePath)) {
                 return [];
+            }
 
             const content = fs.readFileSync(filePath, "utf8");
             const lines = content.split("\n").filter(Boolean);
 
-            return lines.slice(-limit).map((line) => {
-                const match = line.match(/^\[(.+?)\] \[(\w+)\] (.+)$/);
+            return lines.slice(-Math.max(0, limit)).map((line) => {
+                const match = line.match(
+                    /^\[(.+?)\] \[(\w+)\] (.*)$/
+                );
+
                 if (match) {
                     return {
                         timestamp: match[1],
@@ -199,21 +271,24 @@ class Logger {
                     };
                 }
 
+                // Preserve lines that do not match the expected log format.
                 return {
                     timestamp: "",
                     level: "info" as LogLevel,
-                    message: line
+                    message: line,
                 };
             });
-        }
-
-        catch {
+        } catch {
             return [];
         }
     }
 
-    /* ---------------- cleanup ---------------- */
-    clear() {
+    /* ---------------- Buffer Cleanup ---------------- */
+
+    /**
+     * Clears the in-memory log buffer without deleting persisted log files.
+     */
+    clear(): void {
         this.buffer = [];
     }
 }
