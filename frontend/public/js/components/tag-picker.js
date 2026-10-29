@@ -1,27 +1,41 @@
 /* ============================================================
-   Tag Picker — GitHub-style
+   Tag Picker — GitHub-Style
    ============================================================
-   - کتگوری‌ها رو به‌صورت گروه نشون می‌ده
-   - هر کتگوری تگ‌هاش رو داره
-   - جستجو + ساخت سریع تگ
-   - ساخت کتگوری جدید
+   Displays tag categories as groups, each containing its own
+   tags. Supports search, quick tag creation, and creation of
+   new categories.
    ============================================================ */
 
 /* ============================================================
-   Validate tag ID helper
+   Tag ID Validation Helpers
    ============================================================ */
+
+/* Matches a 24-character hexadecimal MongoDB ObjectId. */
 const OBJECT_ID_RE = /^[a-f\d]{24}$/i;
 
+/**
+ * Determine whether the given value is a valid tag identifier.
+ */
 function isValidTagId(id) {
     return typeof id === 'string' && OBJECT_ID_RE.test(id);
 }
 
+/**
+ * Normalise a tag identifier into a plain string.
+ *
+ * Handles populated ObjectId objects by extracting their `_id`
+ * or falling back to `toString()`. Returns `null` when the
+ * resulting value is not a valid identifier.
+ */
 function normalizeTagId(id) {
     if (id == null) return null;
-    // اگه ObjectId object اومد (از populate)، به string تبدیل کن
+
+    // Extract the raw id from a populated ObjectId reference.
     if (typeof id === 'object' && id._id) id = id._id;
     if (typeof id === 'object' && id.toString) id = id.toString();
+
     const s = String(id);
+
     return isValidTagId(s) ? s : null;
 }
 
@@ -34,8 +48,8 @@ class TagPicker {
 
         this.types = [];           // [{ _id, name, slug, color, icon, tagCount }]
         this.tagsByType = {};      // { typeId: [tag, ...] }
-        this.allTags = [];         // همه تگ‌ها برای جستجو
-        this.activeType = null;    // کتگوری فعال در UI
+        this.allTags = [];         // Flat list of all tags, used for search.
+        this.activeType = null;    // Currently active category in the UI.
 
         this._buildUI();
         this._bindEvents();
@@ -43,7 +57,7 @@ class TagPicker {
     }
 
     /* ============================================================
-       UI
+       UI Construction
        ============================================================ */
     _buildUI() {
         this.root.innerHTML = `
@@ -56,10 +70,10 @@ class TagPicker {
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" class="tp__input" placeholder="جستجو یا ساخت تگ..." data-role="search">
+                        <input type="text" class="tp__input" placeholder="Search or create a tag…" data-role="search">
                     </div>
 
-                    <button type="button" class="tp__new-type-btn" data-role="new-type" title="کتگوری جدید">
+                    <button type="button" class="tp__new-type-btn" data-role="new-type" title="New category">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 2v20M2 12h20"></path>
                         </svg>
@@ -81,18 +95,19 @@ class TagPicker {
         };
     }
 
+    /* Bind search, outside-click, and category-creation handlers. */
     _bindEvents() {
-        // جستجو
+        // Search input.
         this.els.search.addEventListener('focus', () => this._renderDropdown(this.els.search.value));
         this.els.search.addEventListener('input', () => this._renderDropdown(this.els.search.value));
 
-        // بستن dropdown با کلیک بیرون
+        // Close the dropdown when clicking outside of the picker.
         document.addEventListener('click', (e) => {
             if (!this.root.contains(e.target))
                 this._closeDropdown();
         });
 
-        // کتگوری جدید
+        // Create a new category.
         this.els.newType.addEventListener('click', (e) => {
             e.stopPropagation();
             this._openNewTypeDialog();
@@ -100,30 +115,38 @@ class TagPicker {
     }
 
     /* ============================================================
-       Load data
+       Data Loading
        ============================================================ */
+
+    /* Load all tag categories and render the initial UI. */
     async _load() {
         try {
             const res = await fetch('/api/tag-types');
             const data = await res.json();
+
             this.types = data.types || [];
+
             this._renderTypes();
             this._renderSelected();
-        }
-
-        catch (err) {
+        } catch (err) {
             console.error('TagPicker: failed to load types', err);
         }
     }
 
+    /**
+     * Load (and cache) the tags belonging to a category. Successfully
+     * loaded tags are also merged into the flat `allTags` list used
+     * for global search.
+     */
     async _loadTagsForType(typeId) {
         if (this.tagsByType[typeId]) return this.tagsByType[typeId];
 
         const res = await fetch(`/api/tag-types/${typeId}`);
         const data = await res.json();
+
         this.tagsByType[typeId] = data.tags || [];
 
-        // اضافه به allTags برای جستجوی سراسری
+        // Merge into the global search index.
         for (const t of this.tagsByType[typeId]) {
             if (!this.allTags.find((x) => x._id === t._id))
                 this.allTags.push(t);
@@ -133,7 +156,7 @@ class TagPicker {
     }
 
     /* ============================================================
-       Render types
+       Category Rendering
        ============================================================ */
     _renderTypes() {
         this.els.types.innerHTML = this.types.map((t) => `
@@ -147,14 +170,15 @@ class TagPicker {
         this.els.types.querySelectorAll('[data-type]').forEach((btn) => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
+
                 const typeId = btn.dataset.type;
                 this.activeType = typeId;
 
-                // active class
+                // Update the active-state styling.
                 this.els.types.querySelectorAll('.tp__type').forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // load tags و نمایش dropdown
+                // Load the category's tags and open the dropdown.
                 await this._loadTagsForType(typeId);
                 this._renderDropdown('');
             });
@@ -162,13 +186,12 @@ class TagPicker {
     }
 
     /* ============================================================
-       Render selected chips
+       Selected-Chip Rendering
        ============================================================ */
     _renderSelected() {
         const chips = Array.from(this.selected).map((id) => {
             const tag = this.allTags.find((t) => t._id === id);
-            if (!tag)
-                return '';
+            if (!tag) return '';
 
             return `
                 <span class="tp__chip" style="background:${this._hexA(tag.color, 0.12)}; color:${tag.color}; border-color:${this._hexA(tag.color, 0.3)}">
@@ -179,7 +202,7 @@ class TagPicker {
             `;
         }).join('');
 
-        this.els.selected.innerHTML = chips || '<span class="tp__placeholder">هنوز تگی انتخاب نشده</span>';
+        this.els.selected.innerHTML = chips || '<span class="tp__placeholder">No tags selected yet</span>';
 
         this.els.selected.querySelectorAll('[data-remove]').forEach((b) => {
             b.addEventListener('click', (e) => {
@@ -190,20 +213,24 @@ class TagPicker {
     }
 
     /* ============================================================
-       Render dropdown
+       Dropdown Rendering
+       ============================================================
+       When a query is present, searches across all known tags and
+       groups the results by category. Otherwise, shows the tags
+       belonging to the currently active category.
        ============================================================ */
     _renderDropdown(query) {
         const q = (query || '').toLowerCase().trim();
         const dropdown = this.els.dropdown;
 
-        // حالت جستجو: از همه تگ‌ها استفاده کن
+        /* ---------- Search mode: match against all known tags ---------- */
         if (q) {
             const matches = this.allTags
                 .filter((t) => !this.selected.has(t._id))
                 .filter((t) => t.name.toLowerCase().includes(q) || t.slug.includes(q))
                 .slice(0, 15);
 
-            // گروه‌بندی بر اساس type
+            // Group the results by category.
             const grouped = {};
             for (const tag of matches) {
                 const typeId = tag.type?._id || tag.type;
@@ -214,43 +241,42 @@ class TagPicker {
             }
 
             let html = '';
+
             if (Object.keys(grouped).length === 0) {
-                // اگه activeType مشخصه، پیشنهاد ساخت بده
+                // Offer to create the tag within the active category.
                 if (this.activeType) {
                     const type = this.types.find((t) => t._id === this.activeType);
+
                     html = `
                         <div class="tp__dropdown-empty">
-                            تگی پیدا نشد
+                            No tags found
                         </div>
                         ${type?.allowUserTags || type?.isSystem !== true ? `
                             <button type="button" class="tp__create-tag" data-create="${this._esc(query)}" data-type="${this.activeType}">
                                 <span class="tp__create-icon">＋</span>
-                                ساخت تگ «${this._esc(query)}» در «${this._esc(type?.name || '')}»
+                                Create tag "${this._esc(query)}" in "${this._esc(type?.name || '')}"
                             </button>
                         ` : ''}
                     `;
+                } else {
+                    html = `<div class="tp__dropdown-empty">No tags found. Select a category first, or create a new one with the + button.</div>`;
                 }
-
-                else {
-                    html = `<div class="tp__dropdown-empty">تگی پیدا نشد. اول یک کتگوری انتخاب کنید یا از دکمه + کتگوری جدید بسازید.</div>`;
-                }
-            }
-
-            else {
+            } else {
                 for (const [typeId, tags] of Object.entries(grouped)) {
                     const type = this.types.find((t) => t._id === typeId);
+
                     html += `
                         <div class="tp__group">
                             <div class="tp__group-title" style="color:${type?.color || '#6ebbff'}">
                                 <span>${type?.icon || ''}</span>
-                                ${this._esc(type?.name || 'دسته')}
+                                ${this._esc(type?.name || 'Category')}
                             </div>
                             ${tags.map((t) => this._tagOption(t)).join('')}
                         </div>
                     `;
                 }
 
-                // دکمه ساخت تگ جدید اگر کتگوری فعال داریم
+                // Offer to create a new tag when a category is active.
                 if (this.activeType) {
                     const type = this.types.find((t) => t._id === this.activeType);
                     const exists = this.allTags.find(
@@ -263,7 +289,7 @@ class TagPicker {
                         html += `
                             <button type="button" class="tp__create-tag" data-create="${this._esc(query)}" data-type="${this.activeType}">
                                 <span class="tp__create-icon">＋</span>
-                                ساخت تگ «${this._esc(query)}» در «${this._esc(type?.name || '')}»
+                                Create tag "${this._esc(query)}" in "${this._esc(type?.name || '')}"
                             </button>
                         `;
                     }
@@ -274,7 +300,7 @@ class TagPicker {
             dropdown.classList.add('open');
         }
 
-        // حالت بدون جستجو: تگ‌های activeType
+        /* ---------- No query: show tags in the active category ---------- */
         else if (this.activeType) {
             const tags = this.tagsByType[this.activeType] || [];
             const type = this.types.find((t) => t._id === this.activeType);
@@ -282,11 +308,10 @@ class TagPicker {
             const available = tags.filter((t) => !this.selected.has(t._id));
 
             let html = '';
-            if (available.length === 0) {
-                html = `<div class="tp__dropdown-empty">تگی در این کتگوری وجود ندارد</div>`;
-            }
 
-            else {
+            if (available.length === 0) {
+                html = `<div class="tp__dropdown-empty">This category has no tags.</div>`;
+            } else {
                 html = `
                     <div class="tp__group">
                         <div class="tp__group-title" style="color:${type?.color || '#6ebbff'}">
@@ -302,14 +327,16 @@ class TagPicker {
             dropdown.classList.add('open');
         }
 
+        /* ---------- No category selected yet ---------- */
         else {
-            dropdown.innerHTML = `<div class="tp__dropdown-empty">یک کتگوری انتخاب کنید یا جستجو کنید</div>`;
+            dropdown.innerHTML = `<div class="tp__dropdown-empty">Select a category or start typing to search.</div>`;
             dropdown.classList.add('open');
         }
 
         this._bindDropdownEvents();
     }
 
+    /* Render a single selectable tag option within the dropdown. */
     _tagOption(tag) {
         return `
             <button type="button" class="tp__option" data-select="${tag._id}">
@@ -320,6 +347,7 @@ class TagPicker {
         `;
     }
 
+    /* Bind select and create handlers to the freshly rendered dropdown items. */
     _bindDropdownEvents() {
         this.els.dropdown.querySelectorAll('[data-select]').forEach((el) => {
             el.addEventListener('click', (e) => {
@@ -336,6 +364,7 @@ class TagPicker {
         });
     }
 
+    /* Collapse the dropdown. */
     _closeDropdown() {
         this.els.dropdown.classList.remove('open');
     }
@@ -343,8 +372,11 @@ class TagPicker {
     /* ============================================================
        Actions
        ============================================================ */
+
+    /* Add a tag to the current selection, respecting the max limit. */
     _add(tagId) {
         const normalized = normalizeTagId(tagId);
+
         if (!normalized) {
             console.warn('[TagPicker] invalid tag id:', tagId);
 
@@ -356,7 +388,7 @@ class TagPicker {
 
         if (this.selected.size >= this.maxTags) {
             if (window.toast)
-                toast(`حداکثر ${this.maxTags} تگ`, 'error');
+                toast(`Maximum of ${this.maxTags} tags`, 'error');
 
             return;
         }
@@ -367,6 +399,7 @@ class TagPicker {
         this.onChange(this.getSelected());
     }
 
+    /* Remove a tag from the current selection. */
     _remove(tagId) {
         this.selected.delete(tagId);
         this._renderSelected();
@@ -374,12 +407,17 @@ class TagPicker {
         this.onChange(Array.from(this.selected));
     }
 
+    /**
+     * Create a new tag (or reuse an existing one) via the API, then
+     * add it to the current selection and update local caches.
+     */
     async _createTag(name, typeId) {
         if (!name.trim()) return;
 
         try {
             const body = { name: name.trim() };
-            // ✅ فقط اگه type معتبر بود بفرست
+
+            // Include the category only when a valid identifier is present.
             if (typeId && isValidTagId(typeId)) {
                 body.type = typeId;
             }
@@ -392,27 +430,30 @@ class TagPicker {
             });
 
             const data = await res.json();
+
             if (!res.ok) {
                 if (window.toast)
-                    toast(data.message || 'ساخت تگ ناموفق', 'error');
+                    toast(data.message || 'Failed to create tag', 'error');
 
                 return;
             }
 
             const tag = data.tag;
+
             if (!tag || !isValidTagId(tag._id)) {
                 if (window.toast)
-                    toast('پاسخ سرور نامعتبر است', 'error');
+                    toast('The server returned an invalid response.', 'error');
 
                 return;
             }
 
-            // اضافه به کش
+            // Merge the new tag into the local caches.
             if (!this.allTags.find((t) => t._id === tag._id)) {
                 this.allTags.push(tag);
             }
 
             const typeKey = tag.type?._id || tag.type;
+
             if (!this.tagsByType[typeKey])
                 this.tagsByType[typeKey] = [];
 
@@ -422,30 +463,35 @@ class TagPicker {
 
             this._add(tag._id);
             this.els.search.value = '';
-            if (window.toast)
-                toast(`تگ «${tag.name}» ساخته شد`, 'success');
 
-            // آپدیت count
+            if (window.toast)
+                toast(`Tag "${tag.name}" created`, 'success');
+
+            // Increment the category's tag count.
             const type = this.types.find((x) => x._id === typeKey);
             if (type)
                 type.tagCount = (type.tagCount || 0) + 1;
 
             this._renderTypes();
-        }
-
-        catch (err) {
+        } catch (err) {
             console.error('[TagPicker._createTag] failed:', err);
+
             if (window.toast)
-                toast('خطا در ساخت تگ', 'error');
+                toast('Error creating tag', 'error');
         }
     }
 
+    /**
+     * Prompt the user for a name and colour, then create a new
+     * category via the API. Categories awaiting approval are
+     * reflected in the toast messaging.
+     */
     async _openNewTypeDialog() {
-        const name = prompt('نام کتگوری جدید:');
+        const name = prompt('New category name:');
         if (!name || !name.trim())
             return;
 
-        const color = prompt('رنگ (hex، مثلاً #6ebbff):', '#6ebbff') || '#6ebbff';
+        const color = prompt('Color (hex, e.g. #6ebbff):', '#6ebbff') || '#6ebbff';
 
         try {
             const res = await fetch('/api/tag-types', {
@@ -463,7 +509,7 @@ class TagPicker {
 
             if (!res.ok) {
                 if (window.toast)
-                    toast(data.message || 'ساخت کتگوری ناموفق', 'error');
+                    toast(data.message || 'Failed to create category', 'error');
 
                 return;
             }
@@ -474,29 +520,29 @@ class TagPicker {
 
             if (data.type.isApproved) {
                 if (window.toast)
-                    toast(`کتگوری «${data.type.name}» ساخته شد`, 'success');
+                    toast(`Category "${data.type.name}" created`, 'success');
+            } else if (window.toast) {
+                toast('Category created and is awaiting approval.', 'info');
             }
-
-            else if (window.toast) {
-                toast('کتگوری ساخته شد و در انتظار تایید است', 'info');
-            }
-        }
-
-        catch {
+        } catch {
             if (window.toast)
-                toast('خطا در ساخت کتگوری', 'error');
+                toast('Error creating category', 'error');
         }
     }
 
     /* ============================================================
        Public API
        ============================================================ */
+
+    /* Return the currently selected tag ids as an array. */
     getSelected() {
         return Array.from(this.selected).filter(isValidTagId);
     }
 
+    /* Replace the current selection with the given tag ids. */
     setSelected(ids) {
         const clean = new Set();
+
         for (const id of (ids || [])) {
             const n = normalizeTagId(id);
             if (n)
@@ -510,6 +556,8 @@ class TagPicker {
     /* ============================================================
        Helpers
        ============================================================ */
+
+    /* Escape user-supplied strings before interpolating them into HTML. */
     _esc(s) {
         if (s == null)
             return '';
@@ -522,6 +570,7 @@ class TagPicker {
             .replace(/'/g, '&#39;');
     }
 
+    /* Convert a hex colour to an rgba() string with the given alpha. */
     _hexA(hex, a) {
         if (!hex)
             return `rgba(110,187,255,${a})`;
