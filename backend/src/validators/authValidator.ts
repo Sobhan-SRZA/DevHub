@@ -1,6 +1,16 @@
 /**
  * backend/src/validators/authValidator.ts
- * Server-side module — core application logic.
+ *
+ * Server-side validation schemas for authentication-related operations.
+ * Defines input validation rules for registration, login, email verification,
+ * password recovery, and password reset.
+ *
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 import { z } from "zod";
@@ -9,11 +19,12 @@ import { z } from "zod";
 /* Username Validation Rules                                                  */
 /* -------------------------------------------------------------------------- */
 
-// - Length: 3–20 characters.
-// - Allowed characters: English letters (a-z, A-Z), digits, underscores, periods, and hyphens.
-// - The @ symbol and whitespace are not allowed.
-// - Non-ASCII letters, including Persian, Arabic, and Cyrillic characters, are not allowed.
-// - Case-insensitive uniqueness is enforced through the usernameLower field.
+// Usernames must:
+// - Contain between 3 and 20 characters.
+// - Use only ASCII letters, digits, underscores, periods, and hyphens.
+// - Exclude the @ symbol and all whitespace.
+// - Exclude non-ASCII letters, including Persian, Arabic, and Cyrillic characters.
+// - Be unique regardless of letter casing, enforced through the usernameLower field.
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,20}$/;
 
 /* -------------------------------------------------------------------------- */
@@ -27,12 +38,20 @@ const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 /* Email Validation Rules                                                    */
 /* -------------------------------------------------------------------------- */
 
+// Validates a basic email address format with a domain suffix of at least two characters.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /* ========================================================================== */
 /* Registration                                                               */
 /* ========================================================================== */
 
+/**
+ * Validates user registration input.
+ *
+ * Normalizes the name and username by trimming surrounding whitespace,
+ * converts the email address to lowercase, enforces password requirements,
+ * verifies password confirmation, and requires acceptance of the terms.
+ */
 export const registerSchema = z
     .object({
         name: z
@@ -104,6 +123,9 @@ export const registerSchema = z
 /* Login                                                                      */
 /* ========================================================================== */
 
+/**
+ * Validates login credentials and the optional remember-me setting.
+ */
 export const loginSchema = z.object({
     identifier: z
         .string({ error: "Email or username is required." })
@@ -129,6 +151,9 @@ export const loginSchema = z.object({
 /* Email Verification                                                         */
 /* ========================================================================== */
 
+/**
+ * Validates the email verification token and six-digit verification code.
+ */
 export const verifyEmailSchema = z.object({
     verifyToken: z
         .string({ error: "Email verification token is required." })
@@ -144,6 +169,9 @@ export const verifyEmailSchema = z.object({
 /* Resend Email Verification                                                  */
 /* ========================================================================== */
 
+/**
+ * Validates the token required to resend an email verification code.
+ */
 export const resendVerifyEmailSchema = z.object({
     verifyToken: z
         .string()
@@ -151,9 +179,12 @@ export const resendVerifyEmailSchema = z.object({
 });
 
 /* ========================================================================== */
-/* Forgot Password — Step 1                                                  */
+/* Forgot Password — Step 1                                                   */
 /* ========================================================================== */
 
+/**
+ * Validates and normalizes the email address used to initiate password recovery.
+ */
 export const forgotPasswordSchema = z.object({
     email: z
         .string({ error: "Email is required." })
@@ -164,13 +195,18 @@ export const forgotPasswordSchema = z.object({
 });
 
 /* ========================================================================== */
-/* Reset Password — Step 2                                                   */
+/* Reset Password — Step 2                                                    */
 /* ========================================================================== */
 
-// Requires at least eight characters, including a lowercase letter,
-// an uppercase letter, and a digit.
+// Requires at least eight characters, including at least one lowercase letter,
+// one uppercase letter, and one digit.
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
+/**
+ * Validates password reset credentials, the verification code, and the new
+ * password. Ensures the new password meets strength requirements and matches
+ * its confirmation.
+ */
 export const resetPasswordSchema = z
     .object({
         resetToken: z
@@ -204,6 +240,9 @@ export const resetPasswordSchema = z
 /* Resend Password Reset                                                      */
 /* ========================================================================== */
 
+/**
+ * Validates the token required to resend a password reset verification code.
+ */
 export const resendPasswordResetSchema = z.object({
     resetToken: z
         .string({ error: "Password reset token is required." })
@@ -214,7 +253,10 @@ export const resendPasswordResetSchema = z.object({
 /* Inferred Types                                                             */
 /* ========================================================================== */
 
+/** The validated input type inferred from the registration schema. */
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+/** The validated input type inferred from the login schema. */
 export type LoginInput = z.infer<typeof loginSchema>;
 
 /**
