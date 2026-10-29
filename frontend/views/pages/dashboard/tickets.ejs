@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <!-- Apply persisted theme and accent preferences before first paint. -->
+  <meta charset="UTF-8">
+  <script>
+    (function() {
+      try {
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
+      } catch (e) {}
+    })();
+  </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/themes.css">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/form-errors.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/tailwind.css">
+  <link rel="stylesheet" href="/styles/dashboard/tickets.css">
+
+  <title>Tickets</title>
+</head>
+
+<body>
+  <%- include("../../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../../components/dashboard-nav") %>
+    <%- include("../../components/dash-breadcrumb", { pageTitle: "Tickets" }) %>
+
+    <main class="dash-main">
+      <div class="dash-head">
+        <div>
+          <h2 class="dash-title">Support Tickets</h2>
+          <p class="dash-sub" id="ticketsCount">—</p>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="dash-filters">
+        <div class="dash-search">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="ticketSearch" placeholder="Search by number, subject, or email…">
+        </div>
+
+        <select id="ticketStatus" class="dash-select">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="pending">Pending</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+
+        <select id="ticketCategory" class="dash-select">
+          <option value="">All categories</option>
+          <option value="general">General</option>
+          <option value="bug">Bug report</option>
+          <option value="feature">Feature request</option>
+          <option value="collaboration">Collaboration</option>
+          <option value="security">Security</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div id="ticketsList" class="tickets-list">
+        <div class="dash-loading">Loading…</div>
+      </div>
+
+      <div class="dash-pagination" id="ticketsPagination"></div>
+    </main>
+  </div>
+
+  <script src="/js/dashboard-nav.js"></script>
+  <script src="/js/dashboard/tickets.js"></script>
+</body>
+
+</html>
