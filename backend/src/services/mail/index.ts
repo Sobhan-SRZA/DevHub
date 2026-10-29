@@ -1,9 +1,12 @@
+
 export type {
     SendMailOptions,
     SendMailResult,
     MailAddress
 } from "./types";
+
 export type { OtpPurpose } from "./templates/otpTemplate";
+
 export { getMailConfig } from "./config";
 export { sendOtpEmail } from "./templates/sendOtpEmail";
 export { mailer } from "./mailService";
