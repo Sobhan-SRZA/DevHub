@@ -1,3 +1,4 @@
+
 import { requireDeveloper } from "../middleware/roles";
 import { requireAuth } from "../middleware/auth";
 import { Router } from "express";
@@ -5,12 +6,28 @@ import * as ctrl from "../controllers/systemController";
 
 const router = Router();
 
+/* ==========================================================================
+ * Access Control
+ * All system routes require authentication and developer privileges.
+ * ========================================================================== */
+
 router.use(requireAuth);
 router.use(requireDeveloper);
 
+/* ==========================================================================
+ * System Monitoring and Administration
+ * ========================================================================== */
+
+// Retrieve system statistics
 router.get("/stats", ctrl.getSystemStats);
+
+// Retrieve system logs
 router.get("/logs", ctrl.getLogs);
+
+// Download system logs
 router.get("/logs/download", ctrl.downloadLogs);
+
+// Clear system logs
 router.post("/logs/clear", ctrl.clearLogs);
 
 export default router;
