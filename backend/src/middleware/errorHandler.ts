@@ -11,10 +11,11 @@ import { AppError } from "../utils/AppError";
 import { ZodError } from "zod";
 
 /**
- * خطاها رو به JSON تبدیل می‌کنه.
- * - اگه هدر پاسخ قبلاً ارسال شده باشه: فقط لاگ و delegate به Express
- * - در غیر این صورت: همیشه JSON برمی‌گردونه
- * - هیچوقت پروسه رو نمی‌کُشه
+ * Converts application and runtime errors into standardized JSON responses.
+ *
+ * - Delegates to Express's default error handler if response headers have already been sent.
+ * - Returns JSON responses for all errors that can be handled by this middleware.
+ * - Prevents unhandled errors from terminating the process.
  */
 export function errorHandler(
     err: unknown,
@@ -22,29 +23,33 @@ export function errorHandler(
     res: Response,
     next: NextFunction
 ) {
-    /* ---------- اگه پاسخ قبلاً ارسال شده ---------- */
+    /* ---------- Response headers already sent ---------- */
+
     if (res.headersSent) {
-        // Express default handler رو صدا بزن (اتصال رو می‌بنده)
+        // Delegate to Express's default error handler to terminate the response.
         return next(err);
     }
 
-    /* ---------- AppError ---------- */
+    /* ---------- Application errors ---------- */
+
     if (err instanceof AppError) {
         return res.status(err.statusCode).json(err.toJSON());
     }
 
-    /* ---------- ZodError ---------- */
+    /* ---------- Zod validation errors ---------- */
+
     if (err instanceof ZodError) {
         return res.status(400).json({
             ok: false,
             code: ErrorCodes.VALIDATION_ERROR,
             message: ErrorMessages[ErrorCodes.VALIDATION_ERROR],
-            details: err.flatten().fieldErrors,
+            details: err.flatten().fieldErrors
         });
     }
 
-    /* ---------- Mongoose duplicate key ---------- */
-    if (isObject(err) && (err as any).code === 11000) {
+    /* ---------- Mongoose duplicate key errors ---------- */
+
+    if (isObject(err) && err.code === 11000) {
         const pattern = (err as any).keyPattern || {};
         const dupField = Object.keys(pattern)[0] || "";
 
@@ -53,83 +58,97 @@ export function errorHandler(
                 ok: false,
                 code: ErrorCodes.USERNAME_TAKEN,
                 message: ErrorMessages[ErrorCodes.USERNAME_TAKEN],
-                field: "username",
+                field: "username"
             });
         }
+
         if (dupField === "email") {
             return res.status(409).json({
                 ok: false,
                 code: ErrorCodes.EMAIL_TAKEN,
                 message: ErrorMessages[ErrorCodes.EMAIL_TAKEN],
-                field: "email",
+                field: "email"
             });
         }
+
         return res.status(409).json({
             ok: false,
             code: ErrorCodes.VALIDATION_ERROR,
-            message: "این مقدار تکراری است",
-            field: dupField,
+            message: "This value already exists",
+            field: dupField
         });
     }
 
-    /* ---------- Mongoose validation ---------- */
-    if (isObject(err) && (err as any).name === "ValidationError") {
+    /* ---------- Mongoose validation errors ---------- */
+
+    if (isObject(err) && err.name === "ValidationError") {
         const rawErrors = (err as any).errors as Record<string, any>;
         const details: Record<string, string[]> = {};
+
         for (const [key, val] of Object.entries(rawErrors)) {
             details[key] = [val.message];
         }
+
         return res.status(400).json({
             ok: false,
             code: ErrorCodes.VALIDATION_ERROR,
             message: ErrorMessages[ErrorCodes.VALIDATION_ERROR],
-            details,
+            details
         });
     }
 
-    /* ---------- Mongoose cast ---------- */
-    if (isObject(err) && (err as any).name === "CastError") {
+    /* ---------- Mongoose cast errors ---------- */
+
+    if (isObject(err) && err.name === "CastError") {
         return res.status(400).json({
             ok: false,
             code: ErrorCodes.VALIDATION_ERROR,
-            message: "شناسه نامعتبر است",
-            field: (err as any).path,
+            message: "Invalid identifier",
+            field: (err as any).path
         });
     }
 
-    /* ---------- JWT ---------- */
-    if (isObject(err) && (err as any).name === "JsonWebTokenError") {
+    /* ---------- JSON Web Token errors ---------- */
+
+    if (isObject(err) && err.name === "JsonWebTokenError") {
         return res.status(401).json({
             ok: false,
             code: ErrorCodes.INVALID_TOKEN,
-            message: ErrorMessages[ErrorCodes.INVALID_TOKEN],
+            message: ErrorMessages[ErrorCodes.INVALID_TOKEN]
         });
     }
-    if (isObject(err) && (err as any).name === "TokenExpiredError") {
+
+    if (isObject(err) && err.name === "TokenExpiredError") {
         return res.status(401).json({
             ok: false,
             code: ErrorCodes.SESSION_EXPIRED,
-            message: ErrorMessages[ErrorCodes.SESSION_EXPIRED],
+            message: ErrorMessages[ErrorCodes.SESSION_EXPIRED]
         });
     }
 
-    /* ---------- خطای شبکه (fetch داخل کنترلر) ---------- */
-    if (isObject(err) && ((err as any).code === "ECONNREFUSED" || (err as any).code === "ETIMEDOUT")) {
+    /* ---------- Network errors from external requests ---------- */
+
+    if (
+        isObject(err) &&
+        (err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT")
+    ) {
         return res.status(503).json({
             ok: false,
             code: ErrorCodes.NETWORK_ERROR,
-            message: "سرویس جانبی در دسترس نیست",
+            message: "An external service is currently unavailable"
         });
     }
 
-    /* ---------- ناشناخته ---------- */
+    /* ---------- Unhandled errors ---------- */
+
     const isProd = process.env.NODE_ENV === "production";
-    console.error("🔴 [UNHANDLED ERROR]", {
+
+    console.error("[UNHANDLED ERROR]", {
         method: req.method,
         url: req.originalUrl,
         name: (err as any)?.name,
         message: (err as any)?.message,
-        stack: isProd ? undefined : (err as any)?.stack,
+        stack: isProd ? undefined : (err as any)?.stack
     });
 
     return res.status(500).json({
@@ -137,11 +156,11 @@ export function errorHandler(
         code: ErrorCodes.INTERNAL_ERROR,
         message: isProd
             ? ErrorMessages[ErrorCodes.INTERNAL_ERROR]
-            : (err as Error)?.message || "Internal Server Error",
+            : (err as Error)?.message || "Internal Server Error"
     });
 }
 
-function isObject(v: unknown): v is Record<string, unknown> {
+function isObject(v: unknown): v is Record<string, any> {
     return typeof v === "object" && v !== null;
 }
 
