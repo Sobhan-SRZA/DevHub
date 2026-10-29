@@ -82,9 +82,22 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         /* ---------------- success ---------------- */
-        onSuccess() {
-            toast("خوش آمدید", "success");
-            setTimeout(() => (location.href = "/"), 500);
+        onSuccess(data) {
+            toast('ورود موفق', 'success');
+
+            if (data?.user && data.user.emailVerified === false) {
+                // کاربر ایمیل تأیید نشده — برو به صفحه تایید
+                setTimeout(() => {
+                    location.href = '/auth/verify-email';
+                }, 500);
+                return;
+            }
+
+            setTimeout(() => {
+                location.href = data?.user?.role === 'developer'
+                    ? '/dashboard'
+                    : '/';
+            }, 500);
         },
 
         onError(payload) {
