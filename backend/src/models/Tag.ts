@@ -8,13 +8,13 @@ import {
 export interface ITag {
     name: string;
     slug: string;
-    type: Types.ObjectId;            // کتگوری
+    type: Types.ObjectId; // Reference to the tag category.
     color: string;
     description?: string;
 
-    isSystem: boolean;                // تگ‌های پیش‌فرض
+    isSystem: boolean; // Indicates whether the tag is system-defined.
     isApproved: boolean;
-    createdBy: Types.ObjectId | null; // null برای system tags
+    createdBy: Types.ObjectId | null; // Null for system-defined tags.
 
     usageCount: number;
     createdAt: Date;
@@ -25,7 +25,12 @@ type TagModel = Model<ITag>;
 
 const tagSchema = new Schema<ITag, TagModel>(
     {
-        name: { type: String, required: true, trim: true, maxlength: 40 },
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 40
+        },
         slug: {
             type: String,
             required: true,
@@ -39,20 +44,45 @@ const tagSchema = new Schema<ITag, TagModel>(
             required: true,
             index: true
         },
-        color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
-        description: { type: String, maxlength: 200 },
+        color: {
+            type: String,
+            default: "#6ebbff",
+            match: /^#[0-9a-fA-F]{6}$/
+        },
+        description: {
+            type: String,
+            maxlength: 200
+        },
 
-        isSystem: { type: Boolean, default: false, index: true },
-        isApproved: { type: Boolean, default: true },
-        createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+        isSystem: {
+            type: Boolean,
+            default: false,
+            index: true
+        },
+        isApproved: {
+            type: Boolean,
+            default: true
+        },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
 
-        usageCount: { type: Number, default: 0, min: 0 },
+        usageCount: {
+            type: Number,
+            default: 0,
+            min: 0
+        }
     },
     { timestamps: true }
 );
 
-// یکتایی slug در هر کتگوری
+/* -------------------- Indexes -------------------- */
+
+// Ensures slug uniqueness within each tag category.
 tagSchema.index({ slug: 1, type: 1 }, { unique: true });
+
 tagSchema.index({ type: 1, isApproved: 1, usageCount: -1 });
 tagSchema.index({ isApproved: 1, createdAt: -1 });
 
