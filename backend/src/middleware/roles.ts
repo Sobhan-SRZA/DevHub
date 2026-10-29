@@ -11,8 +11,9 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 
 /* ==================================================================
-   API Guards
+   API Access Guards
    ================================================================== */
+
 export function requireRole(minRole: "admin" | "developer") {
     return (req: any, _res: Response, next: NextFunction) => {
         if (!req.user) {
@@ -25,8 +26,8 @@ export function requireRole(minRole: "admin" | "developer") {
                     403,
                     ErrorCodes.PROJECT_NOT_OWNED,
                     minRole === "developer"
-                        ? "این بخش فقط برای developer است"
-                        : "این بخش فقط برای ادمین است"
+                        ? "This section is restricted to developers"
+                        : "This section is restricted to administrators"
                 )
             );
         }
@@ -39,8 +40,9 @@ export const requireAdmin = requireRole("admin");
 export const requireDeveloper = requireRole("developer");
 
 /* ==================================================================
-   Page Guards
+   Page Access Guards
    ================================================================== */
+
 export function pageRoleGuard(minRole: "admin" | "developer") {
     return (req: any, res: Response, next: NextFunction) => {
         if (!hasRole(req.user, minRole)) {
@@ -55,8 +57,9 @@ export const pageAdminGuard = pageRoleGuard("admin");
 export const pageDeveloperGuard = pageRoleGuard("developer");
 
 /* ==================================================================
-   Helpers
+   Role Helpers
    ================================================================== */
+
 export const isAdmin = checkAdmin;
 export const isDeveloper = checkDev;
 
