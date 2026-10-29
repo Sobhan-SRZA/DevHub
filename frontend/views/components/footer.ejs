@@ -1,11 +1,11 @@
 <%
   const year = new Date().getFullYear();
 %>
-<footer class="site-footer border-t border-border bg-surface-elevated mt-auto" dir="rtl" role="contentinfo">
+<footer class="site-footer border-t border-border bg-surface-elevated mt-auto" dir="ltr" role="contentinfo">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10">
 
-      <!-- Brand + tagline -->
+      <!-- Brand and tagline -->
       <div class="md:col-span-4 space-y-4">
         <%- include("./brand", {
           brandGradientId: "brandFooter",
@@ -13,15 +13,12 @@
           brandShowText: true
         }) %>
         <p class="text-sm text-content-secondary leading-relaxed max-w-xs">
-          پلتفرم کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز —
-          ساخته‌شده برای توسعه‌دهندگان ایرانی و جهانی.
+          A platform to discover, review, and share open-source projects — built for developers around the world.
         </p>
         <div class="flex items-center gap-3 pt-1">
-          <a href="https://github.com/Sobhan-SRZA/devhub" target="_blank" rel="noopener noreferrer"
-             class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border text-content-secondary hover:text-content hover:border-border-strong hover:bg-surface-hover transition-colors"
-             aria-label="گیت‌هاب">
+          <a href="https://github.com/Sobhan-SRZA/devhub" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border text-content-secondary hover:text-content hover:border-border-strong hover:bg-surface-hover transition-colors" aria-label="GitHub">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.305-5.467-1.334-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.12 3.176.77.84 1.233 1.91 1.233 3.22 0 4.61-2.807 5.62-5.48 5.92.43.37.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .32.217.694.825.576C20.565 21.796 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.305-5.467-1.334-5.467-5.93 0-1.31.468-2.38 1.235-3.22-.123-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.12 3.176.77.84 1.233 1.91 1.233 3.22 0 4.61-2.807 5.62-5.48 5.92.43.37.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .32.217.694.825.576C20.565 21.796 24 17.3 24 12c0-6.63-5.37-12-12-12z" />
             </svg>
           </a>
         </div>
@@ -29,49 +26,49 @@
 
       <!-- Product links -->
       <div class="md:col-span-2">
-        <h3 class="text-sm font-semibold text-content mb-3">محصول</h3>
+        <h3 class="text-sm font-semibold text-content mb-3">Product</h3>
         <ul class="space-y-2.5 text-sm">
-          <li><a href="/explore" class="text-content-secondary hover:text-accent transition-colors">اکسپلور</a></li>
-          <li><a href="/projects" class="text-content-secondary hover:text-accent transition-colors">پروژه‌ها</a></li>
-          <li><a href="/users" class="text-content-secondary hover:text-accent transition-colors">کاربران</a></li>
-          <li><a href="/dashboard" class="text-content-secondary hover:text-accent transition-colors">داشبورد</a></li>
+          <li><a href="/explore" class="text-content-secondary hover:text-accent transition-colors">Explore</a></li>
+          <li><a href="/projects" class="text-content-secondary hover:text-accent transition-colors">Projects</a></li>
+          <li><a href="/users" class="text-content-secondary hover:text-accent transition-colors">Users</a></li>
+          <li><a href="/dashboard" class="text-content-secondary hover:text-accent transition-colors">Dashboard</a></li>
         </ul>
       </div>
 
-      <!-- Company -->
+      <!-- Company links -->
       <div class="md:col-span-2">
-        <h3 class="text-sm font-semibold text-content mb-3">شرکت</h3>
+        <h3 class="text-sm font-semibold text-content mb-3">Company</h3>
         <ul class="space-y-2.5 text-sm">
-          <li><a href="/about" class="text-content-secondary hover:text-accent transition-colors">درباره ما</a></li>
-          <li><a href="/contact" class="text-content-secondary hover:text-accent transition-colors">تماس با ما</a></li>
+          <li><a href="/about" class="text-content-secondary hover:text-accent transition-colors">About Us</a></li>
+          <li><a href="/contact" class="text-content-secondary hover:text-accent transition-colors">Contact Us</a></li>
         </ul>
       </div>
 
-      <!-- Account -->
+      <!-- Account links -->
       <div class="md:col-span-2">
-        <h3 class="text-sm font-semibold text-content mb-3">حساب کاربری</h3>
+        <h3 class="text-sm font-semibold text-content mb-3">Account</h3>
         <ul class="space-y-2.5 text-sm">
-          <li><a href="/auth/login" class="text-content-secondary hover:text-accent transition-colors">ورود</a></li>
-          <li><a href="/auth/register" class="text-content-secondary hover:text-accent transition-colors">ثبت‌نام</a></li>
+          <li><a href="/auth/login" class="text-content-secondary hover:text-accent transition-colors">Log In</a></li>
+          <li><a href="/auth/register" class="text-content-secondary hover:text-accent transition-colors">Sign Up</a></li>
         </ul>
       </div>
 
-      <!-- Legal placeholder -->
+      <!-- Legal links -->
       <div class="md:col-span-2">
-        <h3 class="text-sm font-semibold text-content mb-3">قانونی</h3>
+        <h3 class="text-sm font-semibold text-content mb-3">Legal</h3>
         <ul class="space-y-2.5 text-sm">
-          <li><span class="text-content-muted cursor-default">حریم خصوصی</span></li>
-          <li><span class="text-content-muted cursor-default">شرایط استفاده</span></li>
+          <li><span class="text-content-muted cursor-default">Privacy Policy</span></li>
+          <li><span class="text-content-muted cursor-default">Terms of Service</span></li>
         </ul>
       </div>
     </div>
 
     <div class="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-content-muted">
-      <p>© <%= year %> DevHub. تمامی حقوق محفوظ است.</p>
+      <p>© <%= year %> DevHub. All rights reserved.</p>
       <p class="flex items-center gap-1.5">
-        ساخته‌شده با
+        Made with
         <span class="text-danger" aria-hidden="true">♥</span>
-        برای جامعه متن‌باز
+        for the open-source community
       </p>
     </div>
   </div>
