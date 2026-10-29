@@ -1,11 +1,21 @@
+
 import { optionalAuth } from "../middleware/auth";
 import { Router } from "express";
 import * as ctrl from "../controllers/userController";
 
 const router = Router();
 
+/* ==========================================================================
+ * Public User Profile Routes
+ * ========================================================================== */
+
+// Retrieve a user's public profile
 router.get("/:idOrUsername", optionalAuth, ctrl.getPublicProfile);
+
+// Retrieve projects created by a specific user
 router.get("/:idOrUsername/projects", ctrl.getUserProjects);
+
+// Retrieve reviews submitted by a specific user
 router.get("/:idOrUsername/reviews", ctrl.getUserReviews);
 
 export default router;
