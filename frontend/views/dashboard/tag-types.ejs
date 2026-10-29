@@ -1,38 +1,48 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint to prevent flashing. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/form-errors.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/tag-types.css">
-  <title>کتگوری‌ها</title>
+
+  <title>Categories</title>
 </head>
 
 <body>
@@ -40,78 +50,85 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: "نوع تگ‌ها" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "Tag Types" }) %>
 
     <main class="dash-main">
-      <!-- Tabs: Approved / Pending -->
+      <!-- ============ VIEW TABS (Approved / Pending) ============ -->
       <div class="tt-tabs">
         <button type="button" class="tt-tab active" data-view="approved">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
-          کتگوری‌های فعال
+          Active Categories
           <span class="tt-tab__badge" id="approvedCount">0</span>
         </button>
+
         <button type="button" class="tt-tab" data-view="pending" id="pendingTab">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          در انتظار تایید
+          Pending Approval
           <span class="tt-tab__badge tt-tab__badge--warn" id="pendingCount">0</span>
         </button>
       </div>
 
+      <!-- ============ PAGE HEADER ============ -->
       <div class="dash-head">
         <div>
-          <h2 class="dash-title" id="pageTitle">کتگوری‌های تگ</h2>
-          <p class="dash-sub" id="pageSub">مدیریت دسته‌بندی تگ‌ها (مثل GitHub Topics)</p>
+          <h2 class="dash-title" id="pageTitle">Tag Categories</h2>
+          <p class="dash-sub" id="pageSub">Manage tag categories (similar to GitHub Topics)</p>
         </div>
+
         <button type="button" class="btn-primary" id="btnNewType">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          کتگوری جدید
+          New Category
         </button>
       </div>
 
-      <!-- Filters -->
+      <!-- ============ FILTERS ============ -->
       <div class="dash-filters" id="filtersRow">
         <div class="dash-search">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="ttSearch" placeholder="جستجوی کتگوری...">
+          <input type="text" id="ttSearch" placeholder="Search categories...">
         </div>
+
         <select id="ttSort" class="dash-select">
-          <option value="order">ترتیب پیش‌فرض</option>
-          <option value="name">بر اساس نام</option>
-          <option value="usage">پرکاربردترین</option>
-          <option value="recent">جدیدترین</option>
+          <option value="order">Default order</option>
+          <option value="name">By name</option>
+          <option value="usage">Most used</option>
+          <option value="recent">Newest</option>
         </select>
       </div>
 
-      <!-- Grid -->
+      <!-- ============ CATEGORY GRID ============ -->
       <div class="tag-types-grid" id="typesGrid">
-        <div class="dash-loading">در حال بارگذاری…</div>
+        <div class="dash-loading">Loading…</div>
       </div>
     </main>
   </div>
 
-  <!-- ============================= -->
-  <!-- TYPE MODAL                    -->
-  <!-- ============================= -->
+  <!-- ================================================================
+       TYPE MODAL (CREATE / EDIT)
+       Used to create or edit a tag category with icon, name, slug,
+       color, description, display order, and user-tag permission.
+       ================================================================ -->
   <div class="modal-backdrop" id="typeModalBackdrop"></div>
   <div class="modal modal--md" id="typeModal" role="dialog">
     <div class="modal__header">
       <div class="modal__header-info">
-        <h3 class="modal__title" id="typeModalTitle">کتگوری جدید</h3>
-        <p class="modal__subtitle" id="typeModalSubtitle">یک کتگوری برای گروه‌بندی تگ‌ها بسازید</p>
+        <h3 class="modal__title" id="typeModalTitle">New Category</h3>
+        <p class="modal__subtitle" id="typeModalSubtitle">Create a category to group tags</p>
       </div>
-      <button type="button" class="modal__close" id="typeModalClose" aria-label="بستن">
+
+      <button type="button" class="modal__close" id="typeModalClose" aria-label="Close">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -122,25 +139,29 @@
     <form class="modal__body" id="typeForm" novalidate>
       <input type="hidden" name="_id">
 
+      <!-- Icon and name -->
       <div class="field-row">
         <div class="field field--icon">
-          <label for="tt-icon">آیکون</label>
+          <label for="tt-icon">Icon</label>
           <input id="tt-icon" type="text" name="icon" maxlength="4" placeholder="🤖" autocomplete="off">
         </div>
+
         <div class="field">
-          <label for="tt-name">نام کتگوری <span class="req">*</span></label>
-          <input id="tt-name" type="text" name="name" required maxlength="50" placeholder="مثلاً: هوش مصنوعی">
+          <label for="tt-name">Category Name <span class="req">*</span></label>
+          <input id="tt-name" type="text" name="name" required maxlength="50" placeholder="e.g., Artificial Intelligence">
         </div>
       </div>
 
+      <!-- Slug -->
       <div class="field">
-        <label for="tt-slug">Slug <small>(اختیاری — خودکار ساخته می‌شود)</small></label>
+        <label for="tt-slug">Slug <small>(optional — generated automatically)</small></label>
         <input id="tt-slug" type="text" name="slug" maxlength="40" placeholder="artificial-intelligence">
-        <div class="field-hint">فقط حروف انگلیسی کوچک، عدد و خط تیره</div>
+        <div class="field-hint">Lowercase English letters, numbers, and hyphens only</div>
       </div>
 
+      <!-- Color selection -->
       <div class="field">
-        <label for="tt-color">رنگ</label>
+        <label for="tt-color">Color</label>
         <div class="tt-color-row">
           <input id="tt-color" type="color" name="color" value="#6ebbff">
           <div class="tt-color-presets" id="colorPresets">
@@ -156,43 +177,49 @@
         </div>
       </div>
 
+      <!-- Description -->
       <div class="field">
-        <label for="tt-description">توضیح <small>(اختیاری)</small></label>
-        <textarea id="tt-description" name="description" rows="2" maxlength="300" placeholder="این کتگوری برای چه تگ‌هایی است؟"></textarea>
+        <label for="tt-description">Description <small>(optional)</small></label>
+        <textarea id="tt-description" name="description" rows="2" maxlength="300" placeholder="Which tags belong to this category?"></textarea>
       </div>
 
+      <!-- Display order and user-tag permission -->
       <div class="field-row">
         <div class="field">
-          <label for="tt-order">ترتیب نمایش</label>
+          <label for="tt-order">Display Order</label>
           <input id="tt-order" type="number" name="order" min="0" max="9999" value="0">
         </div>
+
         <div class="field field--inline">
           <label class="checkbox">
             <input type="checkbox" name="allowUserTags" checked>
-            <span>کاربران تگ جدید اضافه کنند</span>
+            <span>Allow users to add new tags</span>
           </label>
         </div>
       </div>
 
+      <!-- Live preview -->
       <div class="tt-preview" id="typePreview">
-        <div class="tt-preview__label">پیش‌نمایش:</div>
+        <div class="tt-preview__label">Preview:</div>
         <div class="tt-preview__card">
           <span class="tt-preview__icon" id="previewIcon">🏷</span>
-          <span class="tt-preview__name" id="previewName">نام کتگوری</span>
+          <span class="tt-preview__name" id="previewName">Category name</span>
           <span class="tt-preview__count">0</span>
         </div>
       </div>
     </form>
 
     <div class="modal__footer">
-      <button type="button" class="btn-ghost" id="typeModalCancel">انصراف</button>
-      <button type="submit" form="typeForm" class="btn-primary" id="typeModalSubmit">ذخیره</button>
+      <button type="button" class="btn-ghost" id="typeModalCancel">Cancel</button>
+      <button type="submit" form="typeForm" class="btn-primary" id="typeModalSubmit">Save</button>
     </div>
   </div>
 
-  <!-- ============================= -->
-  <!-- TAG TYPE DETAILS PANEL        -->
-  <!-- ============================= -->
+  <!-- ================================================================
+       TAG TYPE DETAILS PANEL
+       Opens a read-only panel listing the tags that belong to a
+       selected category.
+       ================================================================ -->
   <div class="modal-backdrop" id="detailBackdrop"></div>
   <div class="modal modal--lg" id="detailModal" role="dialog">
     <div class="modal__header">
@@ -200,6 +227,7 @@
         <h3 class="modal__title" id="detailTitle">—</h3>
         <p class="modal__subtitle" id="detailSubtitle">—</p>
       </div>
+
       <button type="button" class="modal__close" id="detailClose">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -210,12 +238,12 @@
 
     <div class="modal__body">
       <div id="detailTags" class="detail-tags">
-        <div class="dash-loading">در حال بارگذاری…</div>
+        <div class="dash-loading">Loading…</div>
       </div>
     </div>
 
     <div class="modal__footer">
-      <button type="button" class="btn-ghost" id="detailCloseBtn">بستن</button>
+      <button type="button" class="btn-ghost" id="detailCloseBtn">Close</button>
     </div>
   </div>
 
