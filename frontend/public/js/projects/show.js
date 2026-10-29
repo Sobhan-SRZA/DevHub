@@ -1,10 +1,18 @@
 /* ============================================================
    Project Detail Page
+   ============================================================
+   Handles the full project detail view: metadata rendering,
+   image gallery with lightbox, reviews (including the current
+   user's own review), threaded comments, related projects,
+   and the share modal.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
     /* ============================================================
-       State
+       View State
+       ============================================================
+       Centralised state for the project, the current user, the
+       user's own review, review/comment pagination, and gallery.
        ============================================================ */
     const state = {
         projectId: null,
@@ -16,14 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
         gallery: { items: [], index: 0 },
     };
 
-    const $ = (s, r = document) => r.querySelector(s);
-    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
     const pageEl = $('#projectPage');
     const idOrSlug = pageEl.dataset.projectId;
 
     /* ============================================================
-       API helper
+       API Helper
+       ============================================================
+       Sends credentialed JSON requests and normalises failures
+       into Error objects that preserve the server payload.
        ============================================================ */
     async function api(path, opts = {}) {
         const res = await fetch(path, {
@@ -31,21 +42,29 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             ...opts,
         });
+
         let data = null;
-        try { data = await res.json(); } catch { }
+        try {
+            data = await res.json();
+        } catch { /* Ignore JSON parse failures. */ }
+
         if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
+            const err = new Error(data?.message || 'Error');
             Object.assign(err, data, { status: res.status });
             throw err;
         }
+
         return data;
     }
 
     /* ============================================================
        Helpers
        ============================================================ */
+
+    /* Escape user-supplied strings before interpolating them into HTML. */
     function escapeHtml(s) {
         if (s == null) return '';
+
         return String(s)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -54,61 +73,85 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#39;');
     }
 
+    /* Abbreviate large numbers using K/M suffixes. */
     function formatNumber(n) {
         n = Number(n) || 0;
+
         if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
         if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+
         return String(n);
     }
 
+    /* Format an ISO date as a medium-length English date. */
     function formatDate(d) {
         if (!d) return '—';
+
         try {
-            return new Intl.DateTimeFormat('fa-IR', {
+            return new Intl.DateTimeFormat('en-US', {
                 dateStyle: 'medium',
             }).format(new Date(d));
-        } catch { return '—'; }
+        } catch {
+            return '—';
+        }
     }
 
+    /* Render a human-friendly relative time string (e.g. "3 days ago"). */
     function relativeTime(d) {
         if (!d) return '';
+
         const diff = Date.now() - new Date(d).getTime();
         const s = Math.floor(diff / 1000);
-        if (s < 60) return 'همین الان';
+
+        if (s < 60) return 'just now';
+
         const m = Math.floor(s / 60);
-        if (m < 60) return `${m} دقیقه پیش`;
+        if (m < 60) return `${m} minute${m === 1 ? '' : 's'} ago`;
+
         const h = Math.floor(m / 60);
-        if (h < 24) return `${h} ساعت پیش`;
+        if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+
         const days = Math.floor(h / 24);
-        if (days < 30) return `${days} روز پیش`;
+        if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+
         const months = Math.floor(days / 30);
-        if (months < 12) return `${months} ماه پیش`;
-        return `${Math.floor(months / 12)} سال پیش`;
+        if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+
+        const years = Math.floor(months / 12);
+        return `${years} year${years === 1 ? '' : 's'} ago`;
     }
 
+    /* Convert a byte count into a human-readable size string. */
     function humanSize(bytes) {
         bytes = Number(bytes) || 0;
+
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
         return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
     }
 
+    /* Convert a hex colour to an rgba() string with the given alpha. */
     function hexA(hex, a) {
         if (!hex) return `rgba(110,187,255,${a})`;
+
         const h = hex.replace('#', '');
         const r = parseInt(h.substr(0, 2), 16);
         const g = parseInt(h.substr(2, 2), 16);
         const b = parseInt(h.substr(4, 2), 16);
+
         return `rgba(${r},${g},${b},${a})`;
     }
 
     /* ============================================================
-       Load project
+       Project Loading
+       ============================================================
+       Fetch the project and the current user in parallel, then
+       render the view and trigger the dependent sub-loads.
        ============================================================ */
     async function loadProject() {
         try {
-            // بارگذاری پروژه و کاربر به‌صورت موازی
             const [projectRes, userRes] = await Promise.allSettled([
                 api(`/api/projects/${idOrSlug}`),
                 api('/api/auth/me'),
@@ -130,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             $('#pageLoading').style.display = 'none';
             $('#pageContent').style.display = 'block';
 
-            // بارگذاری ریویوها و کامنت‌ها
+            // Load dependent sections after the main view is rendered.
             loadReviews();
             loadComments();
             loadRelated();
@@ -139,24 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /* Show the error panel with messaging appropriate to the status code. */
     function showError(err) {
         $('#pageLoading').style.display = 'none';
         $('#pageError').style.display = 'flex';
 
         if (err.status === 403) {
-            $('#errorTitle').textContent = 'دسترسی ندارید';
-            $('#errorSub').textContent = 'این پروژه عمومی نیست';
+            $('#errorTitle').textContent = 'Access denied';
+            $('#errorSub').textContent = 'This project is not public.';
         } else if (err.status === 404) {
-            $('#errorTitle').textContent = 'پروژه یافت نشد';
-            $('#errorSub').textContent = 'ممکن است حذف شده باشد';
+            $('#errorTitle').textContent = 'Project not found';
+            $('#errorSub').textContent = 'It may have been removed.';
         } else {
-            $('#errorTitle').textContent = 'خطا در بارگذاری';
-            $('#errorSub').textContent = err.message || 'دوباره تلاش کنید';
+            $('#errorTitle').textContent = 'Failed to load';
+            $('#errorSub').textContent = err.message || 'Please try again.';
         }
     }
 
     /* ============================================================
-       Render project
+       Project Rendering
+       ============================================================
+       Populates every section of the project page from the loaded
+       project payload, adapting the view to the viewer's role.
        ============================================================ */
     function render() {
         const p = state.project;
@@ -164,14 +211,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const gh = p.githubData || {};
         const isOwner = state.currentUser && String(state.currentUser.id) === String(owner._id || owner);
 
-        document.title = `${p.title} — نمایش پروژه`;
+        document.title = `${p.title} — Project`;
 
-        /* ---------- Breadcrumb ---------- */
+        /* Breadcrumb */
         $('#breadcrumbName').textContent = p.title;
 
-        /* ---------- Avatar / Cover ---------- */
+        /* Avatar / Cover */
         const cover = p.images?.[0]?.url;
         const avatarEl = $('#projectAvatar');
+
         if (cover) {
             avatarEl.style.backgroundImage = `url('${cover}')`;
             avatarEl.textContent = '';
@@ -179,43 +227,36 @@ document.addEventListener('DOMContentLoaded', () => {
             avatarEl.textContent = (p.title || '?').charAt(0).toUpperCase();
         }
 
-        /* ---------- Title / Status / Short ---------- */
+        /* Title / Status / Short Description */
         $('#projectTitle').textContent = p.title;
 
-        const statusMap = { draft: 'پیش‌نویس', published: 'منتشر شده', archived: 'آرشیو' };
+        const statusMap = { draft: 'Draft', published: 'Published', archived: 'Archived' };
         const statusEl = $('#projectStatus');
         statusEl.textContent = statusMap[p.status] || p.status;
         statusEl.className = `proj-status proj-status--${p.status}`;
 
         $('#projectShort').textContent = p.shortDescription || '';
 
-        /* ---------- Owner ---------- */
-        $('#ownerName').textContent = owner.name || owner.username || 'کاربر';
+        /* Owner */
+        $('#ownerName').textContent = owner.name || owner.username || 'User';
 
-        // link
         const ownerLink = document.getElementById('ownerLink');
         if (ownerLink && owner.username) {
             ownerLink.href = `/users/${encodeURIComponent(owner.username)}`;
-        }
-
-        else if (ownerLink) {
+        } else if (ownerLink) {
             ownerLink.removeAttribute('href');
             ownerLink.style.pointerEvents = 'none';
         }
 
-        // avatar
         const ownerAvatar = document.getElementById('ownerAvatar');
         if (owner.avatar?.url) {
             ownerAvatar.style.backgroundImage = `url('${owner.avatar.url}')`;
             ownerAvatar.textContent = '';
-        }
-
-        else {
+        } else {
             ownerAvatar.textContent = (owner.name || '?').charAt(0).toUpperCase();
         }
 
-
-        /* ---------- Actions ---------- */
+        /* Actions */
         if (p.githubUrl) {
             const ghBtn = $('#btnGithub');
             ghBtn.href = p.githubUrl;
@@ -228,8 +269,9 @@ document.addEventListener('DOMContentLoaded', () => {
             editBtn.style.display = '';
         }
 
-        /* ---------- Tags ---------- */
+        /* Tags */
         const tags = p.tags || [];
+
         $('#projectTags').innerHTML = tags.map((t) => `
             <a href="/projects?tag=${t._id}" class="proj-tag"
                style="background:${hexA(t.color, 0.12)}; color:${t.color}; border-color:${hexA(t.color, 0.3)}">
@@ -244,28 +286,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${escapeHtml(t.name)}
                 </a>
               `).join('')
-            : '<div style="color:#666;font-size:0.82rem">بدون تگ</div>';
+            : '<div style="color:#666;font-size:0.82rem">No tags</div>';
 
-        /* ---------- Stats ---------- */
+        /* Stats */
         $('#statStars').textContent = formatNumber(gh.stars);
         $('#statForks').textContent = formatNumber(gh.forks);
         $('#statDownloads').textContent = formatNumber(p.downloads);
         $('#statRating').textContent = (p.rating || 0).toFixed(1);
         $('#statViews').textContent = formatNumber(p.views);
         $('#statRatingCount').textContent = p.reviewCount
-            ? `${p.reviewCount} ریویو`
-            : 'بدون امتیاز';
+            ? `${p.reviewCount} review${p.reviewCount === 1 ? '' : 's'}`
+            : 'No ratings';
 
-        /* ---------- Gallery ---------- */
+        /* Gallery */
         renderGallery(p.images || []);
 
-        /* ---------- Description ---------- */
+        /* Description */
         const descriptionHtml = (window.parseMarkdown
             ? window.parseMarkdown(p.fullDescription || '')
             : escapeHtml(p.fullDescription || '').replace(/\n/g, '<br>'));
-        $('#projectDescription').innerHTML = descriptionHtml || '<em style="color:#666">بدون توضیحات</em>';
+        $('#projectDescription').innerHTML = descriptionHtml || '<em style="color:#666">No description</em>';
 
-        /* ---------- Video ---------- */
+        /* Video */
         if (p.demoVideo?.url) {
             $('#videoSection').style.display = '';
             $('#videoContainer').innerHTML = `
@@ -273,23 +315,23 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        /* ---------- Download ---------- */
+        /* Download */
         if (p.downloadFile?.url) {
             $('#downloadCard').style.display = '';
             $('#fileVersion').textContent = p.downloadFile.version
-                ? `نسخه ${p.downloadFile.version}`
-                : 'دانلود پروژه';
+                ? `Version ${p.downloadFile.version}`
+                : 'Download project';
             $('#fileSize').textContent = humanSize(p.downloadFile.size);
             $('#downloadBtn').href = `/api/projects/${p._id}/download`;
 
             const metaParts = [];
             if (p.downloadFile.filename) metaParts.push(`<span>📄 ${escapeHtml(p.downloadFile.filename)}</span>`);
-            if (p.downloadFile.downloads != null) metaParts.push(`<span>⬇ ${p.downloadFile.downloads} دانلود</span>`);
+            if (p.downloadFile.downloads != null) metaParts.push(`<span>⬇ ${p.downloadFile.downloads} downloads</span>`);
             $('#fileMeta').innerHTML = metaParts.join('');
         }
 
-        /* ---------- Info list ---------- */
-        const statusLabel = { draft: 'پیش‌نویس', published: 'منتشر شده', archived: 'آرشیو' };
+        /* Info list */
+        const statusLabel = { draft: 'Draft', published: 'Published', archived: 'Archived' };
         $('#infoStatus').textContent = statusLabel[p.status] || p.status;
         $('#infoCreated').textContent = formatDate(p.createdAt);
         $('#infoUpdated').textContent = relativeTime(p.updatedAt);
@@ -298,18 +340,20 @@ document.addEventListener('DOMContentLoaded', () => {
             $('#infoLicenseRow').style.display = '';
             $('#infoLicense').textContent = gh.license;
         }
+
         if (gh.language) {
             $('#infoLanguageRow').style.display = '';
             $('#infoLanguage').textContent = gh.language;
         }
 
-        /* ---------- Reviews summary ---------- */
+        /* Reviews summary */
         updateReviewsSummary(p);
 
-        /* ---------- Comment form ---------- */
+        /* Comment form visibility */
         if (state.currentUser) {
             $('#commentForm').style.display = '';
             $('#commentLogin').style.display = 'none';
+
             const name = state.currentUser.name || state.currentUser.username || '?';
             $('#myAvatar').textContent = name.charAt(0).toUpperCase();
         } else {
@@ -317,17 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
             $('#commentLogin').style.display = 'flex';
         }
 
-        /* ---------- Review box ---------- */
+        /* Review box visibility */
         if (!state.currentUser) {
             $('#reviewCta').style.display = 'none';
             $('#reviewForm').style.display = 'none';
         } else if (isOwner) {
-            // صاحب پروژه نمی‌تونه ریویو بده
+            // Project owners cannot review their own project.
             $('#reviewCta').innerHTML = `
                 <div class="review-box__cta-icon">👑</div>
                 <div class="review-box__cta-text">
-                    <strong>شما صاحب این پروژه هستید</strong>
-                    <small>نمی‌توانید به پروژه خودتان امتیاز دهید</small>
+                    <strong>You own this project</strong>
+                    <small>You cannot rate your own project.</small>
                 </div>
             `;
         }
@@ -350,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="gallery-item" data-index="${i}">
                 <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.alt || '')}" loading="lazy">
                 <div class="gallery-item__overlay">
-                    <span>${escapeHtml(img.filename || `تصویر ${i + 1}`)}</span>
+                    <span>${escapeHtml(img.filename || `Image ${i + 1}`)}</span>
                 </div>
             </div>
         `).join('');
@@ -384,6 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateLightbox() {
         const items = state.gallery.items;
         if (!items.length) return;
+
         const i = state.gallery.index;
         lightboxImg.src = items[i].url;
         lightboxImg.alt = items[i].alt || '';
@@ -391,25 +436,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     $('#lightboxClose').addEventListener('click', closeLightbox);
+
     $('#lightboxPrev').addEventListener('click', () => {
         const n = state.gallery.items.length;
         if (!n) return;
+
         state.gallery.index = (state.gallery.index - 1 + n) % n;
         updateLightbox();
     });
+
     $('#lightboxNext').addEventListener('click', () => {
         const n = state.gallery.items.length;
         if (!n) return;
+
         state.gallery.index = (state.gallery.index + 1) % n;
         updateLightbox();
     });
+
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox || e.target.classList.contains('lightbox__image-wrap')) {
             closeLightbox();
         }
     });
+
     document.addEventListener('keydown', (e) => {
         if (!lightbox.classList.contains('open')) return;
+
         if (e.key === 'Escape') closeLightbox();
         else if (e.key === 'ArrowLeft') $('#lightboxNext').click();
         else if (e.key === 'ArrowRight') $('#lightboxPrev').click();
@@ -421,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadReviews() {
         try {
             const data = await api(`/api/projects/${state.projectId}/reviews?sort=${state.reviews.sort}&limit=50`);
+
             state.reviews.distribution = data.distribution || {};
             state.myReview = data.myReview || null;
 
@@ -428,35 +481,39 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMyReview();
             renderReviews(data.reviews || []);
         } catch (err) {
-            $('#reviewsList').innerHTML = `<div class="panel-empty">خطا در بارگذاری ریویوها</div>`;
+            $('#reviewsList').innerHTML = `<div class="panel-empty">Failed to load reviews.</div>`;
         }
     }
 
+    /* Render the average rating, star row, and rating distribution bars. */
     function updateReviewsSummary(summary) {
         const p = state.project || {};
         const rating = summary.rating ?? p.rating ?? 0;
         const count = summary.reviewCount ?? p.reviewCount ?? 0;
 
         $('#avgRating').textContent = rating.toFixed(1);
-        $('#avgCount').textContent = count === 0 ? 'بدون امتیاز' : `${count} ریویو`;
+        $('#avgCount').textContent = count === 0
+            ? 'No ratings'
+            : `${count} review${count === 1 ? '' : 's'}`;
         $('#reviewsCount').textContent = count;
 
-        // stars
         const starsHtml = Array.from({ length: 5 }, (_, i) => {
             const filled = i < Math.round(rating);
+
             return filled
                 ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
                 : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
         }).join('');
+
         $('#avgStars').innerHTML = starsHtml;
 
-        // distribution
         const dist = state.reviews.distribution || {};
         const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1;
 
         $('#reviewsDist').innerHTML = [5, 4, 3, 2, 1].map((star) => {
             const c = dist[star] || 0;
             const pct = (c / total) * 100;
+
             return `
                 <div class="dist-row">
                     <span class="dist-row__label">${star} ★</span>
@@ -469,6 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
+    /* Render the current user's own review, or reveal the write-review CTA. */
     function renderMyReview() {
         const mine = $('#reviewMine');
         const cta = $('#reviewCta');
@@ -476,9 +534,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!state.myReview) {
             mine.style.display = 'none';
-            if (state.currentUser && state.project && String(state.currentUser.id) !== String(state.project.owner?._id || state.project.owner)) {
+
+            if (state.currentUser && state.project &&
+                String(state.currentUser.id) !== String(state.project.owner?._id || state.project.owner)) {
                 cta.style.display = '';
             }
+
             form.style.display = 'none';
             return;
         }
@@ -500,11 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
-                    ریویو شما
+                    Your review
                 </span>
                 <div class="my-review__actions">
-                    <button type="button" class="my-review__btn" id="editMyReview">ویرایش</button>
-                    <button type="button" class="my-review__btn my-review__btn--danger" id="deleteMyReview">حذف</button>
+                    <button type="button" class="my-review__btn" id="editMyReview">Edit</button>
+                    <button type="button" class="my-review__btn my-review__btn--danger" id="deleteMyReview">Delete</button>
                 </div>
             </div>
 
@@ -514,9 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ${r.body ? `<p class="my-review__body">${escapeHtml(r.body)}</p>` : ''}
 
             <div class="my-review__meta">
-                <span>رضایت: ${r.satisfaction}%</span>
+                <span>Satisfaction: ${r.satisfaction}%</span>
                 <span>${relativeTime(r.createdAt)}</span>
-                ${r.isEdited ? '<span>ویرایش شده</span>' : ''}
+                ${r.isEdited ? '<span>Edited</span>' : ''}
             </div>
         `;
 
@@ -524,27 +585,26 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#deleteMyReview')?.addEventListener('click', deleteMyReview);
     }
 
+    /* Render other users' reviews, excluding the current user's own review. */
     function renderReviews(reviews) {
         if (!reviews.length) {
-            $('#reviewsList').innerHTML = `<div class="panel-empty">هنوز ریویویی ثبت نشده — اولین نفر باشید!</div>`;
-
+            $('#reviewsList').innerHTML = `<div class="panel-empty">No reviews yet — be the first!</div>`;
             return;
         }
 
-        // مخفی کردن ریویوی خودم از لیست (چون بالاتر نمایش داده می‌شه)
+        // Exclude the user's own review; it is rendered separately above.
         const filtered = state.myReview
             ? reviews.filter((r) => r._id !== state.myReview._id)
             : reviews;
 
         if (!filtered.length) {
-            $('#reviewsList').innerHTML = `<div class="panel-empty">فقط ریویوی شما ثبت شده است</div>`;
-
+            $('#reviewsList').innerHTML = `<div class="panel-empty">Only your review has been submitted.</div>`;
             return;
         }
 
         $('#reviewsList').innerHTML = filtered.map((r) => {
             const u = r.user || {};
-            const name = u.name || u.username || 'کاربر';
+            const name = u.name || u.username || 'User';
             const initial = name.charAt(0).toUpperCase();
 
             const starsHtml = Array.from({ length: 5 }, (_, i) =>
@@ -583,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <div class="review-item__footer">
                         <div class="review-item__satisfaction">
-                            <span>رضایت</span>
+                            <span>Satisfaction</span>
                             <div class="review-item__satisfaction-bar">
                                 <div class="review-item__satisfaction-fill" style="width:${r.satisfaction}%"></div>
                             </div>
@@ -594,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                             </svg>
-                            مفید بود (${r.helpfulCount || 0})
+                            Helpful (${r.helpfulCount || 0})
                         </button>
                     </div>
                 </article>
@@ -606,21 +666,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* Mark a review as helpful and refresh the displayed count. */
     async function markHelpful(id, btn) {
         btn.disabled = true;
+
         try {
             const data = await api(`/api/projects/${state.projectId}/reviews/${id}/helpful`, { method: 'POST' });
             btn.innerHTML = btn.innerHTML.replace(/\(\d+\)/, `(${data.helpfulCount})`);
         } catch (err) {
             if (err.status === 401) {
-                toast('برای این کار وارد شوید', 'info');
+                toast('Sign in to do this', 'info');
             }
         } finally {
             btn.disabled = false;
         }
     }
 
-    /* ---------- Review form ---------- */
+    /* ---------- Review Form ---------- */
     const reviewForm = $('#reviewForm');
     const starRating = $('#starRating');
     const satisfactionSlider = $('#reviewSatisfaction');
@@ -631,20 +693,24 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#reviewFormClose')?.addEventListener('click', closeReviewForm);
     $('#reviewCancel')?.addEventListener('click', closeReviewForm);
 
+    /**
+     * Reveal the review form and prefill it when editing an existing
+     * review, or reset it when composing a new one.
+     */
     function openReviewForm(existing) {
         reviewForm.style.display = '';
         $('#reviewCta').style.display = 'none';
 
         if (existing) {
-            $('#reviewFormTitle').textContent = 'ویرایش ریویو';
-            $('#reviewSubmit').textContent = 'ذخیره تغییرات';
+            $('#reviewFormTitle').textContent = 'Edit review';
+            $('#reviewSubmit').textContent = 'Save changes';
             reviewRating = existing.rating;
             $('#reviewTitle').value = existing.title || '';
             $('#reviewBody').value = existing.body || '';
             satisfactionSlider.value = existing.satisfaction;
         } else {
-            $('#reviewFormTitle').textContent = 'ریویوی جدید';
-            $('#reviewSubmit').textContent = 'ثبت ریویو';
+            $('#reviewFormTitle').textContent = 'New review';
+            $('#reviewSubmit').textContent = 'Submit review';
             reviewRating = 0;
             $('#reviewTitle').value = '';
             $('#reviewBody').value = '';
@@ -657,8 +723,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => reviewForm.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     }
 
+    /* Hide the review form and restore the appropriate prior state. */
     function closeReviewForm() {
         reviewForm.style.display = 'none';
+
         if (state.myReview) {
             $('#reviewMine').style.display = '';
         } else if (state.currentUser) {
@@ -666,13 +734,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /* Reflect the selected rating on the star buttons and label. */
     function updateStars(v) {
         $$('#starRating button').forEach((b) => {
             b.classList.toggle('active', Number(b.dataset.star) <= v);
         });
+
         $('#starValue').textContent = v;
     }
 
+    /* Update the satisfaction percentage label. */
     function updateSatisfaction() {
         $('#satisfactionValue').textContent = `${satisfactionSlider.value}%`;
     }
@@ -682,12 +753,14 @@ document.addEventListener('DOMContentLoaded', () => {
             reviewRating = Number(btn.dataset.star);
             updateStars(reviewRating);
         });
+
         btn.addEventListener('mouseenter', () => {
             const hoverValue = Number(btn.dataset.star);
             $$('#starRating button').forEach((b) => {
                 b.classList.toggle('hover', Number(b.dataset.star) <= hoverValue);
             });
         });
+
         btn.addEventListener('mouseleave', () => {
             $$('#starRating button').forEach((b) => b.classList.remove('hover'));
         });
@@ -699,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         if (reviewRating < 1) {
-            toast('لطفاً امتیاز بدهید', 'error');
+            toast('Please provide a rating', 'error');
             return;
         }
 
@@ -713,48 +786,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = $('#reviewSubmit');
         submitBtn.disabled = true;
         const original = submitBtn.textContent;
-        submitBtn.textContent = 'در حال ذخیره…';
+        submitBtn.textContent = 'Saving…';
 
         try {
             const isEdit = !!state.myReview;
+
             await api(`/api/projects/${state.projectId}/reviews`, {
                 method: isEdit ? 'PUT' : 'POST',
                 body: JSON.stringify(payload),
             });
 
-            toast(isEdit ? 'ریویو ویرایش شد' : 'ریویو ثبت شد', 'success');
+            toast(isEdit ? 'Review updated' : 'Review submitted', 'success');
+
             await loadReviews();
-            // آپدیت آمار پروژه
+
+            // Refresh the project to pick up the new aggregate rating.
             const p = await api(`/api/projects/${state.projectId}`);
             state.project = p.project;
+
             updateReviewsSummary({
                 rating: p.project.rating,
                 reviewCount: p.project.reviewCount,
             });
         } catch (err) {
-            toast(err.message || 'خطا در ذخیره', 'error');
+            toast(err.message || 'Failed to save', 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = original;
         }
     });
 
+    /* Delete the current user's own review after confirmation. */
     async function deleteMyReview() {
         const ok = await confirmDialog({
-            title: 'حذف ریویو',
-            message: 'آیا از حذف ریویوی خود مطمئنید؟',
-            confirmText: 'حذف کن',
+            title: 'Delete review',
+            message: 'Are you sure you want to delete your review?',
+            confirmText: 'Delete',
             danger: true,
         });
         if (!ok) return;
 
         try {
             await api(`/api/projects/${state.projectId}/reviews`, { method: 'DELETE' });
-            toast('ریویو حذف شد', 'success');
+
+            toast('Review deleted', 'success');
             state.myReview = null;
+
             await loadReviews();
         } catch (err) {
-            toast(err.message || 'خطا در حذف', 'error');
+            toast(err.message || 'Failed to delete', 'error');
         }
     }
 
@@ -766,15 +846,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await api(`/api/projects/${state.projectId}/comments?sort=${state.comments.sort}&limit=100`);
             renderComments(data.comments || []);
         } catch (err) {
-            $('#commentsList').innerHTML = `<div class="panel-empty">خطا در بارگذاری نظرات</div>`;
+            $('#commentsList').innerHTML = `<div class="panel-empty">Failed to load comments.</div>`;
         }
     }
 
+    /* Render the full comment tree and bind per-comment actions. */
     function renderComments(comments) {
         $('#commentsCount').textContent = countAll(comments);
 
         if (!comments.length) {
-            $('#commentsList').innerHTML = `<div class="panel-empty">هنوز نظری ثبت نشده — اولین نفر باشید!</div>`;
+            $('#commentsList').innerHTML = `<div class="panel-empty">No comments yet — be the first!</div>`;
             return;
         }
 
@@ -782,18 +863,26 @@ document.addEventListener('DOMContentLoaded', () => {
         bindCommentActions();
     }
 
+    /* Count comments recursively, including nested replies. */
     function countAll(comments) {
         let n = comments.length;
+
         for (const c of comments) {
             if (c.replies) n += countAll(c.replies);
         }
+
         return n;
     }
 
+    /**
+     * Produce the markup for a single comment, including its replies.
+     * Nesting is capped at MAX_DEPTH; deeper levels cannot be replied to.
+     */
     function renderComment(c, depth) {
         const u = c.user || {};
-        const name = u.name || u.username || 'کاربر';
+        const name = u.name || u.username || 'User';
         const initial = name.charAt(0).toUpperCase();
+
         const isMyComment = state.currentUser && String(state.currentUser.id) === String(u._id);
         const isProjectOwner = state.currentUser && state.project &&
             String(state.currentUser.id) === String(state.project.owner?._id || state.project.owner);
@@ -808,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const replyCount = replies.length;
 
         const bodyHtml = c.isDeleted
-            ? `<div class="comment__text comment__text--deleted">${escapeHtml(c.body || '[این نظر حذف شده است]')}</div>`
+            ? `<div class="comment__text comment__text--deleted">${escapeHtml(c.body || '[This comment has been deleted]')}</div>`
             : `<div class="comment__text">${escapeHtml(c.body)}</div>`;
 
         return `
@@ -817,9 +906,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="comment__body">
                     <div class="comment__head">
                         <span class="comment__author">${escapeHtml(name)}</span>
-                        ${isProjectOwner ? '<span class="comment__badge">صاحب پروژه</span>' : ''}
+                        ${isProjectOwner ? '<span class="comment__badge">Project owner</span>' : ''}
                         <span class="comment__date">${relativeTime(c.createdAt)}</span>
-                        ${c.isEdited ? '<span class="comment__edited">(ویرایش شده)</span>' : ''}
+                        ${c.isEdited ? '<span class="comment__edited">(edited)</span>' : ''}
                     </div>
 
                     ${bodyHtml}
@@ -840,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <polyline points="9 17 4 12 9 7"></polyline>
                                     <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
                                 </svg>
-                                پاسخ
+                                Reply
                             </button>
                         ` : ''}
 
@@ -850,14 +939,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
-                                ویرایش
+                                Edit
                             </button>
                             <button type="button" class="comment__action" data-action="delete">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
                                 </svg>
-                                حذف
+                                Delete
                             </button>
                         ` : ''}
                     </div>
@@ -872,6 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    /* Bind like / reply / edit / delete handlers to each rendered comment. */
     function bindCommentActions() {
         $$('.comment').forEach((el) => {
             const id = el.dataset.commentId;
@@ -879,6 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.querySelectorAll('[data-action]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const action = btn.dataset.action;
+
                     if (action === 'like') toggleLike(id, btn, el);
                     else if (action === 'reply') showReplyForm(id, el);
                     else if (action === 'edit') showEditForm(id, el);
@@ -888,33 +979,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* Toggle the current user's like on a comment. */
     async function toggleLike(id, btn, el) {
         btn.disabled = true;
+
         try {
             const data = await api(`/api/projects/${state.projectId}/comments/${id}/like`, { method: 'POST' });
+
             btn.classList.toggle('liked', data.liked);
+
             const countEl = btn.querySelector('.comment__likes-count');
             if (countEl) countEl.textContent = data.likesCount;
+
             const svg = btn.querySelector('svg');
             if (svg) svg.setAttribute('fill', data.liked ? 'currentColor' : 'none');
         } catch (err) {
-            if (err.status === 401) toast('برای لایک وارد شوید', 'info');
+            if (err.status === 401) toast('Sign in to like comments', 'info');
         } finally {
             btn.disabled = false;
         }
     }
 
+    /* Render an inline reply form beneath the target comment. */
     function showReplyForm(id, el) {
-        // اگه فرم قبلی بازه، حذفش کن
+        // Remove any previously opened reply form in this comment.
         el.querySelectorAll('.comment__reply-form').forEach((f) => f.remove());
 
         const form = document.createElement('div');
         form.className = 'comment__reply-form';
         form.innerHTML = `
-            <textarea placeholder="پاسخ خود را بنویسید…" maxlength="2000"></textarea>
+            <textarea placeholder="Write your reply…" maxlength="2000"></textarea>
             <div class="comment__reply-actions">
-                <button type="button" class="btn-ghost" data-cancel>انصراف</button>
-                <button type="button" class="btn-primary" data-send>ارسال</button>
+                <button type="button" class="btn-ghost" data-cancel>Cancel</button>
+                <button type="button" class="btn-primary" data-send>Send</button>
             </div>
         `;
 
@@ -938,16 +1035,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     body: JSON.stringify({ body, parent: id }),
                 });
-                toast('پاسخ ارسال شد', 'success');
+
+                toast('Reply posted', 'success');
                 await loadComments();
             } catch (err) {
-                toast(err.message || 'خطا در ارسال', 'error');
+                toast(err.message || 'Failed to send', 'error');
+
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'ارسال';
+                sendBtn.textContent = 'Send';
             }
         });
     }
 
+    /* Render an inline edit form in place of the comment's text. */
     function showEditForm(id, el) {
         const textEl = el.querySelector('.comment__text');
         const oldBody = textEl.textContent;
@@ -957,8 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
         form.innerHTML = `
             <textarea maxlength="2000">${escapeHtml(oldBody)}</textarea>
             <div class="comment__reply-actions">
-                <button type="button" class="btn-ghost" data-cancel>انصراف</button>
-                <button type="button" class="btn-primary" data-save>ذخیره</button>
+                <button type="button" class="btn-ghost" data-cancel>Cancel</button>
+                <button type="button" class="btn-primary" data-save>Save</button>
             </div>
         `;
 
@@ -986,34 +1086,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'PUT',
                     body: JSON.stringify({ body }),
                 });
-                toast('نظر ویرایش شد', 'success');
+
+                toast('Comment updated', 'success');
                 await loadComments();
             } catch (err) {
-                toast(err.message || 'خطا در ویرایش', 'error');
+                toast(err.message || 'Failed to update', 'error');
                 saveBtn.disabled = false;
             }
         });
     }
 
+    /* Delete a comment after confirmation. */
     async function deleteComment(id) {
         const ok = await confirmDialog({
-            title: 'حذف نظر',
-            message: 'این نظر حذف شود؟',
-            confirmText: 'حذف کن',
+            title: 'Delete comment',
+            message: 'Delete this comment?',
+            confirmText: 'Delete',
             danger: true,
         });
         if (!ok) return;
 
         try {
             await api(`/api/projects/${state.projectId}/comments/${id}`, { method: 'DELETE' });
-            toast('نظر حذف شد', 'success');
+
+            toast('Comment deleted', 'success');
             await loadComments();
         } catch (err) {
-            toast(err.message || 'خطا در حذف', 'error');
+            toast(err.message || 'Failed to delete', 'error');
         }
     }
 
-    /* ---------- New comment form ---------- */
+    /* ---------- New Comment Form ---------- */
     const commentInput = $('#commentInput');
     const commentSubmit = $('#commentSubmit');
 
@@ -1021,9 +1124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         commentSubmit.disabled = !commentInput.value.trim();
     });
 
+    // Ctrl/Cmd + Enter submits the comment.
     commentInput?.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
+
             if (!commentSubmit.disabled) $('#commentForm').requestSubmit();
         }
     });
@@ -1036,18 +1141,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         commentSubmit.disabled = true;
         const original = commentSubmit.textContent;
-        commentSubmit.textContent = 'در حال ارسال…';
+        commentSubmit.textContent = 'Sending…';
 
         try {
             await api(`/api/projects/${state.projectId}/comments`, {
                 method: 'POST',
                 body: JSON.stringify({ body }),
             });
+
             commentInput.value = '';
-            toast('نظر ثبت شد', 'success');
+
+            toast('Comment posted', 'success');
             await loadComments();
         } catch (err) {
-            toast(err.message || 'خطا در ارسال', 'error');
+            toast(err.message || 'Failed to send', 'error');
         } finally {
             commentSubmit.disabled = !commentInput.value.trim();
             commentSubmit.textContent = original;
@@ -1055,11 +1162,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
-       Related projects
+       Related Projects
        ============================================================ */
     async function loadRelated() {
         const p = state.project;
         const tagIds = (p.tags || []).map((t) => t._id);
+
         if (!tagIds.length) return;
 
         try {
@@ -1069,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!items.length) return;
 
             $('#relatedCard').style.display = '';
+
             $('#sideRelated').innerHTML = items.map((x) => {
                 const cover = x.images?.[0]?.url;
                 const style = cover ? `background-image:url('${escapeHtml(cover)}')` : '';
@@ -1088,11 +1197,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </a>
                 `;
             }).join('');
-        } catch { }
+        } catch { /* Non-critical — silently ignore failures. */ }
     }
 
     /* ============================================================
-       Share
+       Share Modal
        ============================================================ */
     const shareModal = $('#shareModal');
     const shareBackdrop = $('#shareBackdrop');
@@ -1122,23 +1231,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('#shareClose')?.addEventListener('click', closeShareModal);
     shareBackdrop?.addEventListener('click', closeShareModal);
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && shareModal.classList.contains('open')) closeShareModal();
     });
 
+    /* Copy the share URL to the clipboard, with a legacy fallback. */
     $('#copyShareUrl')?.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(shareInput.value);
-            toast('لینک کپی شد', 'success');
+            toast('Link copied', 'success');
         } catch {
             shareInput.select();
             document.execCommand('copy');
-            toast('لینک کپی شد', 'success');
+            toast('Link copied', 'success');
         }
     });
 
     /* ============================================================
-       Init
+       Initialization
        ============================================================ */
     loadProject();
 });
