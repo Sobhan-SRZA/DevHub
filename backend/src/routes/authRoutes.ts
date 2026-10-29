@@ -1,26 +1,59 @@
-import { requireAuth } from "../middleware/auth";
-import { authLimiter, sensitiveLimiter } from "../middleware/security";
 import { Router } from "express";
 import * as ctrl from "../controllers/authController";
+import { requireAuth } from "../middleware/auth";
+import noCache from "../middleware/noCache";
+import {
+    authLimiter,
+    sensitiveLimiter
+} from "../middleware/security";
 
 const router = Router();
 
-// ---------- public (rate-limited) ----------
+/* -------------------- Public Authentication Routes -------------------- */
+
+// Rate-limited authentication endpoints.
 router.post("/register", authLimiter, ctrl.register);
 router.post("/login", authLimiter, ctrl.login);
 router.post("/refresh", authLimiter, ctrl.refresh);
 router.post("/logout", ctrl.logout);
-router.post("/forgot-password", sensitiveLimiter, ctrl.forgotPassword);
-router.post("/reset-password", sensitiveLimiter, ctrl.resetPassword);
-router.post("/resend-password-reset", sensitiveLimiter, ctrl.resendPasswordReset);
+
 router.post(
-    "/resend-verification-for-me",
-    requireAuth,
+    "/forgot-password",
     sensitiveLimiter,
-    ctrl.resendVerificationForMe
+    ctrl.forgotPassword
 );
 
-// ---------- protected ----------
+router.post(
+    "/reset-password",
+    sensitiveLimiter,
+    ctrl.resetPassword
+);
+
+router.post(
+    "/resend-password-reset",
+    sensitiveLimiter,
+    ctrl.resendPasswordReset
+);
+
+// Email verification requires authentication and is rate-limited.
+router.post(
+    "/verify-email",
+    noCache,
+    requireAuth,
+    sensitiveLimiter,
+    ctrl.verifyEmail
+);
+
+router.post(
+    "/resend-verification",
+    noCache,
+    requireAuth,
+    sensitiveLimiter,
+    ctrl.resendVerification
+);
+
+/* -------------------- Protected Authentication Routes -------------------- */
+
 router.get("/me", requireAuth, ctrl.me);
 router.post("/logout-all", requireAuth, ctrl.logoutAll);
 router.get("/sessions", requireAuth, ctrl.listSessions);
