@@ -1,17 +1,24 @@
+
 import { ensureDeveloperExists } from "../services/roleService";
 import { connectDB } from "../config/db";
 import mongoose from "mongoose";
 
-async function main() {
+/**
+ * Ensures that the designated developer account exists in the database.
+ */
+async function main(): Promise<void> {
     await connectDB();
     await ensureDeveloperExists();
     await mongoose.disconnect();
-    
+
     process.exit(0);
 }
 
-main().catch((err) => {
-    console.error("❌", err);
+main().catch(async (error: unknown) => {
+    console.error("Failed to initialize the developer account:", error);
+
+    await mongoose.disconnect().catch(() => undefined);
+
     process.exit(1);
 });
 
