@@ -1,3 +1,4 @@
+
 import {
     otpEmailTemplate,
     type OtpPurpose
@@ -15,9 +16,11 @@ export interface SendOtpOptions {
 }
 
 /**
- * compose + send یک ایمیل OTP.
+ * Generates and sends a one-time password (OTP) email.
  */
-export async function sendOtpEmail(opts: SendOtpOptions): Promise<SendMailResult> {
+export async function sendOtpEmail(
+    opts: SendOtpOptions
+): Promise<SendMailResult> {
     const { subject, html, text } = otpEmailTemplate({
         code: opts.code,
         purpose: opts.purpose,
