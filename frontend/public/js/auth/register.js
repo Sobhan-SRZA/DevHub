@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registerForm");
-    if (!form) 
+    if (!form)
         return;
 
     /* ---------------- regex هم‌راستا با سرور ---------------- */
@@ -14,6 +14,26 @@ document.addEventListener("DOMContentLoaded", () => {
         email: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
         password: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/
     };
+
+    /* ---------------- کلید ذخیره‌سازی state تایید ایمیل ---------------- */
+    const VERIFY_STORAGE_KEY = "email_verify_state";
+
+    function saveVerifyState(data, email) {
+        try {
+            if (!data?.verifyToken || !email) return false;
+            sessionStorage.setItem(
+                VERIFY_STORAGE_KEY,
+                JSON.stringify({
+                    verifyToken: data.verifyToken,
+                    email: data.email || email,
+                    expiresAt: Date.now() + (data.expiresIn || 900) * 1000,
+                })
+            );
+            return true;
+        } catch {
+            return false;
+        }
+    }
 
     FormKit.attach(form, {
         /* ---------------- اعتبارسنجی سمت کلاینت ---------------- */
@@ -66,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (v.password.length < 6) {
                 errors.password = "رمز عبور باید حداقل ۶ کاراکتر باشد";
             }
-
             else if (!RE.password.test(v.password)) {
                 errors.password = "رمز عبور باید شامل حرف و عدد باشد";
             }
@@ -100,7 +119,24 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         /* ---------------- success ---------------- */
-        onSuccess() {
+        onSuccess(data) {
+            // اگر سرور verifyToken برگرداند → برو صفحه تایید ایمیل
+            const email =
+                data?.email ||
+                form.querySelector('[name="email"]')?.value?.trim()?.toLowerCase();
+
+            if (saveVerifyState(data, email)) {
+                toast(
+                    data?.message || "حساب شما ساخته شد. کد تایید را وارد کنید",
+                    "success"
+                );
+                setTimeout(() => {
+                    location.href = "/auth/verify-email";
+                }, 800);
+                return;
+            }
+
+            // fallback: اگر verifyToken نبود، رفتار قبلی
             toast("حساب شما با موفقیت ساخته شد 🎉", "success");
             setTimeout(() => (location.href = "/"), 700);
         },
