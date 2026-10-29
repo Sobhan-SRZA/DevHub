@@ -1,9 +1,14 @@
+
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 
 /* ==================================================================
    Types
    ================================================================== */
+
+/**
+ * Normalized metadata for a GitHub repository.
+ */
 export interface GitHubRepoInfo {
     id: number;
     name: string;
@@ -28,53 +33,85 @@ export interface GitHubRepoInfo {
 }
 
 /* ==================================================================
-   URL parser
+   URL Parser
    ================================================================== */
-export function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
-    if (!url)
+
+/**
+ * Parses a GitHub repository URL or shorthand into its owner and
+ * repository name.
+ *
+ * Supported formats:
+ * - https://github.com/owner/repo
+ * - https://github.com/owner/repo.git
+ * - git@github.com:owner/repo.git
+ * - owner/repo
+ *
+ * @returns The repository owner and name, or `null` if the input is invalid.
+ */
+export function parseGitHubUrl(
+    url: string
+): { owner: string; repo: string } | null {
+    if (!url) {
         return null;
+    }
 
-    // پشتیبانی از:
-    //   https://github.com/owner/repo
-    //   https://github.com/owner/repo.git
-    //   git@github.com:owner/repo.git
-    //   owner/repo
-    const cleaned = url.trim().replace(/\.git$/, "").replace(/\/$/, "");
+    const cleaned = url
+        .trim()
+        .replace(/\.git$/i, "")
+        .replace(/\/+$/, "");
 
-    // حالت owner/repo ساده
+    // Handle the owner/repository shorthand.
     if (/^[\w.-]+\/[\w.-]+$/.test(cleaned)) {
         const [owner, repo] = cleaned.split("/");
 
         return { owner, repo };
     }
 
-    // حالت URL کامل
+    // Handle HTTPS and other standard URL formats.
     try {
-        const u = new URL(cleaned);
-        if (!/(^|\.)github\.com$/i.test(u.hostname))
+        const parsedUrl = new URL(cleaned);
+
+        if (!/(^|\.)github\.com$/i.test(parsedUrl.hostname)) {
             return null;
+        }
 
-        const parts = u.pathname.split("/").filter(Boolean);
-        if (parts.length < 2)
+        const parts = parsedUrl.pathname.split("/").filter(Boolean);
+
+        if (parts.length < 2) {
             return null;
+        }
 
-        return { owner: parts[0], repo: parts[1] };
-    }
+        return {
+            owner: parts[0],
+            repo: parts[1],
+        };
+    } catch {
+        // Handle the SSH-style GitHub repository URL.
+        const match = cleaned.match(
+            /^git@github\.com:([\w.-]+)\/([\w.-]+)$/i
+        );
 
-    catch {
-        // git@github.com:owner/repo
-        const m = cleaned.match(/^git@github\.com:([\w.-]+)\/([\w.-]+)$/);
-        if (m)
-            return { owner: m[1], repo: m[2] };
+        if (match) {
+            return {
+                owner: match[1],
+                repo: match[2],
+            };
+        }
 
         return null;
     }
 }
 
 /* ==================================================================
-   HTTP helper
+   HTTP Helper
    ================================================================== */
-async function ghFetch<T>(path: string): Promise<T> {
+
+/**
+ * Sends an authenticated request to the GitHub REST API.
+ *
+ * @throws AppError when the request fails or GitHub returns an error.
+ */
+async function ghFetch<T>(apiPath: string): Promise<T> {
     const headers: Record<string, string> = {
         Accept: "application/vnd.github+json",
         "User-Agent": "devhub-app",
@@ -84,38 +121,50 @@ async function ghFetch<T>(path: string): Promise<T> {
         headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
     }
 
-    let res: Response;
+    let response: Response;
+
     try {
-        res = await fetch(`https://api.github.com${path}`, {
+        response = await fetch(`https://api.github.com${apiPath}`, {
             headers,
-            signal: AbortSignal.timeout(8000)
+            signal: AbortSignal.timeout(8000),
         });
+    } catch {
+        throw new AppError(
+            503,
+            ErrorCodes.GITHUB_API_ERROR,
+            "Unable to connect to the GitHub API."
+        );
     }
 
-    catch (err) {
-        throw new AppError(503, ErrorCodes.GITHUB_API_ERROR, "ارتباط با GitHub برقرار نشد");
-    }
-
-    if (res.status === 404) {
+    if (response.status === 404) {
         throw new AppError(404, ErrorCodes.GITHUB_REPO_NOT_FOUND);
     }
 
-    if (res.status === 403 || res.status === 429) {
+    if (response.status === 403 || response.status === 429) {
         throw new AppError(429, ErrorCodes.GITHUB_RATE_LIMIT);
     }
 
-    if (!res.ok) {
+    if (!response.ok) {
         throw new AppError(502, ErrorCodes.GITHUB_API_ERROR);
     }
 
-    return (await res.json()) as T;
+    return (await response.json()) as T;
 }
 
 /* ==================================================================
-   Fetch repo info
+   Fetch Repository Information
    ================================================================== */
-export async function fetchRepoInfo(owner: string, repo: string): Promise<GitHubRepoInfo> {
-    const data: any = await ghFetch(`/repos/${owner}/${repo}`);
+
+/**
+ * Retrieves and normalizes metadata for a GitHub repository.
+ */
+export async function fetchRepoInfo(
+    owner: string,
+    repo: string
+): Promise<GitHubRepoInfo> {
+    const data: any = await ghFetch(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
+    );
 
     return {
         id: data.id,
@@ -133,43 +182,66 @@ export async function fetchRepoInfo(owner: string, repo: string): Promise<GitHub
         license: data.license?.spdx_id ?? null,
         topics: data.topics ?? [],
         defaultBranch: data.default_branch ?? "main",
-        isArchived: !!data.archived,
-        isFork: !!data.fork,
+        isArchived: Boolean(data.archived),
+        isFork: Boolean(data.fork),
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at),
-        pushedAt: new Date(data.pushed_at)
+        pushedAt: new Date(data.pushed_at),
     };
 }
 
 /* ==================================================================
-   Fetch downloads (from releases)
+   Fetch Download Statistics
    ================================================================== */
-export async function fetchRepoDownloads(owner: string, repo: string): Promise<number> {
+
+/**
+ * Calculates the total download count across the repository's latest
+ * 100 releases and their associated assets.
+ *
+ * Returns zero if the repository has no releases.
+ */
+export async function fetchRepoDownloads(
+    owner: string,
+    repo: string
+): Promise<number> {
     try {
-        const releases: any[] = await ghFetch(`/repos/${owner}/${repo}/releases?per_page=100`);
-        let total = 0;
-        for (const r of releases) {
-            for (const asset of r.assets || []) {
-                total += asset.download_count || 0;
+        const releases: any[] = await ghFetch(
+            `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases?per_page=100`
+        );
+
+        let totalDownloads = 0;
+
+        for (const release of releases) {
+            for (const asset of release.assets || []) {
+                totalDownloads += asset.download_count || 0;
             }
         }
 
-        return total;
-    }
-
-    catch (err) {
-        // اگه release نداشت، 0 برگردون بدون خطا
-        if (err instanceof AppError && err.statusCode === 404)
+        return totalDownloads;
+    } catch (error) {
+        // A repository without releases has no downloadable release assets.
+        if (error instanceof AppError && error.statusCode === 404) {
             return 0;
+        }
 
-        throw err;
+        throw error;
     }
 }
 
 /* ==================================================================
-   Aggregate fetch — repo + downloads
+   Aggregate Repository Data
    ================================================================== */
-export async function fetchFullRepoData(owner: string, repo: string) {
+
+/**
+ * Fetches repository metadata and release download statistics concurrently.
+ *
+ * Download statistics are optional; failures retrieving them do not prevent
+ * repository metadata from being returned.
+ */
+export async function fetchFullRepoData(
+    owner: string,
+    repo: string
+) {
     const [info, downloads] = await Promise.all([
         fetchRepoInfo(owner, repo),
         fetchRepoDownloads(owner, repo).catch(() => 0),
@@ -179,11 +251,23 @@ export async function fetchFullRepoData(owner: string, repo: string) {
 }
 
 /* ==================================================================
-   Cache helper — آیا نیاز به sync مجدد داریم؟
+   Cache Synchronization
    ================================================================== */
-export function shouldResync(lastSyncedAt: Date | null | undefined, maxAgeHours = 6): boolean {
-    if (!lastSyncedAt)
+
+/**
+ * Determines whether repository data should be synchronized again.
+ *
+ * @param lastSyncedAt - Timestamp of the most recent successful sync.
+ * @param maxAgeHours - Maximum permitted cache age, in hours.
+ * @returns `true` if no previous sync exists or the cache has expired.
+ */
+export function shouldResync(
+    lastSyncedAt: Date | null | undefined,
+    maxAgeHours = 6
+): boolean {
+    if (!lastSyncedAt) {
         return true;
+    }
 
     const ageMs = Date.now() - new Date(lastSyncedAt).getTime();
 
