@@ -1,10 +1,11 @@
+import { optionalAuth } from "../../middleware/auth";
 import { Router } from "express";
-
+import noCache from "../../middleware/noCache";
 const router = Router();
 
 /* -------------------- Contact Page -------------------- */
 
-router.get("/", (req, res) => {
+router.get("/", optionalAuth, noCache, (req, res) => {
     res.render("pages/contact", { req });
 });
 
