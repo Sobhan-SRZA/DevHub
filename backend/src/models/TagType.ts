@@ -12,10 +12,10 @@ export interface ITagType {
     color: string;
     icon?: string;
 
-    isSystem: boolean;          // پیش‌فرض‌های سیستم
-    isApproved: boolean;         // اگه کاربر ساخته، admin تایید کنه
-    allowUserTags: boolean;      // کاربر می‌تونه تگ جدید زیر این کتگوری بسازه؟
-    maxTags?: number;            // حداکثر تگ زیر این کتگوری (null = نامحدود)
+    isSystem: boolean; // Indicates whether the category is system-defined.
+    isApproved: boolean; // Requires admin approval for user-created categories.
+    allowUserTags: boolean; // Determines whether users can create tags in this category.
+    maxTags?: number; // Maximum number of tags allowed; null indicates no limit.
 
     order: number;
     createdBy: Types.ObjectId | null;
@@ -27,7 +27,12 @@ type TagTypeModel = Model<ITagType>;
 
 const tagTypeSchema = new Schema<ITagType, TagTypeModel>(
     {
-        name: { type: String, required: true, trim: true, maxlength: 50 },
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 50
+        },
         slug: {
             type: String,
             required: true,
@@ -37,24 +42,61 @@ const tagTypeSchema = new Schema<ITagType, TagTypeModel>(
             trim: true,
             match: /^[a-z0-9-]+$/
         },
-        description: { type: String, maxlength: 300 },
-        color: { type: String, default: "#6ebbff", match: /^#[0-9a-fA-F]{6}$/ },
-        icon: { type: String, maxlength: 8 },
+        description: {
+            type: String,
+            maxlength: 300
+        },
+        color: {
+            type: String,
+            default: "#6ebbff",
+            match: /^#[0-9a-fA-F]{6}$/
+        },
+        icon: {
+            type: String,
+            maxlength: 8
+        },
 
-        isSystem: { type: Boolean, default: false, index: true },
-        isApproved: { type: Boolean, default: true },
-        allowUserTags: { type: Boolean, default: true },
-        maxTags: { type: Number, default: null, min: 1 },
+        isSystem: {
+            type: Boolean,
+            default: false,
+            index: true
+        },
+        isApproved: {
+            type: Boolean,
+            default: true
+        },
+        allowUserTags: {
+            type: Boolean,
+            default: true
+        },
+        maxTags: {
+            type: Number,
+            default: null,
+            min: 1
+        },
 
-        order: { type: Number, default: 0, index: true },
-        createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+        order: {
+            type: Number,
+            default: 0,
+            index: true
+        },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        }
     },
     { timestamps: true }
 );
 
+/* -------------------- Indexes -------------------- */
+
 tagTypeSchema.index({ isApproved: 1, isSystem: -1, order: 1 });
 
-export const TagType = model<ITagType, TagTypeModel>("TagType", tagTypeSchema);
+export const TagType = model<ITagType, TagTypeModel>(
+    "TagType",
+    tagTypeSchema
+);
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
