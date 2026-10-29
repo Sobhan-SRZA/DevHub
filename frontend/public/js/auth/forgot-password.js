@@ -1,9 +1,14 @@
 /* ============================================================
    Forgot Password Page
+   ============================================================
+   Handles the password recovery request: validates the
+   submitted email address, dispatches the recovery request to
+   the API, persists any returned reset token in session storage,
+   and redirects the user to the reset-password page.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const $ = (s) => document.querySelector(s);
+    const $ = (selector) => document.querySelector(selector);
     const form = $('#forgotForm');
 
     if (!form) return;
@@ -11,7 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailInput = $('#email');
     const submitBtn = $('#submitBtn');
 
-    /* ---------------- API ---------------- */
+    /* ---------------- API Helper ----------------
+       POST a JSON payload and normalise failures into Error
+       objects that preserve the server payload and status.
+       ---------------- */
     async function api(path, body) {
         const res = await fetch(path, {
             method: 'POST',
@@ -19,17 +27,26 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
+
         let data = null;
-        try { data = await res.json(); } catch { }
+        try {
+            data = await res.json();
+        } catch { /* Ignore JSON parse failures. */ }
+
         if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
+            const err = new Error(data?.message || 'Error');
             Object.assign(err, data || {}, { status: res.status });
             throw err;
         }
+
         return data;
     }
 
-    /* ---------------- Submit ---------------- */
+    /* ---------------- Submit Handler ----------------
+       Validate the email, submit the recovery request, persist
+       the reset token when returned, and redirect to the
+       reset-password page on success.
+       ---------------- */
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -38,20 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
         FormKit.clearAllErrors(form);
 
         if (!email) {
-            return FormKit.showFieldError(emailInput, 'ایمیل الزامی است');
+            return FormKit.showFieldError(emailInput, 'Email is required.');
         }
+
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-            return FormKit.showFieldError(emailInput, 'ایمیل نامعتبر است');
+            return FormKit.showFieldError(emailInput, 'Invalid email address.');
         }
 
         submitBtn.disabled = true;
         const original = submitBtn.textContent;
-        submitBtn.textContent = 'در حال ارسال…';
+        submitBtn.textContent = 'Sending…';
 
         try {
             const data = await api('/api/auth/forgot-password', { email });
 
-            // ذخیره در sessionStorage
+            // Persist the reset state so the reset-password page can
+            // resume the flow without another round trip.
             if (data?.resetToken) {
                 sessionStorage.setItem(
                     'password_reset_state',
@@ -64,15 +83,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             toast(
-                data?.message || 'اگر ایمیل در سیستم موجود باشد، کد ارسال می‌شود',
+                data?.message || 'If the email exists in our system, a code will be sent.',
                 'success'
             );
 
-            // ری‌دایرکت به صفحه reset-password
+            // Redirect to the reset-password page.
             setTimeout(() => {
                 location.href = '/auth/reset-password';
             }, 800);
         } catch (err) {
+            // Render field-level errors when the server identifies a
+            // specific field; otherwise surface a general toast.
             if (err.field) {
                 const el = form.querySelector(`[name="${err.field}"]`);
                 if (el) FormKit.showFieldError(el, err.message);
@@ -84,14 +105,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-            toast(err.message || 'خطا در ارسال', 'error');
+
+            toast(err.message || 'Failed to send the recovery request.', 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = original;
         }
     });
 
-    /* ---------------- Init ---------------- */
+    /* ---------------- Initialization ----------------
+       Focus the email field once the page has settled.
+       ---------------- */
     setTimeout(() => emailInput.focus(), 200);
 });
 
