@@ -1,25 +1,25 @@
 
-/**
- * Advanced Spam Detection Service
- *
- * Features:
- * - Persian / English text normalization
- * - Table-aware repeated-word detection
- * - Adaptive repetition scoring
- * - URL and suspicious-link detection
- * - Obfuscation and invisible-character detection
- * - HTML / JavaScript injection pattern detection
- * - Normalized duplicate-content detection
- * - Explainable risk score: 0..100
- *
- * Copyright (c) 2026 Sobhan Rasoulzadeh Asl
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
 import crypto from "node:crypto";
 import { cacheGet, cacheSet } from "./cache";
 import { AppError } from "../utils/AppError";
 import { ErrorCodes } from "../utils/errorCodes";
+
+/**
+ * Advanced spam detection service.
+ *
+ * Features:
+ * - Persian and English text normalization
+ * - Table-aware repeated-word detection
+ * - Adaptive repetition scoring
+ * - URL and suspicious-link detection
+ * - Obfuscation and invisible-character detection
+ * - HTML and JavaScript injection pattern detection
+ * - Normalized duplicate-content detection
+ * - Explainable risk scoring from 0 to 100
+ *
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 /* ================================================================
    Types
@@ -33,19 +33,20 @@ export interface SpamCheckOptions {
     field?: string;
 
     /**
-     * متن حاوی جدول‌های متنی یا ساختاریافته است.
-     * در صورت true، تشخیص تکرار کلمات محافظه‌کارانه‌تر می‌شود.
+     * Indicates that the content may contain textual or structured tables.
+     * When enabled, repeated-word analysis excludes detected table rows
+     * to reduce false positives.
      */
     allowTables?: boolean;
 
     /**
-     * بررسی محتوای HTML / JavaScript خطرناک.
-     * این گزینه جایگزین sanitization امنیتی نیست.
+     * Enables detection of potentially dangerous HTML and JavaScript
+     * patterns. This is not a substitute for security sanitization.
      */
     checkInjection?: boolean;
 
     /**
-     * حداقل تعداد تکرار یک کلمه برای بررسی آماری.
+     * Minimum word frequency required for statistical repetition analysis.
      */
     repeatedWordThreshold?: number;
 }
@@ -106,7 +107,7 @@ const URL_SHORTENERS = new Set([
 ]);
 
 const SUSPICIOUS_PHRASES = [
-    // فارسی
+    // Persian promotional phrases.
     "کلیک کنید",
     "پول رایگان",
     "برنده شوید",
@@ -118,7 +119,7 @@ const SUSPICIOUS_PHRASES = [
     "تخفیف ویژه",
     "فرصت محدود",
 
-    // English
+    // English promotional phrases.
     "click here",
     "free money",
     "win prize",
@@ -139,9 +140,15 @@ const HIGH_RISK_PHRASES = [
 ];
 
 /* ================================================================
-   Normalization
+   Text Normalization
    ================================================================ */
 
+/**
+ * Normalizes Persian and English text for consistent comparison.
+ *
+ * Removes invisible formatting characters and diacritics, standardizes
+ * Persian character variants, and normalizes whitespace and letter case.
+ */
 function normalizeText(text: string): string {
     return text
         .normalize("NFKC")
@@ -156,8 +163,8 @@ function normalizeText(text: string): string {
 }
 
 /**
- * برای مقایسه عبارت‌های مشکوک،
- * فاصله‌های متوالی را به یک فاصله تبدیل می‌کند.
+ * Produces a punctuation-insensitive representation suitable for
+ * matching suspicious phrases and comparing normalized content.
  */
 function normalizeForMatching(text: string): string {
     return normalizeText(text)
@@ -167,7 +174,7 @@ function normalizeForMatching(text: string): string {
 }
 
 /**
- * متن را به خطوط قابل بررسی تقسیم می‌کند.
+ * Splits text into individual lines while supporting common newline formats.
  */
 function getLines(text: string): string[] {
     return text.split(/\r\n?|\n/);
@@ -178,18 +185,22 @@ function getLines(text: string): string[] {
    ================================================================ */
 
 /**
- * تشخیص تقریبی ردیف‌های جدول:
- * - جدول Markdown
- * - ستون‌های جداشده با Tab
- * - تگ‌های table / tr / td / th
+ * Determines whether a line is likely part of a table.
  *
- * این تشخیص عمداً محافظه‌کارانه است تا متن عادی
- * که فقط چند علامت | دارد، خودکار جدول محسوب نشود.
+ * Supported indicators:
+ * - Markdown table rows and separators
+ * - Tab-separated columns
+ * - HTML table-related elements
+ *
+ * Detection is intentionally conservative to reduce false positives
+ * for ordinary text containing occasional pipe characters.
  */
 function isTableLine(line: string): boolean {
     const trimmed = line.trim();
 
-    if (!trimmed) return false;
+    if (!trimmed) {
+        return false;
+    }
 
     if (/<\/?(?:table|thead|tbody|tfoot|tr|td|th)\b/i.test(trimmed)) {
         return true;
@@ -205,7 +216,7 @@ function isTableLine(line: string): boolean {
         return true;
     }
 
-    // ردیف جداکننده جدول Markdown
+    // Detect Markdown table separator rows.
     if (/^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?$/.test(trimmed)) {
         return true;
     }
@@ -213,8 +224,14 @@ function isTableLine(line: string): boolean {
     return false;
 }
 
+/**
+ * Excludes detected table rows from text analysis when table-aware
+ * processing is enabled.
+ */
 function getNonTableText(text: string, allowTables: boolean): string {
-    if (!allowTables) return text;
+    if (!allowTables) {
+        return text;
+    }
 
     return getLines(text)
         .filter((line) => !isTableLine(line))
@@ -222,14 +239,20 @@ function getNonTableText(text: string, allowTables: boolean): string {
 }
 
 /* ================================================================
-   Word Statistics
+   Word Frequency Analysis
    ================================================================ */
 
+/**
+ * Tokenizes normalized text into Unicode letters and numeric sequences.
+ */
 function tokenizeWords(text: string): string[] {
-    return normalizeText(text)
-        .match(/[\p{L}\p{N}]+/gu) || [];
+    return normalizeText(text).match(/[\p{L}\p{N}]+/gu) || [];
 }
 
+/**
+ * Calculates word-frequency statistics used to identify excessive
+ * repetition in longer content.
+ */
 function analyzeRepeatedWords(text: string): WordStats {
     const words = tokenizeWords(text).filter(
         (word) => word.length > 2
@@ -274,6 +297,9 @@ function analyzeRepeatedWords(text: string): WordStats {
    Character Analysis
    ================================================================ */
 
+/**
+ * Returns the length of the longest consecutive run of identical characters.
+ */
 function getMaxRepeatedCharRun(text: string): number {
     let maxRun = 0;
     let currentRun = 0;
@@ -293,18 +319,26 @@ function getMaxRepeatedCharRun(text: string): number {
     return maxRun;
 }
 
+/**
+ * Calculates the proportion of uppercase letters among Latin letters.
+ * Short Latin text samples are excluded to reduce false positives.
+ */
 function getCapsRatio(text: string): number {
     const latinLetters = text.match(/[a-z]/gi) || [];
 
-    if (latinLetters.length < 30) return 0;
+    if (latinLetters.length < 30) {
+        return 0;
+    }
 
     const uppercase = (text.match(/[A-Z]/g) || []).length;
 
     return uppercase / latinLetters.length;
 }
 
+/**
+ * Detects invisible formatting characters embedded between letters or digits.
+ */
 function hasSuspiciousInvisibleChars(text: string): boolean {
-    // کاراکترهای نامرئی داخل کلمات، نه صرفاً هر استفاده‌ای از آن‌ها
     return /[\p{L}\p{N}][\u200B\u200C\u200D\u2060\uFEFF][\p{L}\p{N}]/u.test(
         text
     );
@@ -314,13 +348,21 @@ function hasSuspiciousInvisibleChars(text: string): boolean {
    URL Analysis
    ================================================================ */
 
+/**
+ * Extracts HTTP, HTTPS, and www-prefixed URLs from text.
+ */
 function extractUrls(text: string): string[] {
     return text.match(URL_REGEX) || [];
 }
 
+/**
+ * Extracts a normalized hostname from a URL.
+ * Returns an empty string when the URL cannot be parsed.
+ */
 function getDomain(url: string): string {
     try {
         const cleaned = url.replace(/[),.;!?]+$/g, "");
+
         const parsed = new URL(
             /^https?:\/\//i.test(cleaned)
                 ? cleaned
@@ -335,6 +377,9 @@ function getDomain(url: string): string {
     }
 }
 
+/**
+ * Counts URLs hosted by known URL-shortening services.
+ */
 function countShortenerUrls(urls: string[]): number {
     return urls.filter((url) => {
         const domain = getDomain(url);
@@ -348,9 +393,14 @@ function countShortenerUrls(urls: string[]): number {
 }
 
 /* ================================================================
-   Duplicate Content
+   Duplicate Content Detection
    ================================================================ */
 
+/**
+ * Generates a SHA-256 hash from normalized content.
+ * Equivalent text with different punctuation or spacing produces
+ * the same canonical representation.
+ */
 function hashContent(text: string): string {
     const canonical = normalizeForMatching(text);
 
@@ -361,9 +411,16 @@ function hashContent(text: string): string {
 }
 
 /* ================================================================
-   Main Spam Check
+   Main Spam Detection
    ================================================================ */
 
+/**
+ * Evaluates content against configurable spam detection rules.
+ *
+ * Each triggered rule contributes to an explainable risk score.
+ * The final score is capped at 100, and content is classified as spam
+ * when the score reaches the configured threshold.
+ */
 export async function checkSpam(
     text: string,
     options: SpamCheckOptions = {}
@@ -394,9 +451,13 @@ export async function checkSpam(
     const normalized = normalizeText(text);
     const matchingText = normalizeForMatching(text);
 
+    /**
+     * Records a rule only once to prevent duplicate reasons and messages.
+     */
     const add = (rule: Rule): void => {
-        // از ثبت چندباره یک دلیل جلوگیری می‌شود.
-        if (result.reasons.includes(rule.reason)) return;
+        if (result.reasons.includes(rule.reason)) {
+            return;
+        }
 
         result.score += rule.weight;
         result.reasons.push(rule.reason);
@@ -408,20 +469,20 @@ export async function checkSpam(
     };
 
     /* ------------------------------------------------------------
-       1. Short content
+       1. Short Content
        ------------------------------------------------------------ */
 
     if (normalized.length < minLength) {
         add({
             weight: 10,
             reason: "TOO_SHORT",
-            message: "متن برای ارزیابی بسیار کوتاه است.",
+            message: "The content is too short for reliable evaluation.",
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       2. Excessive repeated characters
+       2. Excessive Character Repetition
        ------------------------------------------------------------ */
 
     const maxCharRun = getMaxRepeatedCharRun(normalized);
@@ -430,25 +491,25 @@ export async function checkSpam(
         add({
             weight: 40,
             reason: "REPEATED_CHARS",
-            message: "تکرار غیرعادی کاراکترها شناسایی شد.",
+            message: "An unusually long sequence of repeated characters was detected.",
         });
     } else if (maxCharRun >= 15) {
         add({
             weight: 25,
             reason: "REPEATED_CHARS",
-            message: "تعداد کاراکترهای تکراری زیاد است.",
+            message: "Excessive character repetition was detected.",
         });
     } else if (maxCharRun >= 8) {
         add({
             weight: 10,
             reason: "REPEATED_CHARS",
-            message: "تکرار طولانی یک کاراکتر مشاهده شد.",
+            message: "A long sequence of repeated characters was detected.",
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       3. Repeated words
+       3. Repeated Words
        ------------------------------------------------------------ */
 
     const textForWordAnalysis = getNonTableText(
@@ -458,8 +519,8 @@ export async function checkSpam(
 
     const wordStats = analyzeRepeatedWords(textForWordAnalysis);
 
-    // متن کوتاه و متن‌های دارای واژگان بسیار محدود،
-    // با نسبت تکرار به‌تنهایی اسپم محسوب نمی‌شوند.
+    // Repetition ratios are evaluated only for sufficiently long content
+    // to reduce false positives in short descriptions and limited vocabularies.
     if (wordStats.totalWords >= 30) {
         const repetitionRatio = wordStats.repetitionRatio;
         const threshold = Math.max(10, repeatedWordThreshold);
@@ -471,7 +532,7 @@ export async function checkSpam(
             add({
                 weight: 35,
                 reason: "REPEATED_WORDS",
-                message: "تکرار گسترده کلمات در متن شناسایی شد.",
+                message: "Extensive word repetition was detected.",
             });
         } else if (
             wordStats.repeatedWords >= 3 &&
@@ -480,7 +541,7 @@ export async function checkSpam(
             add({
                 weight: 20,
                 reason: "REPEATED_WORDS",
-                message: "تکرار کلمات بیشتر از حد معمول است.",
+                message: "Word repetition exceeds typical levels.",
                 warning: true,
             });
         } else if (
@@ -490,14 +551,14 @@ export async function checkSpam(
             add({
                 weight: 10,
                 reason: "REPEATED_WORDS",
-                message: "یک یا چند کلمه بیش از حد تکرار شده‌اند.",
+                message: "One or more words are repeated excessively.",
                 warning: true,
             });
         }
     }
 
     /* ------------------------------------------------------------
-       4. Excessive links
+       4. Excessive Links
        ------------------------------------------------------------ */
 
     const urls = extractUrls(text);
@@ -506,19 +567,19 @@ export async function checkSpam(
         add({
             weight: 35,
             reason: "TOO_MANY_LINKS",
-            message: `تعداد لینک‌ها (${urls.length}) بسیار زیاد است.`,
+            message: `The number of links (${urls.length}) is unusually high.`,
         });
     } else if (urls.length > maxLinks) {
         add({
             weight: 20,
             reason: "TOO_MANY_LINKS",
-            message: `تعداد لینک‌ها (${urls.length}) از حد مجاز بیشتر است.`,
+            message: `The number of links (${urls.length}) exceeds the configured limit.`,
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       5. URL shorteners
+       5. URL Shorteners
        ------------------------------------------------------------ */
 
     const shortenerCount = countShortenerUrls(urls);
@@ -527,19 +588,19 @@ export async function checkSpam(
         add({
             weight: 25,
             reason: "URL_SHORTENER",
-            message: "استفاده مکرر از لینک‌های کوتاه‌کننده شناسایی شد.",
+            message: "Repeated use of URL-shortening services was detected.",
         });
     } else if (shortenerCount > 0) {
         add({
             weight: 8,
             reason: "URL_SHORTENER",
-            message: "لینک کوتاه‌کننده در متن وجود دارد.",
+            message: "A URL-shortening service is present in the content.",
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       6. Excessive uppercase
+       6. Excessive Uppercase Usage
        ------------------------------------------------------------ */
 
     const capsRatio = getCapsRatio(text);
@@ -548,58 +609,57 @@ export async function checkSpam(
         add({
             weight: 25,
             reason: "CAPS_LOCK",
-            message: "استفاده غیرعادی از حروف بزرگ انگلیسی.",
+            message: "Unusually extensive uppercase usage was detected.",
         });
     } else if (capsRatio >= 0.75) {
         add({
             weight: 12,
             reason: "CAPS_LOCK",
-            message: "نسبت حروف بزرگ انگلیسی بالاست.",
+            message: "The proportion of uppercase Latin letters is high.",
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       7. Suspicious phrases
+       7. Suspicious Promotional Phrases
        ------------------------------------------------------------ */
 
-    const suspiciousHits = SUSPICIOUS_PHRASES.filter(
-        (phrase) =>
-            matchingText.includes(normalizeForMatching(phrase))
+    const suspiciousHits = SUSPICIOUS_PHRASES.filter((phrase) =>
+        matchingText.includes(normalizeForMatching(phrase))
     );
 
-    const highRiskHits = HIGH_RISK_PHRASES.filter(
-        (phrase) =>
-            matchingText.includes(normalizeForMatching(phrase))
+    const highRiskHits = HIGH_RISK_PHRASES.filter((phrase) =>
+        matchingText.includes(normalizeForMatching(phrase))
     );
 
     if (suspiciousHits.length >= 3) {
         add({
             weight: 25,
             reason: "SUSPICIOUS_KEYWORDS",
-            message: "چند عبارت تبلیغاتی مشکوک در متن مشاهده شد.",
+            message: "Multiple suspicious promotional phrases were detected.",
             warning: true,
         });
     } else if (suspiciousHits.length > 0) {
         add({
             weight: 8,
             reason: "SUSPICIOUS_KEYWORDS",
-            message: "عبارت تبلیغاتی مشکوک در متن وجود دارد.",
+            message: "A potentially suspicious promotional phrase was detected.",
             warning: true,
         });
     }
 
-    // عبارت مشکوک به‌تنهایی کافی نیست؛ باید همراه نشانه دیگری باشد.
+    // High-risk promotional phrases alone are insufficient for this rule.
+    // At least two distinct phrases and one URL must be present.
     if (highRiskHits.length >= 2 && urls.length > 0) {
         add({
             weight: 20,
             reason: "HIGH_RISK_PROMOTION",
-            message: "ترکیب عبارات پرریسک تبلیغاتی و لینک شناسایی شد.",
+            message: "High-risk promotional phrases combined with links were detected.",
         });
     }
 
     /* ------------------------------------------------------------
-       8. HTML / JavaScript injection patterns
+       8. HTML and JavaScript Injection Patterns
        ------------------------------------------------------------ */
 
     if (checkInjection) {
@@ -618,36 +678,35 @@ export async function checkSpam(
             add({
                 weight: 50,
                 reason: "HTML_INJECTION",
-                message: "الگوی بالقوه خطرناک HTML یا JavaScript شناسایی شد.",
+                message: "A potentially dangerous HTML or JavaScript pattern was detected.",
             });
         }
     }
 
     /* ------------------------------------------------------------
-       9. Invisible character obfuscation
+       9. Invisible-Character Obfuscation
        ------------------------------------------------------------ */
 
     if (hasSuspiciousInvisibleChars(text)) {
         add({
             weight: 15,
             reason: "INVISIBLE_CHAR_OBFUSCATION",
-            message: "کاراکتر نامرئی در میان حروف یا ارقام شناسایی شد.",
+            message: "An invisible character embedded within text was detected.",
             warning: true,
         });
     }
 
     /* ------------------------------------------------------------
-       10. Duplicate content
+       10. Duplicate Content
        ------------------------------------------------------------ */
 
     if (checkHashDuplicate && userId && normalized.length > 20) {
         const hash = hashContent(text);
 
-        // تفکیک فیلدها مانع برخورد ناخواسته شرح پروژه
-        // با محتوای پروفایل می‌شود.
+        // Scope duplicate checks by user and field to avoid collisions
+        // between unrelated content types.
         const scope = field || "default";
-        const cacheKey =
-            `spam:hash:${userId}:${scope}:${hash}`;
+        const cacheKey = `spam:hash:${userId}:${scope}:${hash}`;
 
         const existing = cacheGet<number>(cacheKey);
 
@@ -655,7 +714,7 @@ export async function checkSpam(
             add({
                 weight: 50,
                 reason: "DUPLICATE_CONTENT",
-                message: "محتوای یکسان قبلاً در این فیلد ارسال شده است.",
+                message: "Identical content has already been submitted for this field.",
             });
         } else {
             cacheSet(cacheKey, Date.now(), 24 * 60 * 60);
@@ -663,12 +722,14 @@ export async function checkSpam(
     }
 
     /* ------------------------------------------------------------
-       Final result
+       Final Score and Classification
        ------------------------------------------------------------ */
 
     result.score = Math.min(100, result.score);
     result.isSpam = result.score >= SPAM_THRESHOLD;
 
+    // Warnings are intended for borderline results, not confirmed spam
+    // or content with a score below the warning threshold.
     if (result.isSpam || result.score < WARN_THRESHOLD) {
         result.warnings = [];
     }
@@ -680,6 +741,10 @@ export async function checkSpam(
    Controller Helper
    ================================================================ */
 
+/**
+ * Validates submitted content and throws an application error when
+ * the spam score reaches the configured rejection threshold.
+ */
 export async function assertNotSpam(
     text: string,
     options: SpamCheckOptions = {}
@@ -690,19 +755,18 @@ export async function assertNotSpam(
         throw new AppError(
             400,
             ErrorCodes.SPAM_DETECTED,
-            "محتوای شما مشکوک به اسپم است. لطفاً متن را اصلاح کنید.",
+            "Your content has been flagged as potential spam. Please revise it.",
             {
                 field: options.field,
                 details: {
                     score: result.score,
                     reasons: result.reasons,
-                    messages: result.messages
-                }
+                    messages: result.messages,
+                },
             }
         );
     }
 }
-
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
