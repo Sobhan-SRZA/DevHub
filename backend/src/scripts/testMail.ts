@@ -1,40 +1,53 @@
-/**
- * تست ارسال ایمیل
- *
- * npx tsx backend/src/scripts/testMail.ts you@example.com
- */
+
 import {
     mailer,
-    getMailConfig
+    getMailConfig,
+    sendOtpEmail,
 } from "../services/mail";
 import { VerificationCode } from "../models/VerificationCode";
-import { sendOtpEmail } from "../services/mail";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 
-// Load .env file from the project root
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+/**
+ * Tests email delivery by sending a one-time password (OTP) to the
+ * specified recipient.
+ *
+ * Usage:
+ *   npx tsx backend/src/scripts/testMail.ts you@example.com
+ */
 
-async function main() {
+// Load environment variables from the project root.
+dotenv.config({
+    path: path.resolve(process.cwd(), ".env"),
+});
+
+async function main(): Promise<void> {
     const to = process.argv[2];
 
+    // Validate the recipient email address before attempting delivery.
     if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
-        console.error("Usage: npx tsx src/scripts/testMail.ts you@example.com");
-        process.exit(1);
+        console.error(
+            "Usage: npx tsx src/scripts/testMail.ts you@example.com"
+        );
+
+        process.exitCode = 1;
+        return;
     }
 
     const config = getMailConfig();
-    console.log(`📧 Mode: ${config.mode}`);
 
-    // برای SMTP به DB نیازی نیست، ولی connectDB رو صدا نمی‌زنیم
+    console.log(`Email delivery mode: ${config.mode}`);
+
+    // Verify the SMTP connection when SMTP transport is configured.
+    // No database connection is required for this test.
     if (config.mode === "smtp") {
         await mailer.verifyOnStartup();
     }
 
-    console.log(`\n→ Sending test OTP to ${to}...\n`);
+    console.log(`\nSending a test OTP to ${to}...\n`);
 
-    const { code } = (VerificationCode as any).generateCode();
+    const { code } = VerificationCode.generateCode();
 
     try {
         const result = await sendOtpEmail({
@@ -43,23 +56,34 @@ async function main() {
             purpose: "change_password",
             expiresInMinutes: 10,
             userName: "Test User",
-            ip: "127.0.0.1"
+            ip: "127.0.0.1",
         });
 
-        console.log("\n✅ Sent successfully:");
-        console.log(`   messageId: ${result.messageId}`);
-        console.log(`   transport: ${result.transport}`);
-    }
+        console.log("\nEmail sent successfully.");
+        console.log(`Message ID: ${result.messageId}`);
+        console.log(`Transport: ${result.transport}`);
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : String(error);
 
-    catch (err: any) {
-        console.error("\n❌ Failed:", err?.message || err);
-        process.exit(1);
-    }
+        console.error("\nEmail delivery failed:", message);
 
-    await mongoose.disconnect().catch(() => { });
+        process.exitCode = 1;
+    } finally {
+        await mongoose.disconnect().catch(() => undefined);
+    }
 }
 
-main();
+main().catch(async (error: unknown) => {
+    const message =
+        error instanceof Error ? error.message : String(error);
+
+    console.error("Email test failed:", message);
+
+    await mongoose.disconnect().catch(() => undefined);
+
+    process.exitCode = 1;
+});
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
