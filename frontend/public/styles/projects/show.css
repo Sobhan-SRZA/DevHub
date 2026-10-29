@@ -54,10 +54,10 @@
 
 /* ---------- Header ---------- */
 .proj-header {
-    padding-top: 24px;
-    padding-bottom: 24px;
+    padding: 24px 30px;
     max-width: 1180px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .proj-header__breadcrumb {
@@ -67,13 +67,14 @@
     margin-bottom: 20px;
     font-size: 0.82rem;
     color: #666;
-    direction: rtl;
     flex-wrap: wrap;
 }
 
 .proj-header__breadcrumb a {
     color: #888;
     padding-bottom: 0;
+    text-decoration: none;
+    transition: color 0.15s ease;
 }
 
 .proj-header__breadcrumb a::after {
@@ -132,7 +133,6 @@
     color: #fff;
     font-weight: 700;
     margin: 0;
-    text-align: right;
     line-height: 1.3;
 }
 
@@ -162,19 +162,11 @@
     color: #fbbf24;
 }
 
-.proj-header {
-    padding: 24px 30px;
-    max-width: 1180px;
-    margin: 0 auto;
-    width: 100%;
-}
-
 .proj-header__short {
     color: #999;
     font-size: 0.98rem;
     line-height: 1.7;
     margin: 0 0 12px;
-    text-align: right;
 }
 
 .proj-header__owner {
@@ -184,12 +176,31 @@
     font-size: 0.82rem;
     color: #777;
     margin-bottom: 12px;
-    text-align: right;
+}
+
+.proj-header__owner-label {
+    color: #666;
 }
 
 .proj-header__owner-name {
     color: #6ebbff;
     font-weight: 600;
+}
+
+.proj-header__owner-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #6ebbff);
+    background-size: cover;
+    background-position: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
 }
 
 .proj-header__tags {
@@ -207,7 +218,12 @@
     font-size: 0.75rem;
     font-weight: 600;
     border: 1px solid;
+    text-decoration: none;
     transition: transform 0.15s ease;
+}
+
+.proj-tag::after {
+    display: none;
 }
 
 .proj-tag:hover {
@@ -219,19 +235,23 @@
     gap: 8px;
     flex-wrap: wrap;
     align-items: flex-start;
-    margin-right: auto;
+    margin-left: auto;
 }
 
 .proj-header__actions .btn-primary,
 .proj-header__actions .btn-secondary {
     padding: 9px 16px;
     font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
 }
 
 .proj-header__owner-link {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     color: #6ebbff;
     text-decoration: none;
     padding-bottom: 0;
@@ -281,7 +301,6 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
-    text-align: right;
     min-width: 0;
 }
 
@@ -361,7 +380,6 @@
     color: #fff;
     font-size: 1.1rem;
     font-weight: 700;
-    text-align: right;
 }
 
 .proj-section__title svg {
@@ -370,7 +388,7 @@
 }
 
 .proj-section__count {
-    margin-right: auto;
+    margin-left: auto;
     padding: 2px 10px;
     background: #1a1a1a;
     border: 1px solid #262626;
@@ -443,8 +461,6 @@
    DESCRIPTION
    ============================================================ */
 .proj-description {
-    direction: rtl;
-    text-align: right;
     font-size: 0.95rem;
     line-height: 1.9;
     color: #ccc;
@@ -488,7 +504,7 @@
     justify-content: center;
     gap: 6px;
     padding: 10px;
-    border-left: 1px solid #1a1a1a;
+    border-right: 1px solid #1a1a1a;
 }
 
 .reviews-summary__big {
@@ -557,7 +573,6 @@
 .dist-row__label {
     color: #999;
     font-weight: 600;
-    text-align: right;
 }
 
 .dist-row__bar {
@@ -578,6 +593,7 @@
     color: #888;
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 /* ---------- Review CTA box ---------- */
@@ -609,7 +625,6 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    text-align: right;
 }
 
 .review-box__cta-text strong {
@@ -674,7 +689,6 @@
 
 .review-form .field {
     margin-bottom: 16px;
-    text-align: right;
 }
 
 .review-form label {
@@ -697,8 +711,6 @@
     font-family: inherit;
     outline: none;
     transition: border-color 0.2s ease;
-    direction: rtl;
-    text-align: right;
     resize: vertical;
 }
 
@@ -720,7 +732,6 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    direction: ltr;
 }
 
 .star-rating button {
@@ -745,7 +756,7 @@
 }
 
 .star-rating__value {
-    margin-right: 12px;
+    margin-left: 12px;
     color: #888;
     font-size: 0.9rem;
     font-weight: 700;
@@ -789,7 +800,7 @@
 }
 
 .satisfaction-value {
-    float: left;
+    float: right;
     color: #6ebbff;
     font-weight: 700;
     font-size: 0.85rem;
@@ -871,7 +882,6 @@
     font-weight: 700;
     font-size: 0.95rem;
     margin: 0 0 6px;
-    text-align: right;
 }
 
 .my-review__body {
@@ -879,7 +889,6 @@
     font-size: 0.88rem;
     line-height: 1.7;
     margin: 0;
-    text-align: right;
     white-space: pre-wrap;
 }
 
@@ -904,7 +913,6 @@
     border: 1px solid #1a1a1a;
     border-radius: 12px;
     transition: border-color 0.2s ease;
-    text-align: right;
 }
 
 .review-item:hover {
@@ -923,6 +931,8 @@
     height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #6ebbff, #007bff);
+    background-size: cover;
+    background-position: center;
     color: #fff;
     display: flex;
     align-items: center;
@@ -1077,8 +1087,6 @@
     outline: none;
     resize: vertical;
     min-height: 60px;
-    direction: rtl;
-    text-align: right;
     transition: border-color 0.2s ease;
 }
 
@@ -1121,7 +1129,6 @@
     color: #888;
     font-size: 0.88rem;
     margin-bottom: 18px;
-    text-align: right;
 }
 
 .comments-list {
@@ -1139,7 +1146,6 @@
     border: 1px solid #1a1a1a;
     border-radius: 12px;
     transition: border-color 0.2s ease;
-    text-align: right;
 }
 
 .comment:hover {
@@ -1161,6 +1167,8 @@
     height: 38px;
     border-radius: 50%;
     background: linear-gradient(135deg, #a78bfa, #6ebbff);
+    background-size: cover;
+    background-position: center;
     color: #fff;
     display: flex;
     align-items: center;
@@ -1261,8 +1269,8 @@
 
 .comment__replies {
     margin-top: 12px;
-    padding-right: 20px;
-    border-right: 2px solid #1a1a1a;
+    padding-left: 20px;
+    border-left: 2px solid #1a1a1a;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1309,8 +1317,6 @@
     resize: vertical;
     min-height: 50px;
     outline: none;
-    direction: rtl;
-    text-align: right;
 }
 
 .comment__reply-form textarea:focus {
@@ -1339,7 +1345,6 @@
     font-size: 0.95rem;
     font-weight: 700;
     margin: 0 0 14px;
-    text-align: right;
 }
 
 /* ---------- Download ---------- */
@@ -1371,7 +1376,6 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
-    text-align: right;
     min-width: 0;
 }
 
@@ -1383,8 +1387,6 @@
 .side-card__info small {
     color: #777;
     font-size: 0.78rem;
-    direction: ltr;
-    text-align: right;
 }
 
 .side-card__btn {
@@ -1435,7 +1437,7 @@
     color: #ddd;
     font-size: 0.85rem;
     font-weight: 600;
-    text-align: left;
+    text-align: right;
 }
 
 /* ---------- Tags ---------- */
@@ -1508,7 +1510,6 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    text-align: right;
 }
 
 .related-item__title {
@@ -1636,76 +1637,300 @@
     font-size: 0.85rem;
     font-weight: 600;
     backdrop-filter: blur(10px);
-    direction: ltr;
 }
 
 /* ============================================================
-   SHARE MODAL
+   SHARE MODAL — Self-contained (does not rely on dialog.css)
+   ============================================================
+   Defines the modal scaffolding, backdrop, and content styles
+   needed for the share dialog on the project detail page. The
+   rules are scoped to #shareModal and #shareBackdrop so they do
+   not interfere with other modals in the application.
    ============================================================ */
+
+/* ---------- Backdrop ---------- */
+#shareBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#shareBackdrop.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ---------- Modal container ---------- */
+#shareModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: calc(100% - 32px);
+    max-width: 480px;
+    max-height: calc(100vh - 40px);
+    background: #0d0d0d;
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        visibility 0.2s ease;
+    overflow: hidden;
+}
+
+#shareModal.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* ---------- Header ---------- */
+#shareModal .modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 22px;
+    border-bottom: 1px solid #1a1a1a;
+    flex-shrink: 0;
+}
+
+#shareModal .modal__title {
+    margin: 0;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+#shareModal .modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+
+#shareModal .modal__close:hover {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+#shareModal .modal__close:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* ---------- Body ---------- */
+#shareModal .modal__body {
+    padding: 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* ---------- Link row ---------- */
 .share-link {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    align-items: stretch;
 }
 
 .share-link input {
     flex: 1;
+    min-width: 0;
     background: #161616;
     border: 1px solid #262626;
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: #aaa;
+    border-radius: 9px;
+    padding: 11px 14px;
+    color: #ccc;
     font-size: 0.82rem;
-    font-family: ui-monospace, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     direction: ltr;
+    text-align: left;
     outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.share-link input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.share-link input::selection {
+    background: #007bff;
+    color: #fff;
 }
 
 .share-link .btn-secondary {
-    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 16px;
+    background: #1a1a1a;
+    border: 1px solid #262626;
+    border-radius: 9px;
+    color: #ddd;
     font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.share-link .btn-secondary:hover {
+    background: #222;
+    border-color: #333;
+    color: #fff;
+}
+
+.share-link .btn-secondary:active {
+    background: #262626;
+}
+
+.share-link .btn-secondary:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* ---------- Social buttons ---------- */
 .share-socials {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 }
 
 .share-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px;
-    border-radius: 8px;
+    gap: 7px;
+    padding: 12px 10px;
+    border-radius: 10px;
     color: #fff;
     font-size: 0.8rem;
     font-weight: 600;
     text-decoration: none;
-    transition: transform 0.15s ease, opacity 0.2s ease;
     border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .share-btn::after {
     display: none;
 }
 
+.share-btn svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
 .share-btn:hover {
     transform: translateY(-2px);
-    opacity: 0.9;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    opacity: 1;
+    color: #fff;
+}
+
+.share-btn:active {
+    transform: translateY(0);
+}
+
+.share-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 
 .share-btn--tw {
     background: #000;
+    border: 1px solid #2a2a2a;
+}
+
+.share-btn--tw:hover {
+    background: #111;
+    border-color: #333;
 }
 
 .share-btn--tg {
     background: #229ED9;
 }
 
+.share-btn--tg:hover {
+    background: #1e8cbf;
+}
+
 .share-btn--wa {
     background: #25D366;
+}
+
+.share-btn--wa:hover {
+    background: #20b958;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 540px) {
+    #shareModal {
+        width: calc(100% - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    #shareModal .modal__header {
+        padding: 16px 18px;
+    }
+
+    #shareModal .modal__body {
+        padding: 18px;
+    }
+
+    .share-link {
+        flex-direction: column;
+    }
+
+    .share-link .btn-secondary {
+        width: 100%;
+    }
+
+    .share-socials {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+    #shareBackdrop,
+    #shareModal,
+    .share-btn,
+    .share-link .btn-secondary {
+        transition: none;
+    }
 }
 
 /* ============================================================
@@ -1782,7 +2007,7 @@
     }
 
     .reviews-summary__score {
-        border-left: none;
+        border-right: none;
         border-bottom: 1px solid #1a1a1a;
         padding-bottom: 16px;
     }
@@ -1814,11 +2039,15 @@
     }
 
     .comment__replies {
-        padding-right: 14px;
+        padding-left: 14px;
     }
 
     .share-socials {
         grid-template-columns: 1fr;
+    }
+
+    .share-link {
+        flex-direction: column;
     }
 }
 
