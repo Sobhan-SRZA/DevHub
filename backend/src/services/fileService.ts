@@ -1,83 +1,100 @@
+
 import { UPLOAD_ROOT } from "../config/upload";
 import path from "path";
 import fs from "fs/promises";
 
-/* ==================================================================
-   Convert absolute path → public URL
-   ================================================================== */
+/**
+ * Converts an absolute file path into a public upload URL.
+ */
 export function toPublicUrl(absolutePath: string): string {
-    const rel = path.relative(UPLOAD_ROOT, absolutePath);
+    const relativePath = path.relative(UPLOAD_ROOT, absolutePath);
 
-    return `/uploads/${rel.split(path.sep).join("/")}`;
+    return `/uploads/${relativePath.split(path.sep).join("/")}`;
 }
 
-/* ==================================================================
-   Convert public URL → absolute path (safe)
-   ================================================================== */
+/**
+ * Converts a public upload URL into an absolute file path.
+ * Rejects invalid URLs and paths that escape the upload directory.
+ */
 export function toAbsolutePath(publicUrl: string): string {
     if (!publicUrl.startsWith("/uploads/")) {
-        throw new Error("Invalid upload URL");
+        throw new Error("Invalid upload URL.");
     }
 
-    const rel = publicUrl.replace("/uploads/", "");
-    const abs = path.resolve(UPLOAD_ROOT, rel);
+    const relativePath = publicUrl.slice("/uploads/".length);
+    const absolutePath = path.resolve(UPLOAD_ROOT, relativePath);
+    const relativeToRoot = path.relative(UPLOAD_ROOT, absolutePath);
 
-    // جلوگیری از path traversal
-    if (!abs.startsWith(UPLOAD_ROOT)) 
-        throw new Error("Path traversal detected");
+    // Prevent path traversal outside the upload directory.
+    if (
+        relativeToRoot === ".." ||
+        relativeToRoot.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(relativeToRoot)
+    ) {
+        throw new Error("Path traversal detected.");
+    }
 
-    return abs;
+    return absolutePath;
 }
 
-/* ==================================================================
-   Delete a file safely
-   ================================================================== */
+/**
+ * Safely deletes a file identified by its public upload URL.
+ *
+ * @returns `true` if the file was deleted; otherwise, `false`.
+ */
 export async function deleteFile(publicUrl: string): Promise<boolean> {
     try {
-        const abs = toAbsolutePath(publicUrl);
-        await fs.unlink(abs);
+        const absolutePath = toAbsolutePath(publicUrl);
+        await fs.unlink(absolutePath);
 
         return true;
-    } 
-    
-    catch {
+    } catch {
         return false;
     }
 }
 
-/* ==================================================================
-   Delete all files of a project
-   ================================================================== */
+/**
+ * Recursively deletes all uploaded files associated with a project.
+ */
 export async function deleteProjectFiles(projectId: string): Promise<void> {
-    const baseDir = path.join(UPLOAD_ROOT, "projects");
-    const subdirs = ["images", "videos", "files"];
+    const projectsDirectory = path.join(UPLOAD_ROOT, "projects");
+    const subdirectories = ["images", "videos", "files"];
 
-    for (const sub of subdirs) {
-        const dir = path.join(baseDir, sub, String(projectId));
+    for (const subdirectory of subdirectories) {
+        const projectDirectory = path.join(
+            projectsDirectory,
+            subdirectory,
+            String(projectId)
+        );
+
         try {
-            await fs.rm(dir, { recursive: true, force: true });
-        }
-        
-        catch {
-            /* ignore */
+            await fs.rm(projectDirectory, {
+                recursive: true,
+                force: true,
+            });
+        } catch {
+            // Ignore deletion errors to allow cleanup of other directories.
         }
     }
 }
 
-/* ==================================================================
-   Human readable size
-   ================================================================== */
+/**
+ * Formats a file size in a human-readable unit.
+ */
 export function humanSize(bytes: number): string {
-    if (bytes < 1024)
-         return `${bytes} B`;
+    if (bytes < 1024) {
+        return `${bytes} B`;
+    }
 
-    if (bytes < 1024 * 1024)
-         return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 ** 2) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
 
-    if (bytes < 1024 * 1024 * 1024)
-         return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (bytes < 1024 ** 3) {
+        return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+    }
 
-    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
 /**
