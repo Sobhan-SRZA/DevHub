@@ -1,12 +1,16 @@
+
 /**
- * همه کدهای خطای ممکن. هر کد پیام پیش‌فرض داره و فرانت می‌تونه
- * بر اساسش رفتار متفاوتی نشون بده.
+ * Centralized application error codes.
+ *
+ * Each code identifies a specific error scenario and maps to a default
+ * user-facing message. The frontend can use these codes to determine
+ * how to display errors and handle different failure scenarios.
  */
 export const ErrorCodes = {
     // ---------- Validation ----------
     VALIDATION_ERROR: "VALIDATION_ERROR",
 
-    // ---------- Register ----------
+    // ---------- Registration ----------
     USERNAME_TAKEN: "USERNAME_TAKEN",
     EMAIL_TAKEN: "EMAIL_TAKEN",
     USERNAME_INVALID: "USERNAME_INVALID",
@@ -23,16 +27,16 @@ export const ErrorCodes = {
     NAME_TOO_SHORT: "NAME_TOO_SHORT",
     NAME_TOO_LONG: "NAME_TOO_LONG",
 
-    // ---------- Auth ----------
-    EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+    // ---------- Authentication ----------
+    EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
 
     // ---------- Login ----------
-    INVALID_CREDENTIALS: "INVALID_CREDENTIALS",      // یوزر/ایمیل یا پسورد غلط
-    ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",        // (اختیاری، برای UX بهتر)
+    INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
+    ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",
     ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
-    TOO_MANY_ATTEMPTS: "TOO_MANY_ATTEMPTS",        // (برای rate limit)
+    TOO_MANY_ATTEMPTS: "TOO_MANY_ATTEMPTS",
 
-    // ---------- Session / Token ----------
+    // ---------- Sessions and Tokens ----------
     NO_TOKEN: "NO_TOKEN",
     INVALID_TOKEN: "INVALID_TOKEN",
     WRONG_TOKEN_TYPE: "WRONG_TOKEN_TYPE",
@@ -42,12 +46,12 @@ export const ErrorCodes = {
     INVALID_REFRESH_TOKEN: "INVALID_REFRESH_TOKEN",
     UNAUTHENTICATED: "UNAUTHENTICATED",
 
-    // ---------- Server ----------
+    // ---------- Server and Infrastructure ----------
     INTERNAL_ERROR: "INTERNAL_ERROR",
     DATABASE_ERROR: "DATABASE_ERROR",
     NETWORK_ERROR: "NETWORK_ERROR",
 
-    // ---------- Tag & TagType ----------
+    // ---------- Tags and Tag Types ----------
     TAG_NOT_FOUND: "TAG_NOT_FOUND",
     TAG_TAKEN: "TAG_TAKEN",
     TAG_IN_USE: "TAG_IN_USE",
@@ -56,138 +60,211 @@ export const ErrorCodes = {
     TAG_TYPE_HAS_TAGS: "TAG_TYPE_HAS_TAGS",
     TAG_TYPE_IS_SYSTEM: "TAG_TYPE_IS_SYSTEM",
 
-    // ---------- Project ----------
+    // ---------- Projects ----------
     PROJECT_NOT_FOUND: "PROJECT_NOT_FOUND",
     PROJECT_SLUG_TAKEN: "PROJECT_SLUG_TAKEN",
     PROJECT_NOT_OWNED: "PROJECT_NOT_OWNED",
     PROJECT_LIMIT_REACHED: "PROJECT_LIMIT_REACHED",
 
-    // ---------- GitHub ----------
+    // ---------- GitHub Integration ----------
     GITHUB_URL_INVALID: "GITHUB_URL_INVALID",
     GITHUB_REPO_NOT_FOUND: "GITHUB_REPO_NOT_FOUND",
     GITHUB_API_ERROR: "GITHUB_API_ERROR",
     GITHUB_RATE_LIMIT: "GITHUB_RATE_LIMIT",
     GITHUB_ALREADY_LINKED: "GITHUB_ALREADY_LINKED",
 
-    // ---------- Review ----------
+    // ---------- Reviews ----------
     REVIEW_NOT_FOUND: "REVIEW_NOT_FOUND",
     REVIEW_ALREADY_EXISTS: "REVIEW_ALREADY_EXISTS",
     REVIEW_NOT_OWNED: "REVIEW_NOT_OWNED",
     CANNOT_REVIEW_OWN: "CANNOT_REVIEW_OWN",
 
-    // ---------- Comment ----------
+    // ---------- Comments ----------
     COMMENT_NOT_FOUND: "COMMENT_NOT_FOUND",
     COMMENT_NOT_OWNED: "COMMENT_NOT_OWNED",
     COMMENT_PARENT_INVALID: "COMMENT_PARENT_INVALID",
     COMMENT_DEPTH_EXCEEDED: "COMMENT_DEPTH_EXCEEDED",
 
-    // ---------- Upload ----------
+    // ---------- File Uploads ----------
     FILE_TOO_LARGE: "FILE_TOO_LARGE",
     FILE_TYPE_INVALID: "FILE_TYPE_INVALID",
     FILE_UPLOAD_FAILED: "FILE_UPLOAD_FAILED",
     MEDIA_LIMIT_REACHED: "MEDIA_LIMIT_REACHED",
     NO_FILE_PROVIDED: "NO_FILE_PROVIDED",
 
-    // ---------- Content ----------
-    SPAM_DETECTED: 'SPAM_DETECTED',
-    CONTENT_TOO_LONG: 'CONTENT_TOO_LONG',
+    // ---------- Content Moderation ----------
+    SPAM_DETECTED: "SPAM_DETECTED",
+    CONTENT_TOO_LONG: "CONTENT_TOO_LONG"
 } as const;
 
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+/**
+ * Union of all supported application error codes.
+ *
+ * This type is inferred directly from `ErrorCodes`, ensuring that
+ * error codes remain consistent across the application.
+ */
+export type ErrorCode =
+    typeof ErrorCodes[keyof typeof ErrorCodes];
 
 /**
- * پیام پیش‌فرض فارسی برای هر کد.
- * کنترلر می‌تونه پیام دقیق‌تر بده، ولی اگه نداد از این استفاده می‌شه.
+ * Default user-facing messages for application error codes.
+ *
+ * Controllers and services can override these messages when more
+ * specific context is available. Otherwise, the corresponding default
+ * message is used by the application's error-handling layer.
  */
-export const ErrorMessages: Record<string, string> = {
+export const ErrorMessages: Record<ErrorCode, string> = {
     // ---------- Validation ----------
-    [ErrorCodes.VALIDATION_ERROR]: "داده‌های ورودی نامعتبر است",
+    [ErrorCodes.VALIDATION_ERROR]:
+        "The submitted data is invalid.",
 
-    // ---------- Register ----------
-    [ErrorCodes.USERNAME_TAKEN]: "این نام کاربری قبلاً گرفته شده است",
-    [ErrorCodes.EMAIL_TAKEN]: "این ایمیل قبلاً ثبت شده است",
-    [ErrorCodes.USERNAME_INVALID]: "نام کاربری نامعتبر است",
-    [ErrorCodes.USERNAME_TOO_SHORT]: "نام کاربری باید حداقل ۳ کاراکتر باشد",
-    [ErrorCodes.USERNAME_TOO_LONG]: "نام کاربری باید حداکثر ۲۰ کاراکتر باشد",
-    [ErrorCodes.USERNAME_HAS_AT]: "نام کاربری نمی‌تواند شامل @ باشد",
-    [ErrorCodes.USERNAME_NOT_ENGLISH]: "نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، _ ، . یا - باشد",
-    [ErrorCodes.USERNAME_HAS_SPACE]: "نام کاربری نمی‌تواند شامل فاصله باشد",
-    [ErrorCodes.EMAIL_INVALID]: "ایمیل نامعتبر است",
-    [ErrorCodes.PASSWORD_TOO_SHORT]: "رمز عبور باید حداقل ۶ کاراکتر باشد",
-    [ErrorCodes.PASSWORD_TOO_WEAK]: "رمز عبور باید شامل حرف و عدد باشد",
-    [ErrorCodes.PASSWORDS_DONT_MATCH]: "رمز عبور و تکرار آن یکسان نیستند",
-    [ErrorCodes.TERMS_NOT_ACCEPTED]: "پذیرش قوانین الزامی است",
-    [ErrorCodes.NAME_TOO_SHORT]: "نام باید حداقل ۲ حرف باشد",
-    [ErrorCodes.NAME_TOO_LONG]: "نام بیش از حد طولانی است",
+    // ---------- Registration ----------
+    [ErrorCodes.USERNAME_TAKEN]:
+        "This username is already taken.",
+    [ErrorCodes.EMAIL_TAKEN]:
+        "This email address is already registered.",
+    [ErrorCodes.USERNAME_INVALID]:
+        "The username is invalid.",
+    [ErrorCodes.USERNAME_TOO_SHORT]:
+        "The username must contain at least 3 characters.",
+    [ErrorCodes.USERNAME_TOO_LONG]:
+        "The username must not exceed 20 characters.",
+    [ErrorCodes.USERNAME_HAS_AT]:
+        "The username cannot contain the @ symbol.",
+    [ErrorCodes.USERNAME_NOT_ENGLISH]:
+        "The username can contain only English letters, numbers, underscores, periods, and hyphens.",
+    [ErrorCodes.USERNAME_HAS_SPACE]:
+        "The username cannot contain spaces.",
+    [ErrorCodes.EMAIL_INVALID]:
+        "The email address is invalid.",
+    [ErrorCodes.PASSWORD_TOO_SHORT]:
+        "The password must contain at least 6 characters.",
+    [ErrorCodes.PASSWORD_TOO_WEAK]:
+        "The password must contain both letters and numbers.",
+    [ErrorCodes.PASSWORDS_DONT_MATCH]:
+        "The passwords do not match.",
+    [ErrorCodes.TERMS_NOT_ACCEPTED]:
+        "You must accept the terms and conditions to continue.",
+    [ErrorCodes.NAME_TOO_SHORT]:
+        "The name must contain at least 2 characters.",
+    [ErrorCodes.NAME_TOO_LONG]:
+        "The name exceeds the maximum allowed length.",
 
-    // ---------- Auth ----------
-    [ErrorCodes.EMAIL_NOT_VERIFIED]: 'ایمیل شما تایید نشده است. لطفاً کد ارسال‌شده را وارد کنید',
+    // ---------- Authentication ----------
+    [ErrorCodes.EMAIL_NOT_VERIFIED]:
+        "Your email address has not been verified. Please enter the verification code we sent you.",
 
     // ---------- Login ----------
-    [ErrorCodes.INVALID_CREDENTIALS]: "ایمیل/نام کاربری یا رمز عبور اشتباه است",
-    [ErrorCodes.ACCOUNT_NOT_FOUND]: "حسابی با این مشخصات پیدا نشد",
-    [ErrorCodes.ACCOUNT_DISABLED]: "این حساب غیرفعال شده است",
-    [ErrorCodes.TOO_MANY_ATTEMPTS]: "تلاش‌های زیاد. لطفاً چند دقیقه بعد امتحان کنید",
+    [ErrorCodes.INVALID_CREDENTIALS]:
+        "The email address, username, or password is incorrect.",
+    [ErrorCodes.ACCOUNT_NOT_FOUND]:
+        "No account was found matching the provided information.",
+    [ErrorCodes.ACCOUNT_DISABLED]:
+        "This account has been disabled.",
+    [ErrorCodes.TOO_MANY_ATTEMPTS]:
+        "Too many attempts. Please try again in a few minutes.",
 
-    // ---------- Session / Token ----------
-    [ErrorCodes.NO_TOKEN]: "ابتدا وارد شوید",
-    [ErrorCodes.INVALID_TOKEN]: "توکن نامعتبر است",
-    [ErrorCodes.WRONG_TOKEN_TYPE]: "نوع توکن اشتباه است",
-    [ErrorCodes.SESSION_NOT_FOUND]: "سشن یافت نشد",
-    [ErrorCodes.SESSION_EXPIRED]: "سشن منقضی شده است، دوباره وارد شوید",
-    [ErrorCodes.NO_REFRESH_TOKEN]: "توکن refresh موجود نیست",
-    [ErrorCodes.INVALID_REFRESH_TOKEN]: "توکن refresh نامعتبر یا منقضی است",
-    [ErrorCodes.UNAUTHENTICATED]: "ابتدا وارد شوید",
+    // ---------- Sessions and Tokens ----------
+    [ErrorCodes.NO_TOKEN]:
+        "You must sign in to continue.",
+    [ErrorCodes.INVALID_TOKEN]:
+        "The token is invalid.",
+    [ErrorCodes.WRONG_TOKEN_TYPE]:
+        "The token type is incorrect.",
+    [ErrorCodes.SESSION_NOT_FOUND]:
+        "The session could not be found.",
+    [ErrorCodes.SESSION_EXPIRED]:
+        "Your session has expired. Please sign in again.",
+    [ErrorCodes.NO_REFRESH_TOKEN]:
+        "The refresh token is missing.",
+    [ErrorCodes.INVALID_REFRESH_TOKEN]:
+        "The refresh token is invalid or has expired.",
+    [ErrorCodes.UNAUTHENTICATED]:
+        "Authentication is required to continue.",
 
-    // ---------- Server ----------
-    [ErrorCodes.INTERNAL_ERROR]: "خطای داخلی سرور",
-    [ErrorCodes.DATABASE_ERROR]: "خطا در ارتباط با دیتابیس",
-    [ErrorCodes.NETWORK_ERROR]: "اتصال به سرور برقرار نشد",
+    // ---------- Server and Infrastructure ----------
+    [ErrorCodes.INTERNAL_ERROR]:
+        "An internal server error occurred.",
+    [ErrorCodes.DATABASE_ERROR]:
+        "A database connection error occurred.",
+    [ErrorCodes.NETWORK_ERROR]:
+        "Unable to connect to the server.",
 
-    // ---------- Tag & TagType ----------
-    [ErrorCodes.TAG_NOT_FOUND]: "تگ یافت نشد",
-    [ErrorCodes.TAG_TAKEN]: "این تگ قبلاً در این نوع ثبت شده است",
-    [ErrorCodes.TAG_IN_USE]: "این تگ در پروژه‌ها استفاده می‌شود و قابل حذف نیست",
-    [ErrorCodes.TAG_TYPE_NOT_FOUND]: "نوع تگ یافت نشد",
-    [ErrorCodes.TAG_TYPE_TAKEN]: "این نوع تگ قبلاً وجود دارد",
-    [ErrorCodes.TAG_TYPE_HAS_TAGS]: "این نوع تگ دارای تگ است و قابل حذف نیست",
-    [ErrorCodes.TAG_TYPE_IS_SYSTEM]: "تگ‌های سیستمی قابل حذف نیستند",
+    // ---------- Tags and Tag Types ----------
+    [ErrorCodes.TAG_NOT_FOUND]:
+        "The tag could not be found.",
+    [ErrorCodes.TAG_TAKEN]:
+        "This tag already exists within the specified tag type.",
+    [ErrorCodes.TAG_IN_USE]:
+        "This tag is used by one or more projects and cannot be deleted.",
+    [ErrorCodes.TAG_TYPE_NOT_FOUND]:
+        "The tag type could not be found.",
+    [ErrorCodes.TAG_TYPE_TAKEN]:
+        "This tag type already exists.",
+    [ErrorCodes.TAG_TYPE_HAS_TAGS]:
+        "This tag type contains tags and cannot be deleted.",
+    [ErrorCodes.TAG_TYPE_IS_SYSTEM]:
+        "System tag types cannot be deleted.",
 
-    // ---------- Project ----------
-    [ErrorCodes.PROJECT_NOT_FOUND]: "پروژه یافت نشد",
-    [ErrorCodes.PROJECT_SLUG_TAKEN]: "این slug قبلاً استفاده شده است",
-    [ErrorCodes.PROJECT_NOT_OWNED]: "این پروژه متعلق به شما نیست",
-    [ErrorCodes.PROJECT_LIMIT_REACHED]: "به حداکثر تعداد پروژه رسیده‌اید",
+    // ---------- Projects ----------
+    [ErrorCodes.PROJECT_NOT_FOUND]:
+        "The project could not be found.",
+    [ErrorCodes.PROJECT_SLUG_TAKEN]:
+        "This project slug is already in use.",
+    [ErrorCodes.PROJECT_NOT_OWNED]:
+        "You do not own this project.",
+    [ErrorCodes.PROJECT_LIMIT_REACHED]:
+        "You have reached the maximum number of allowed projects.",
 
-    // ---------- GitHub ----------
-    [ErrorCodes.GITHUB_URL_INVALID]: "لینک GitHub نامعتبر است",
-    [ErrorCodes.GITHUB_REPO_NOT_FOUND]: "مخزن GitHub یافت نشد",
-    [ErrorCodes.GITHUB_API_ERROR]: "خطا در ارتباط با GitHub",
-    [ErrorCodes.GITHUB_RATE_LIMIT]: "محدودیت درخواست GitHub، بعداً امتحان کنید",
-    [ErrorCodes.GITHUB_ALREADY_LINKED]: "این مخزن قبلاً به پروژه دیگری لینک شده است",
+    // ---------- GitHub Integration ----------
+    [ErrorCodes.GITHUB_URL_INVALID]:
+        "The GitHub URL is invalid.",
+    [ErrorCodes.GITHUB_REPO_NOT_FOUND]:
+        "The GitHub repository could not be found.",
+    [ErrorCodes.GITHUB_API_ERROR]:
+        "An error occurred while communicating with GitHub.",
+    [ErrorCodes.GITHUB_RATE_LIMIT]:
+        "The GitHub API rate limit has been reached. Please try again later.",
+    [ErrorCodes.GITHUB_ALREADY_LINKED]:
+        "This repository is already linked to another project.",
 
-    // ---------- Review ----------
-    [ErrorCodes.REVIEW_NOT_FOUND]: 'ریویو یافت نشد',
-    [ErrorCodes.REVIEW_ALREADY_EXISTS]: 'شما قبلاً برای این پروژه ریویو ثبت کرده‌اید',
-    [ErrorCodes.REVIEW_NOT_OWNED]: 'این ریویو متعلق به شما نیست',
-    [ErrorCodes.CANNOT_REVIEW_OWN]: 'نمی‌توانید به پروژه خودتان امتیاز دهید',
+    // ---------- Reviews ----------
+    [ErrorCodes.REVIEW_NOT_FOUND]:
+        "The review could not be found.",
+    [ErrorCodes.REVIEW_ALREADY_EXISTS]:
+        "You have already submitted a review for this project.",
+    [ErrorCodes.REVIEW_NOT_OWNED]:
+        "You do not own this review.",
+    [ErrorCodes.CANNOT_REVIEW_OWN]:
+        "You cannot review your own project.",
 
-    // ---------- Comment ----------
-    [ErrorCodes.COMMENT_NOT_FOUND]: 'نظر یافت نشد',
-    [ErrorCodes.COMMENT_NOT_OWNED]: 'این نظر متعلق به شما نیست',
-    [ErrorCodes.COMMENT_PARENT_INVALID]: 'نظر والد نامعتبر است',
-    [ErrorCodes.COMMENT_DEPTH_EXCEEDED]: 'حداکثر عمق پاسخ‌ها رعایت نشده',
+    // ---------- Comments ----------
+    [ErrorCodes.COMMENT_NOT_FOUND]:
+        "The comment could not be found.",
+    [ErrorCodes.COMMENT_NOT_OWNED]:
+        "You do not own this comment.",
+    [ErrorCodes.COMMENT_PARENT_INVALID]:
+        "The parent comment is invalid.",
+    [ErrorCodes.COMMENT_DEPTH_EXCEEDED]:
+        "The maximum reply nesting depth has been exceeded.",
 
-    // ---------- Upload ----------
-    [ErrorCodes.FILE_TOO_LARGE]: 'حجم فایل بیش از حد مجاز است',
-    [ErrorCodes.FILE_TYPE_INVALID]: 'فرمت فایل مجاز نیست',
-    [ErrorCodes.FILE_UPLOAD_FAILED]: 'آپلود فایل ناموفق بود',
-    [ErrorCodes.MEDIA_LIMIT_REACHED]: 'به حداکثر تعداد رسیده‌اید',
-    [ErrorCodes.NO_FILE_PROVIDED]: 'فایلی ارسال نشده است',
+    // ---------- File Uploads ----------
+    [ErrorCodes.FILE_TOO_LARGE]:
+        "The file exceeds the maximum allowed size.",
+    [ErrorCodes.FILE_TYPE_INVALID]:
+        "This file type is not supported.",
+    [ErrorCodes.FILE_UPLOAD_FAILED]:
+        "The file could not be uploaded.",
+    [ErrorCodes.MEDIA_LIMIT_REACHED]:
+        "You have reached the maximum number of allowed media files.",
+    [ErrorCodes.NO_FILE_PROVIDED]:
+        "No file was provided.",
 
-    // ---------- Content ----------
-    [ErrorCodes.SPAM_DETECTED]: 'محتوای شما مشکوک به اسپم است',
-    [ErrorCodes.CONTENT_TOO_LONG]: 'متن بیش از حد طولانی است',
+    // ---------- Content Moderation ----------
+    [ErrorCodes.SPAM_DETECTED]:
+        "Your content has been flagged as potential spam.",
+    [ErrorCodes.CONTENT_TOO_LONG]:
+        "The content exceeds the maximum allowed length."
 };
 
 /**
