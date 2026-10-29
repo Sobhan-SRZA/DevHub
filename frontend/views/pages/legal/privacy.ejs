@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <%- include("../../components/seo-head", {
+    title: "Privacy Policy — DevHub",
+    description: "How DevHub collects, uses, stores, and protects your personal information. Written in plain English with no legal jargon.",
+    canonicalPath: "/privacy",
+    keywords: "DevHub privacy, privacy policy, data protection, GDPR, user data",
+    ogType: "website",
+    extraStyles: ["/styles/legal.css"]
+  }) %>
+</head>
+
+<body>
+  <%- include("../../components/header") %>
+
+  <main class="legal-page">
+
+    <!-- ============ HERO ============ -->
+    <header class="legal-hero">
+      <div class="legal-hero__inner">
+        <span class="legal-hero__badge">Legal</span>
+        <h1 class="legal-hero__title">Privacy Policy</h1>
+        <p class="legal-hero__sub">
+          How DevHub collects, uses, and protects your information.
+          Written in plain English — no walls of legal jargon.
+        </p>
+        <p class="legal-hero__updated">
+          <strong>Last updated:</strong> <time datetime="2026-01-01">January 1, 2026</time>
+        </p>
+      </div>
+    </header>
+
+    <!-- ============ NOTICE ============ -->
+    <div class="legal-notice" role="note">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <p>
+        This document is provided as a starting point for informational
+        purposes and does not constitute legal advice. Consult a qualified
+        attorney to adapt it to your jurisdiction and business model.
+      </p>
+    </div>
+
+    <!-- ============ TABLE OF CONTENTS ============ -->
+    <nav class="legal-toc" aria-label="Table of contents">
+      <h2 class="legal-toc__title">Contents</h2>
+      <ol class="legal-toc__list">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#data-we-collect">Data we collect</a></li>
+        <li><a href="#how-we-use">How we use your data</a></li>
+        <li><a href="#cookies">Cookies and tracking</a></li>
+        <li><a href="#third-parties">Third-party services</a></li>
+        <li><a href="#data-retention">Data retention</a></li>
+        <li><a href="#your-rights">Your rights</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#children">Children's privacy</a></li>
+        <li><a href="#international">International transfers</a></li>
+        <li><a href="#changes">Changes to this policy</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </nav>
+
+    <!-- ============ CONTENT ============ -->
+    <article class="legal-content">
+
+      <section id="overview" class="legal-section">
+        <h2>1. Overview</h2>
+        <p>
+          DevHub is a community platform for discovering, reviewing, and
+          sharing open-source projects. This Privacy Policy explains what
+          information we collect when you use the platform, how we use
+          it, and the choices available to you.
+        </p>
+        <p>
+          We aim to collect only what is necessary to operate the service,
+          to be transparent about how that information is handled, and to
+          give you meaningful control over your data.
+        </p>
+      </section>
+
+      <section id="data-we-collect" class="legal-section">
+        <h2>2. Data we collect</h2>
+
+        <h3>2.1 Information you provide</h3>
+        <ul>
+          <li><strong>Account data</strong> — your display name, username,
+            email address, and password hash (never the plain-text password).</li>
+          <li><strong>Profile data</strong> — your avatar, biography, and any
+            other fields you choose to fill in.</li>
+          <li><strong>Content you publish</strong> — projects, screenshots,
+            demo videos, downloadable files, reviews, ratings, and comments.</li>
+          <li><strong>Support tickets</strong> — the name, email address,
+            subject, category, and message you submit through the contact form.</li>
+        </ul>
+
+        <h3>2.2 Information collected automatically</h3>
+        <ul>
+          <li><strong>Session data</strong> — an identifier, the login
+            timestamp, the last activity timestamp, and a short device
+            fingerprint used to help you manage active sessions.</li>
+          <li><strong>Network data</strong> — your IP address and user agent
+            string, recorded on each session for security and abuse prevention.</li>
+          <li><strong>Usage data</strong> — view counts, download counts, and
+            aggregated interaction statistics that help us rank and display
+            projects.</li>
+        </ul>
+
+        <h3>2.3 Information from third parties</h3>
+        <ul>
+          <li><strong>GitHub</strong> — when you link a repository to a
+            project, we retrieve public metadata such as stars, forks,
+            language, license, and release download counts. We do not
+            retrieve private repository contents unless you explicitly
+            link a private repository and authorize it.</li>
+        </ul>
+      </section>
+
+      <section id="how-we-use" class="legal-section">
+        <h2>3. How we use your data</h2>
+        <ul>
+          <li>To create and secure your account, and to authenticate you.</li>
+          <li>To display your profile and published content to other users,
+            consistent with your visibility settings.</li>
+          <li>To operate features such as reviews, comments, and ticket
+            handling.</li>
+          <li>To synchronize public repository metadata from GitHub.</li>
+          <li>To detect abuse, enforce rate limits, and prevent fraud.</li>
+          <li>To send transactional email — such as verification codes and
+            password reset links — when required.</li>
+          <li>To measure aggregate usage and improve the service.</li>
+        </ul>
+        <p>
+          We do not sell your personal information, and we do not use your
+          content to train third-party advertising models.
+        </p>
+      </section>
+
+      <section id="cookies" class="legal-section">
+        <h2>4. Cookies and tracking</h2>
+        <p>
+          DevHub uses a small number of strictly necessary cookies:
+        </p>
+        <ul>
+          <li><strong>Session cookies</strong> — <code>access_token</code> and
+            <code>refresh_token</code>, both HTTP-only and Secure in
+            production. These are required for authentication and session
+            management.
+          </li>
+          <li><strong>Preference storage</strong> — the theme and accent
+            choices you make are stored locally in your browser using
+            <code>localStorage</code>. These never leave your device.
+          </li>
+        </ul>
+        <p>
+          We do not use advertising cookies, cross-site tracking pixels, or
+          third-party analytics that profile you across the web.
+        </p>
+      </section>
+
+      <section id="third-parties" class="legal-section">
+        <h2>5. Third-party services</h2>
+
+        <h3>5.1 GitHub</h3>
+        <p>
+          Project metadata is retrieved from the public GitHub API. Requests
+          are made from our servers and may include the repository owner and
+          name. GitHub's own privacy policy governs data processed on their
+          side.
+        </p>
+
+        <h3>5.2 Email delivery</h3>
+        <p>
+          Transactional email is delivered through an SMTP provider. The
+          recipient address and message content are transmitted to that
+          provider solely for delivery purposes.
+        </p>
+
+        <h3>5.3 Hosting and infrastructure</h3>
+        <p>
+          The service runs on cloud infrastructure. Application logs,
+          database records, and uploaded files are stored on infrastructure
+          we control and are accessible only to authorized operators.
+        </p>
+      </section>
+
+      <section id="data-retention" class="legal-section">
+        <h2>6. Data retention</h2>
+        <ul>
+          <li><strong>Active accounts</strong> — retained for as long as
+            your account remains open.</li>
+          <li><strong>Deleted accounts</strong> — content associated with a
+            deleted account is removed within 30 days, except where we are
+            legally required to retain it or where it has been aggregated
+            into anonymized statistics.</li>
+          <li><strong>Session records</strong> — expired or revoked sessions
+            are purged automatically.</li>
+          <li><strong>Support tickets</strong> — retained for up to 24 months
+            after resolution, for reference and audit purposes.</li>
+          <li><strong>Application logs</strong> — retained for up to 90 days.</li>
+        </ul>
+      </section>
+
+      <section id="your-rights" class="legal-section">
+        <h2>7. Your rights</h2>
+        <p>
+          Depending on your jurisdiction, you may have some or all of the
+          following rights:
+        </p>
+        <ul>
+          <li><strong>Access</strong> — request a copy of the personal data
+            we hold about you.</li>
+          <li><strong>Correction</strong> — update or fix inaccurate
+            information from your account settings.</li>
+          <li><strong>Deletion</strong> — request that your account and its
+            associated content be removed.</li>
+          <li><strong>Export</strong> — receive your data in a portable
+            format.</li>
+          <li><strong>Objection</strong> — object to specific processing
+            activities, such as analytics.</li>
+          <li><strong>Withdrawal of consent</strong> — where processing is
+            based on consent, you may withdraw it at any time.</li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact us using the details at
+          the end of this document. We respond to verifiable requests within
+          30 days.
+        </p>
+      </section>
+
+      <section id="security" class="legal-section">
+        <h2>8. Security</h2>
+        <p>
+          We take reasonable technical and organizational measures to
+          protect your information, including:
+        </p>
+        <ul>
+          <li>Passwords hashed with a modern, memory-hard algorithm.</li>
+          <li>HTTP-only, Secure, SameSite cookies for session tokens.</li>
+          <li>Rate limiting on authentication and sensitive endpoints.</li>
+          <li>Least-privilege access controls for administrative tools.</li>
+          <li>Regular dependency updates and security advisories.</li>
+        </ul>
+        <p>
+          No system is completely secure. If you discover a vulnerability,
+          please see <code>SECURITY.md</code> in the project repository for
+          responsible disclosure instructions.
+        </p>
+      </section>
+
+      <section id="children" class="legal-section">
+        <h2>9. Children's privacy</h2>
+        <p>
+          DevHub is not directed at children under 13, and we do not
+          knowingly collect personal information from them. If you believe a
+          child has provided us with personal information, contact us so we
+          can remove it.
+        </p>
+      </section>
+
+      <section id="international" class="legal-section">
+        <h2>10. International transfers</h2>
+        <p>
+          DevHub is operated from servers that may be located outside your
+          country of residence. By using the service, you acknowledge that
+          your information may be transferred to, stored in, and processed
+          in jurisdictions whose data protection laws may differ from yours.
+        </p>
+      </section>
+
+      <section id="changes" class="legal-section">
+        <h2>11. Changes to this policy</h2>
+        <p>
+          We may update this Privacy Policy from time to time. When we do,
+          we update the "Last updated" date at the top of the page. Material
+          changes will be announced in-product or by email at least 14 days
+          before taking effect.
+        </p>
+      </section>
+
+      <section id="contact" class="legal-section">
+        <h2>12. Contact</h2>
+        <p>
+          Questions about this policy can be submitted through our contact
+          form, which creates a tracked support ticket:
+        </p>
+        <div class="legal-cta">
+          <a href="/contact" class="btn-primary">Contact Us</a>
+          <a href="/legal/terms" class="btn-outline">Terms of Service</a>
+        </div>
+        <p>
+          You can also reach the maintainers through the project repository
+          on GitHub.
+        </p>
+      </section>
+
+    </article>
+
+    <!-- ============ FOOTER NAV ============ -->
+    <div class="legal-footer">
+      <a href="/legal/privacy" class="legal-footer__link legal-footer__link--active">Privacy Policy</a>
+      <span class="legal-footer__sep" aria-hidden="true">·</span>
+      <a href="/legal/terms" class="legal-footer__link">Terms of Service</a>
+      <span class="legal-footer__sep" aria-hidden="true">·</span>
+      <a href="/contact" class="legal-footer__link">Contact</a>
+    </div>
+
+  </main>
+
+  <%- include("../../components/footer") %>
+</body>
+
+</html>
