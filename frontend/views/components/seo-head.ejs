@@ -1,24 +1,24 @@
 <%
   /* ============================================================
-     SEO Head — مشترک همه صفحات عمومی
-     پارامترها (همه اختیاری مگر title):
-       title          — عنوان صفحه (بدون برند)
-       description    — متا دسکریپشن
-       canonicalPath  — مسیر canonical مثل /explore (پیش‌فرض از req)
-       ogImage        — URL کامل یا نسبی تصویر OG
-       ogType         — website | article | profile (پیش‌فرض website)
-       noindex        — true برای صفحات خصوصی/داشبورد/احراز هویت
-       keywords       — رشته کلمات کلیدی
-       jsonLd         — آبجکت یا آرایه JSON-LD (رندر می‌شود)
-       extraStyles    — آرایه مسیر CSS اضافه
-       extraScripts   — آرایه مسیر JS (defer) — معمولاً در انتهای body بگذارید
-  ============================================================ */
+     SEO Head — Shared across all public pages
+     Parameters (all optional except title):
+       title          — Page title (without brand name)
+       description    — Meta description
+       canonicalPath  — Canonical path, e.g. /explore (defaults to req)
+       ogImage        — Absolute or relative Open Graph image URL
+       ogType         — website | article | profile (defaults to website)
+       noindex        — true for private, dashboard, or authentication pages
+       keywords       — Keyword string
+       jsonLd         — JSON-LD object or array (will be rendered)
+       extraStyles    — Array of additional CSS file paths
+       extraScripts   — Array of JS file paths (defer); usually placed at the end of body
+     ============================================================ */
   const siteName = 'DevHub';
-  const siteTagline = 'کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز';
-  const defaultDesc = 'پلتفرم کشف و بررسی پروژه‌های متن‌باز — ترکیبی از GitHub، Product Hunt و بازخورد واقعی کاربران. پروژه‌های ایرانی و جهانی را پیدا کنید، امتیاز دهید و به اشتراک بگذارید.';
+  const siteTagline = 'Discover, review, and share open-source projects';
+  const defaultDesc = 'Discover and review open-source projects on a platform combining GitHub, Product Hunt, and authentic user feedback. Find, rate, and share projects from Iran and around the world.';
   const pageTitle = typeof title !== 'undefined' && title
     ? String(title).trim()
-    : 'صفحه اصلی';
+    : 'Home';
   const fullTitle = pageTitle.includes(siteName)
     ? pageTitle
     : `${pageTitle} | ${siteName}`;
@@ -27,13 +27,13 @@
     : defaultDesc;
   const metaKeywords = (typeof keywords !== 'undefined' && keywords)
     ? String(keywords)
-    : 'پروژه متن‌باز, اپن سورس, GitHub, DevHub, برنامه‌نویسی, React, Node.js, کشف پروژه, ریویو پروژه';
+    : 'open-source projects, open source, GitHub, DevHub, programming, React, Node.js, project discovery, project reviews';
   const robotsContent = (typeof noindex !== 'undefined' && noindex)
     ? 'noindex, nofollow'
     : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
   const ogTypeVal = (typeof ogType !== 'undefined' && ogType) ? ogType : 'website';
 
-  // پایه URL — از env یا host درخواست
+  // Base URL — derived from the environment or request host
   let baseUrl = '';
   try {
     if (typeof process !== 'undefined' && process.env && process.env.APP_URL) {
@@ -67,7 +67,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <script>
-(function(){try{var m=localStorage.getItem('dh-mode')||'system';var a=localStorage.getItem('dh-accent')||'blue';var r=m==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):m;document.documentElement.setAttribute('data-mode',r);document.documentElement.setAttribute('data-accent',a);document.documentElement.style.colorScheme=r;}catch(e){}})();
+  (function() {
+    try {
+      var m = localStorage.getItem('dh-mode') || 'system';
+      var a = localStorage.getItem('dh-accent') || 'blue';
+      var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
+      document.documentElement.setAttribute('data-mode', r);
+      document.documentElement.setAttribute('data-accent', a);
+      document.documentElement.style.colorScheme = r;
+    } catch (e) {}
+  })();
 </script>
 
 <title><%= fullTitle %></title>
@@ -80,7 +89,7 @@
 
 <!-- Open Graph -->
 <meta property="og:site_name" content="<%= siteName %>">
-<meta property="og:locale" content="fa_IR">
+<meta property="og:locale" content="en_US">
 <meta property="og:type" content="<%= ogTypeVal %>">
 <meta property="og:title" content="<%= fullTitle %>">
 <meta property="og:description" content="<%= metaDesc %>">
@@ -109,9 +118,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"></noscript>
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+</noscript>
 
-<!-- Styles پایه (design tokens + themes) -->
+<!-- Core styles (design tokens + themes) -->
 <link rel="stylesheet" href="/styles/index.css">
 <link rel="stylesheet" href="/styles/themes.css">
 <link rel="stylesheet" href="/styles/header.css">
@@ -126,7 +137,9 @@
   payload.forEach(function (item) {
     if (!item) return;
 %>
-<script type="application/ld+json"><%- JSON.stringify(item) %></script>
+<script type="application/ld+json">
+  <%- JSON.stringify(item) %>
+</script>
 <%
   });
 } %>
