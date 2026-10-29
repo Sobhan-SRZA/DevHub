@@ -1,37 +1,47 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/logs.css">
-  <title>لاگ‌ها</title>
+
+  <title>Logs</title>
 </head>
 
 <body>
@@ -39,51 +49,55 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: 	"لاگ‌ها" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "Logs" }) %>
 
     <main class="dash-main logs-main">
-      <!-- ============ HEAD ============ -->
+      <!-- ============ PAGE HEADER ============ -->
       <div class="dash-head">
         <div>
-          <h2 class="dash-title">لاگ‌های سیستم</h2>
-          <p class="dash-sub">مشاهده و فیلتر لاگ‌های سرور</p>
+          <h2 class="dash-title">System logs</h2>
+          <p class="dash-sub">View and filter server logs</p>
         </div>
+
         <div class="logs-head-actions">
-          <button type="button" class="btn-ghost" id="clearBtn" title="پاک کردن buffer حافظه">
+          <button type="button" class="btn-ghost" id="clearBtn" title="Clear memory buffer">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
             </svg>
-            پاک‌سازی
+            Clear
           </button>
-          <button type="button" class="btn-ghost" id="downloadBtn" title="دانلود فایل">
+
+          <button type="button" class="btn-ghost" id="downloadBtn" title="Download file">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            دانلود
+            Download
           </button>
+
           <button type="button" class="btn-primary" id="refreshBtn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            رفرش
+            Refresh
           </button>
         </div>
       </div>
 
-      <!-- ============ STATS ============ -->
+      <!-- ============ LOG STATISTICS ============ -->
       <div class="logs-stats" id="logsStats">
         <div class="log-stat-card" data-level="all">
           <span class="log-stat-card__dot" style="--c:#6ebbff"></span>
           <div>
-            <span class="log-stat-card__label">همه</span>
+            <span class="log-stat-card__label">All</span>
             <span class="log-stat-card__value" id="statTotal">0</span>
           </div>
         </div>
+
         <div class="log-stat-card" data-level="info">
           <span class="log-stat-card__dot" style="--c:#3b82f6"></span>
           <div>
@@ -91,6 +105,7 @@
             <span class="log-stat-card__value" id="statInfo">0</span>
           </div>
         </div>
+
         <div class="log-stat-card" data-level="warn">
           <span class="log-stat-card__dot" style="--c:#fbbf24"></span>
           <div>
@@ -98,6 +113,7 @@
             <span class="log-stat-card__value" id="statWarn">0</span>
           </div>
         </div>
+
         <div class="log-stat-card" data-level="error">
           <span class="log-stat-card__dot" style="--c:#ef4444"></span>
           <div>
@@ -105,6 +121,7 @@
             <span class="log-stat-card__value" id="statError">0</span>
           </div>
         </div>
+
         <div class="log-stat-card" data-level="debug">
           <span class="log-stat-card__dot" style="--c:#a78bfa"></span>
           <div>
@@ -114,18 +131,18 @@
         </div>
       </div>
 
-      <!-- ============ FILTERS ============ -->
+      <!-- ============ FILTER CONTROLS ============ -->
       <div class="logs-filters">
         <div class="logs-search">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="searchInput" placeholder="جستجو در لاگ‌ها…">
+          <input type="text" id="searchInput" placeholder="Search logs…">
         </div>
 
         <select id="levelFilter" class="dash-select">
-          <option value="all">همه سطوح</option>
+          <option value="all">All levels</option>
           <option value="info">Info</option>
           <option value="warn">Warn</option>
           <option value="error">Error</option>
@@ -133,35 +150,34 @@
         </select>
 
         <select id="fileFilter" class="dash-select">
-          <option value="live">زنده (حافظه)</option>
+          <option value="live">Live (memory)</option>
         </select>
 
         <label class="logs-auto-refresh">
           <input type="checkbox" id="autoRefreshToggle" checked>
-          <span>به‌روزرسانی خودکار (۳s)</span>
+          <span>Auto-refresh (3s)</span>
         </label>
 
         <label class="logs-auto-refresh">
           <input type="checkbox" id="followToggle" checked>
-          <span>اسکرول خودکار</span>
+          <span>Auto-scroll</span>
         </label>
       </div>
 
-      <!-- ============ LOG LIST ============ -->
+      <!-- ============ LOG OUTPUT ============ -->
       <div class="logs-terminal" id="logsTerminal">
         <div class="logs-loading">
           <div class="logs-loading__spinner"></div>
-          <span>در حال بارگذاری…</span>
+          <span>Loading…</span>
         </div>
       </div>
 
-      <!-- ============ FOOTER ============ -->
+      <!-- ============ FOOTER STATUS ============ -->
       <div class="logs-footer">
-        <span id="logsCount">۰ لاگ</span>
-        <span id="logsSource">منبع: حافظه</span>
+        <span id="logsCount">0 logs</span>
+        <span id="logsSource">Source: Memory</span>
         <span id="logsLastUpdate">—</span>
       </div>
-
     </main>
   </div>
 
