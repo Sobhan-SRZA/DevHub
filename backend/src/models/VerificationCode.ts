@@ -40,7 +40,14 @@ export interface IVerificationCode {
     updatedAt: Date;
 }
 
-type VerificationCodeModel = Model<IVerificationCode>;
+interface VerificationCodeModel extends Model<IVerificationCode> {
+    generateCode(): {   
+        code: string;
+        codeHash: string;
+        salt: string;
+    };
+    hashCode(code: string, salt: string): string;
+}
 
 /* -------------------- Verification Code Schema -------------------- */
 
