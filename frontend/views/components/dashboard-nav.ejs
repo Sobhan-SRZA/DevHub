@@ -1,28 +1,28 @@
 <%
-    const currentUser = (locals && locals.currentUser) || (typeof user !== 'undefined' ? user : null);
-    const userRole = (locals && locals.userRole) || currentUser?.role || 'user';
-    const displayName = currentUser?.name || currentUser?.username || 'کاربر';
-    const initial = displayName.trim().charAt(0).toUpperCase();
-    const hasAvatar = !!currentUser?.avatar?.url;
-    const avatarStyle = hasAvatar ? `background-image:url('${currentUser.avatar.url}');background-size:cover;background-position:center;` : '';
-    const roleMeta = {
-        user:      { label: 'کاربر',  emoji: '👤', color: '#6ebbff' },
-        admin:     { label: 'ادمین',  emoji: '👑', color: '#fbbf24' },
-        developer: { label: 'دولوپر', emoji: '⚡', color: '#ec4899' },
-    };
-    const meta = roleMeta[userRole] || roleMeta.user;
+  const currentUser = (locals && locals.currentUser) || (typeof user !== 'undefined' ? user : null);
+  const userRole = (locals && locals.userRole) || currentUser?.role || 'user';
+  const displayName = currentUser?.name || currentUser?.username || 'User';
+  const initial = displayName.trim().charAt(0).toUpperCase();
+  const hasAvatar = !!currentUser?.avatar?.url;
+  const avatarStyle = hasAvatar ? `background-image:url('${currentUser.avatar.url}');background-size:cover;background-position:center;` : '';
+  const roleMeta = {
+    user:      { label: 'User',      emoji: '👤', color: '#6ebbff' },
+    admin:     { label: 'Admin',     emoji: '👑', color: '#fbbf24' },
+    developer: { label: 'Developer', emoji: '⚡', color: '#ec4899' },
+  };
+  const meta = roleMeta[userRole] || roleMeta.user;
 %>
 
 <aside class="dash-sidebar" id="dashSidebar">
   <div class="dash-sidebar__inner">
     <div class="dash-brand">
       <%- include("./brand", {
-            brandGradientId: "brandSidebar",
-            brandSize: 32,
-            brandShowText: true,
-            brandClass: "dash-brand__logo"
-        }) %>
-      <button type="button" class="dash-collapse-btn" id="dashCollapseBtn" aria-label="جمع کردن منو" title="جمع کردن منو (Ctrl+B)">
+        brandGradientId: "brandSidebar",
+        brandSize: 32,
+        brandShowText: true,
+        brandClass: "dash-brand__logo"
+      }) %>
+      <button type="button" class="dash-collapse-btn" id="dashCollapseBtn" aria-label="Collapse sidebar" title="Collapse sidebar (Ctrl+B)">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
@@ -45,19 +45,18 @@
     <% } %>
 
     <nav class="dash-nav">
-
-      <!-- Dashboard items (modular) -->
+      <!-- Modular dashboard navigation items -->
       <%- include("./dashboard-nav-items", { variant: "sidebar" }) %>
     </nav>
 
     <div class="dash-sidebar__footer">
-      <button type="button" class="dash-logout-btn" id="dashLogoutBtn" title="خروج">
+      <button type="button" class="dash-logout-btn" id="dashLogoutBtn" title="Log Out">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
           <polyline points="16 17 21 12 16 7"></polyline>
           <line x1="21" y1="12" x2="9" y2="12"></line>
         </svg>
-        <span>خروج</span>
+        <span>Log Out</span>
       </button>
     </div>
   </div>
