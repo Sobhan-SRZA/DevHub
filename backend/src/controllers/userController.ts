@@ -27,6 +27,126 @@ function buildUserQuery(idOrUsername: string) {
         : { usernameLower: idOrUsername.toLowerCase() };
 }
 
+
+/* ==========================================================================
+ * User Directory
+ * ========================================================================== */
+
+/**
+ * Returns a paginated list of active users for the public directory.
+ *
+ * Search (`q`) matches against the display name and username using a
+ * case-insensitive prefix-anywhere regular expression. The sort order
+ * may be by newest account, alphabetical name, or most published
+ * projects.
+ *
+ * Project counts are computed with a single aggregation pass over the
+ * matching users, so the endpoint remains efficient even as the
+ * directory grows.
+ */
+export const listUsers = asyncHandler(
+    async (req: Request, res: Response) => {
+        /* ---------- Query parameters ---------- */
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.min(
+            60,
+            Math.max(1, Number(req.query.limit) || 24)
+        );
+        const sort = String(req.query.sort || "recent");
+        const q = String(req.query.q || "").trim().slice(0, 80);
+
+        /* ---------- Base filter ---------- */
+        const filter: Record<string, any> = {
+            isBanned: { $ne: true }
+        };
+
+        if (q) {
+            // Escape regex metacharacters so user input cannot cause
+            // unintended matches or catastrophic backtracking.
+            const rx = new RegExp(
+                q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                "i"
+            );
+
+            filter.$or = [{ name: rx }, { username: rx }];
+        }
+
+        /* ---------- Sort spec ---------- */
+        let sortSpec: Record<string, 1 | -1> = { createdAt: -1 };
+
+        if (sort === "name") {
+            sortSpec = { name: 1, username: 1 };
+        } else if (sort === "projects") {
+            // Project-count sorting is resolved after aggregation.
+            // Fall back to recency for the initial query, then reorder.
+            sortSpec = { createdAt: -1 };
+        }
+
+        /* ---------- Fetch page ---------- */
+        const [users, total] = await Promise.all([
+            User.find(filter)
+                .sort(sortSpec)
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .select("name username avatar bio createdAt")
+                .lean(),
+            User.countDocuments(filter)
+        ]);
+
+        /* ---------- Project counts ---------- */
+        const ids = users.map((u) => u._id);
+
+        let countMap = new Map<string, number>();
+
+        if (ids.length) {
+            const counts = await Project.aggregate([
+                {
+                    $match: {
+                        owner: { $in: ids },
+                        status: "published",
+                        isPublic: true
+                    }
+                },
+                { $group: { _id: "$owner", count: { $sum: 1 } } }
+            ]);
+
+            countMap = new Map(
+                counts.map((c) => [String(c._id), c.count as number])
+            );
+        }
+
+        /* ---------- Shape response ---------- */
+        let serialized = users.map((u) => ({
+            id: u._id,
+            name: u.name,
+            username: u.username,
+            avatar: u.avatar || null,
+            bio: u.bio || "",
+            projectsCount: countMap.get(String(u._id)) || 0,
+            createdAt: u.createdAt
+        }));
+
+        /* ---------- Reorder by project count if requested ---------- */
+        if (sort === "projects") {
+            serialized = serialized.sort(
+                (a, b) => b.projectsCount - a.projectsCount
+            );
+        }
+
+        res.json({
+            ok: true,
+            users: serialized,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.max(1, Math.ceil(total / limit))
+            }
+        });
+    }
+);
+
+
 /* ==================================================================
    GET /api/users/:idOrUsername — Public profile and statistics
    ================================================================== */
