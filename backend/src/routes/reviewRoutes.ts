@@ -1,3 +1,4 @@
+
 import {
     requireAuth,
     optionalAuth
@@ -6,16 +7,21 @@ import { Router } from "express";
 import * as ctrl from "../controllers/reviewController";
 
 const router = Router({ mergeParams: true });
-// mergeParams: true → بتونیم :idOrSlug رو از router والد بگیریم
 
+/* ==========================================================================
+ * Review Routes
+ * ========================================================================== */
+
+// Publicly accessible routes
 router.get("/", optionalAuth, ctrl.listReviews);
-router.get("/me", requireAuth, ctrl.getMyReview);
 
+// Authenticated user routes
+router.get("/me", requireAuth, ctrl.getMyReview);
 router.post("/", requireAuth, ctrl.createReview);
 router.put("/", requireAuth, ctrl.updateReview);
 router.delete("/", requireAuth, ctrl.deleteReview);
 
-// helpful روی review id مستقل
+// Mark a specific review as helpful
 router.post("/:id/helpful", requireAuth, ctrl.markHelpful);
 
 export default router;
