@@ -1,6 +1,7 @@
+
 import {
     requireAuth,
-    optionalAuth
+    optionalAuth,
 } from "../middleware/auth";
 import { requireTagOwnership } from "../middleware/ownership";
 import { Router } from "express";
@@ -8,21 +9,41 @@ import * as ctrl from "../controllers/tagController";
 
 const router = Router();
 
-/* ---------- عمومی ---------- */
+/* ==========================================================================
+ * Public Routes
+ * ========================================================================== */
+
 router.get("/", optionalAuth, ctrl.listTags);
 router.get("/suggest", optionalAuth, ctrl.suggestTags);
+router.get("/:id", ctrl.getTag);
 
-/* ---------- کاربر لاگین‌شده ---------- */
+/* ==========================================================================
+ * Authenticated User Routes
+ * ========================================================================== */
+
 router.post("/find-or-create", requireAuth, ctrl.findOrCreateTag);
 router.post("/", requireAuth, ctrl.createTag);
-router.put("/:id", requireAuth, requireTagOwnership, ctrl.updateTag);
-router.delete("/:id", requireAuth, requireTagOwnership, ctrl.deleteTag);
 
-/* ---------- admin ---------- */
+router.put(
+    "/:id",
+    requireAuth,
+    requireTagOwnership,
+    ctrl.updateTag
+);
+
+router.delete(
+    "/:id",
+    requireAuth,
+    requireTagOwnership,
+    ctrl.deleteTag
+);
+
+/* ==========================================================================
+ * Tag Moderation Routes
+ * ========================================================================== */
+
 router.get("/pending", requireAuth, ctrl.listPending);
 router.post("/:id/approve", requireAuth, ctrl.approveTag);
-
-router.get("/:id", ctrl.getTag);
 
 export default router;
 
