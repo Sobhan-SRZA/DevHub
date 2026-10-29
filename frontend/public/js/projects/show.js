@@ -876,12 +876,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Produce the markup for a single comment, including its replies.
-     * Nesting is capped at MAX_DEPTH; deeper levels cannot be replied to.
+     * The author's avatar and display name are wrapped in links to their
+     * public profile when a username is available. Avatar images are
+     * rendered when present; otherwise the author's initial is shown.
      */
     function renderComment(c, depth) {
         const u = c.user || {};
         const name = u.name || u.username || 'User';
         const initial = name.charAt(0).toUpperCase();
+
+        const hasAvatar = !!(u.avatar && u.avatar.url);
+        const avatarStyle = hasAvatar
+            ? `background-image:url('${escapeHtml(u.avatar.url)}');background-size:cover;background-position:center;`
+            : '';
 
         const isMyComment = state.currentUser && String(state.currentUser.id) === String(u._id);
         const isProjectOwner = state.currentUser && state.project &&
@@ -900,74 +907,92 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<div class="comment__text comment__text--deleted">${escapeHtml(c.body || '[This comment has been deleted]')}</div>`
             : `<div class="comment__text">${escapeHtml(c.body)}</div>`;
 
+        /* ---------- Author avatar (linked when possible) ---------- */
+        const avatarInner = `<div class="comment__avatar" style="${avatarStyle}">${!hasAvatar ? escapeHtml(initial) : ''}</div>`;
+
+        const avatarHtml = u.username && !c.isDeleted
+            ? `<a href="/users/${encodeURIComponent(u.username)}" class="comment__avatar-link" aria-label="View ${escapeHtml(name)}'s profile">${avatarInner}</a>`
+            : avatarInner;
+
+        /* ---------- Author name (linked when possible) ---------- */
+        const nameHtml = u.username && !c.isDeleted
+            ? `<a href="/users/${encodeURIComponent(u.username)}" class="comment__author comment__author-link">${escapeHtml(name)}</a>`
+            : `<span class="comment__author">${escapeHtml(name)}</span>`;
+
         return `
-            <div class="comment ${c.isDeleted ? 'comment--deleted' : ''}" data-comment-id="${c._id}" data-depth="${depth}">
-                <div class="comment__avatar">${escapeHtml(initial)}</div>
-                <div class="comment__body">
-                    <div class="comment__head">
-                        <span class="comment__author">${escapeHtml(name)}</span>
-                        ${isProjectOwner ? '<span class="comment__badge">Project owner</span>' : ''}
-                        <span class="comment__date">${relativeTime(c.createdAt)}</span>
-                        ${c.isEdited ? '<span class="comment__edited">(edited)</span>' : ''}
-                    </div>
+        <div class="comment ${c.isDeleted ? 'comment--deleted' : ''}" data-comment-id="${c._id}" data-depth="${depth}">
+            ${avatarHtml}
+            <div class="comment__body">
+                <div class="comment__head">
+                    ${nameHtml}
+                    ${isProjectOwner ? '<span class="comment__badge">Project owner</span>' : ''}
+                    <span class="comment__date">${relativeTime(c.createdAt)}</span>
+                    ${c.isEdited ? '<span class="comment__edited">(edited)</span>' : ''}
+                </div>
 
-                    ${bodyHtml}
+                ${bodyHtml}
 
-                    <div class="comment__actions">
-                        ${!c.isDeleted && state.currentUser ? `
-                            <button type="button" class="comment__action ${liked ? 'liked' : ''}" data-action="like">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                </svg>
-                                <span class="comment__likes-count">${(c.likes || []).length}</span>
-                            </button>
-                        ` : ''}
+                <div class="comment__actions">
+                    ${!c.isDeleted && state.currentUser ? `
+                        <button type="button" class="comment__action ${liked ? 'liked' : ''}" data-action="like">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span class="comment__likes-count">${(c.likes || []).length}</span>
+                        </button>
+                    ` : ''}
 
-                        ${!c.isDeleted && state.currentUser && canReply ? `
-                            <button type="button" class="comment__action" data-action="reply">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="9 17 4 12 9 7"></polyline>
-                                    <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
-                                </svg>
-                                Reply
-                            </button>
-                        ` : ''}
+                    ${!c.isDeleted && state.currentUser && canReply ? `
+                        <button type="button" class="comment__action" data-action="reply">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 17 4 12 9 7"></polyline>
+                                <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+                            </svg>
+                            Reply
+                        </button>
+                    ` : ''}
 
-                        ${isMyComment && !c.isDeleted ? `
-                            <button type="button" class="comment__action" data-action="edit">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Edit
-                            </button>
-                            <button type="button" class="comment__action" data-action="delete">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                                </svg>
-                                Delete
-                            </button>
-                        ` : ''}
-                    </div>
-
-                    ${replyCount > 0 ? `
-                        <div class="comment__replies">
-                            ${replies.map((r) => renderComment(r, depth + 1)).join('')}
-                        </div>
+                    ${isMyComment && !c.isDeleted ? `
+                        <button type="button" class="comment__action" data-action="edit">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Edit
+                        </button>
+                        <button type="button" class="comment__action" data-action="delete">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                            </svg>
+                            Delete
+                        </button>
                     ` : ''}
                 </div>
+
+                ${replyCount > 0 ? `
+                    <div class="comment__replies">
+                        ${replies.map((r) => renderComment(r, depth + 1)).join('')}
+                    </div>
+                ` : ''}
             </div>
-        `;
+        </div>
+    `;
     }
 
-    /* Bind like / reply / edit / delete handlers to each rendered comment. */
+    /**
+     * Bind like / reply / edit / delete handlers to each rendered comment.
+     * Clicks on the author's avatar or name are allowed to navigate to the
+     * profile page without being intercepted by comment-action handlers.
+     */
     function bindCommentActions() {
         $$('.comment').forEach((el) => {
             const id = el.dataset.commentId;
 
             el.querySelectorAll('[data-action]').forEach((btn) => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
                     const action = btn.dataset.action;
 
                     if (action === 'like') toggleLike(id, btn, el);
@@ -1207,27 +1232,53 @@ document.addEventListener('DOMContentLoaded', () => {
     const shareBackdrop = $('#shareBackdrop');
     const shareInput = $('#shareUrlInput');
 
-    $('#btnShare')?.addEventListener('click', () => {
-        const url = location.href;
+    /**
+     * Open the share modal and prime the share links with the current
+     * page URL and project title. Fails safely when the project has not
+     * yet loaded.
+     */
+    function openShareModal() {
+        if (!state.project) {
+            toast('The project is still loading. Please try again in a moment.', 'info');
+            return;
+        }
+
+        const url = window.location.href;
+        const title = state.project.title || 'DevHub project';
+        const desc = state.project.shortDescription || '';
+
         shareInput.value = url;
 
-        const text = encodeURIComponent(`${state.project.title} — ${state.project.shortDescription}`);
+        const shareText = encodeURIComponent(desc ? `${title} — ${desc}` : title);
         const encodedUrl = encodeURIComponent(url);
 
-        $('#shareTwitter').href = `https://twitter.com/intent/tweet?text=${text}&url=${encodedUrl}`;
-        $('#shareTelegram').href = `https://t.me/share/url?url=${encodedUrl}&text=${text}`;
-        $('#shareWhatsapp').href = `https://wa.me/?text=${text}%20${encodedUrl}`;
+        const tw = document.getElementById('shareTwitter');
+        const tg = document.getElementById('shareTelegram');
+        const wa = document.getElementById('shareWhatsapp');
+
+        if (tw) tw.href = `https://twitter.com/intent/tweet?text=${shareText}&url=${encodedUrl}`;
+        if (tg) tg.href = `https://t.me/share/url?url=${encodedUrl}&text=${shareText}`;
+        if (wa) wa.href = `https://wa.me/?text=${shareText}%20${encodedUrl}`;
 
         shareModal.classList.add('open');
         shareBackdrop.classList.add('open');
         document.body.style.overflow = 'hidden';
-    });
+
+        // Select the URL so the user can copy it directly if needed.
+        setTimeout(() => shareInput.select(), 120);
+    }
 
     function closeShareModal() {
         shareModal.classList.remove('open');
         shareBackdrop.classList.remove('open');
         document.body.style.overflow = '';
     }
+
+    $('#btnShare')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openShareModal();
+    });
 
     $('#shareClose')?.addEventListener('click', closeShareModal);
     shareBackdrop?.addEventListener('click', closeShareModal);
@@ -1238,13 +1289,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* Copy the share URL to the clipboard, with a legacy fallback. */
     $('#copyShareUrl')?.addEventListener('click', async () => {
+        const value = shareInput.value;
+
         try {
-            await navigator.clipboard.writeText(shareInput.value);
-            toast('Link copied', 'success');
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                shareInput.select();
+                document.execCommand('copy');
+            }
+
+            toast('Link copied to clipboard', 'success');
         } catch {
+            // Fallback: select the text so the user can copy manually.
             shareInput.select();
-            document.execCommand('copy');
-            toast('Link copied', 'success');
+            toast('Press Ctrl+C to copy the link', 'info');
         }
     });
 
