@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <script>
+    (function() {
+      try {
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
+      } catch (e) {}
+    })();
+  </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/themes.css">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/tailwind.css">
+  <link rel="stylesheet" href="/styles/dashboard/tickets.css">
+
+  <title>Ticket</title>
+</head>
+
+<body>
+  <%- include("../../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../../components/dashboard-nav") %>
+    <%- include("../../components/dash-breadcrumb", { pageTitle: "Ticket" }) %>
+
+    <main class="dash-main" data-ticket-id="<%= ticketId %>">
+      <div class="dash-head">
+        <div>
+          <h2 class="dash-title">
+            <a href="/dashboard/tickets" class="dash-back">← Tickets</a>
+          </h2>
+          <p class="dash-sub" id="ticketSubject">Loading…</p>
+        </div>
+      </div>
+
+      <div class="ticket-detail" id="ticketDetail">
+        <div class="dash-loading">Loading ticket…</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/dashboard-nav.js"></script>
+  <script src="/js/dashboard/ticket-detail.js"></script>
+</body>
+
+</html>
