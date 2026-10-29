@@ -1,3 +1,4 @@
+
 import type {
     MailConfig,
     MailTransport,
@@ -11,60 +12,80 @@ import {
 import type { Transporter } from "nodemailer";
 import nodemailer from "nodemailer";
 
-/* ==================================================================
-   Singleton transporter (lazy)
-   ================================================================== */
+/**
+ * Maintains a lazily initialized SMTP transporter.
+ *
+ * The transporter is reused while the relevant SMTP configuration
+ * remains unchanged, reducing unnecessary connection setup overhead.
+ */
 let _transporter: Transporter | null = null;
 let _currentConfigHash = "";
 
-function configHash(c: MailConfig): string {
-    const s = c.smtp!;
+/**
+ * Generates a fingerprint from the SMTP settings used to identify
+ * the current transporter configuration.
+ */
+function configHash(config: MailConfig): string {
+    const smtp = config.smtp!;
 
-    return `${s.host}:${s.port}:${s.secure}:${s.auth.user}`;
+    return `${smtp.host}:${smtp.port}:${smtp.secure}:${smtp.auth.user}`;
 }
 
+/**
+ * Creates a Nodemailer transporter with secure TLS defaults,
+ * configurable timeouts, connection pooling, and optional debugging.
+ */
 function buildTransporter(config: MailConfig): Transporter {
     if (!config.smtp) {
-        throw new Error("SMTP config is missing");
+        throw new Error("SMTP configuration is missing.");
     }
 
     const smtp = config.smtp;
 
-    const transporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
         host: smtp.host,
         port: smtp.port,
         secure: smtp.secure,
         auth: smtp.auth,
         name: process.env.MAIL_HELO_NAME || undefined,
 
-        // TLS hardening
+        // Enforce TLS 1.2 or later and validate certificates by default.
         tls: {
             minVersion: "TLSv1.2",
             rejectUnauthorized: smtp.tls?.rejectUnauthorized !== false
         },
 
-        // timeouts
+        // Configure connection, greeting, and socket timeouts.
         connectionTimeout: smtp.connectionTimeout ?? 15000,
         greetingTimeout: smtp.greetingTimeout ?? 15000,
         socketTimeout: smtp.socketTimeout ?? 30000,
 
-        // connection pool
+        // Reuse SMTP connections to improve throughput.
         pool: true,
         maxConnections: 3,
         maxMessages: 100,
 
-        // debug
+        // Enable Nodemailer diagnostics only when explicitly configured.
         logger: smtp.debug ? console : false,
         debug: !!smtp.debug
     });
-
-    return transporter;
 }
 
+/**
+ * Returns the existing transporter when its configuration matches;
+ * otherwise, creates and caches a new transporter.
+ */
 function getTransporter(config: MailConfig): Transporter {
     const hash = configHash(config);
+
     if (_transporter && _currentConfigHash === hash) {
         return _transporter;
+    }
+
+    // Close the previous transport before replacing it to avoid
+    // leaving its pooled SMTP connections open.
+    if (_transporter) {
+        _transporter.close();
     }
 
     _transporter = buildTransporter(config);
@@ -73,21 +94,30 @@ function getTransporter(config: MailConfig): Transporter {
     return _transporter;
 }
 
-/* ==================================================================
-   Public verify
-   ================================================================== */
-export async function verifySmtpTransport(config: MailConfig): Promise<void> {
+/**
+ * Verifies SMTP connectivity and authentication using the configured
+ * transporter. Throws if the connection cannot be established.
+ */
+export async function verifySmtpTransport(
+    config: MailConfig
+): Promise<void> {
     const transporter = getTransporter(config);
     await transporter.verify();
 }
 
-/* ==================================================================
-   SMTP transport
-   ================================================================== */
+/**
+ * SMTP mail transport implementation.
+ *
+ * Sends messages through the configured SMTP server and returns
+ * the resulting message identifier.
+ */
 export const smtpTransport: MailTransport = {
     name: "smtp",
 
-    async send(opts: SendMailOptions, config: MailConfig): Promise<SendMailResult> {
+    async send(
+        opts: SendMailOptions,
+        config: MailConfig
+    ): Promise<SendMailResult> {
         const transporter = getTransporter(config);
         const recipients = normalizeRecipients(opts.to);
 
@@ -97,6 +127,9 @@ export const smtpTransport: MailTransport = {
             subject: opts.subject,
             html: opts.html,
             text: opts.text,
+
+            // Prefer the message-specific reply address over the
+            // configured default when one is explicitly provided.
             replyTo: opts.replyTo
                 ? formatAddress(
                     typeof opts.replyTo === "string"
@@ -118,20 +151,16 @@ export const smtpTransport: MailTransport = {
     },
 };
 
-/* ==================================================================
-   پاک‌سازی (برای graceful shutdown)
-   ================================================================== */
+/**
+ * Closes the SMTP transport and releases pooled connections.
+ *
+ * Intended for graceful application shutdown.
+ */
 export function closeSmtpTransport(): void {
     if (_transporter) {
-        try {
-            _transporter.close();
-        } 
-        
-        catch {
-            /* ignore */
-        }
-        
+        _transporter.close();
         _transporter = null;
+        _currentConfigHash = "";
     }
 }
 
