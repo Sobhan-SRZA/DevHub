@@ -1,19 +1,41 @@
+
 import {
     requireAuth,
-    optionalAuth
+    optionalAuth,
 } from "../middleware/auth";
 import { Router } from "express";
 import * as ctrl from "../controllers/tagController";
 
 const router = Router();
 
+/* ==========================================================================
+ * Public Routes
+ * ========================================================================== */
+
+// Retrieve all tag types
 router.get("/", optionalAuth, ctrl.listTagTypes);
+
+// Retrieve a specific tag type
 router.get("/:id", ctrl.getTagType);
 
+/* ==========================================================================
+ * Authenticated Routes
+ * ========================================================================== */
+
+// Create a new tag type
 router.post("/", requireAuth, ctrl.createTagType);
+
+// Update an existing tag type
 router.put("/:id", requireAuth, ctrl.updateTagType);
+
+// Delete an existing tag type
 router.delete("/:id", requireAuth, ctrl.deleteTagType);
 
+/* ==========================================================================
+ * Tag Type Moderation
+ * ========================================================================== */
+
+// Approve a pending tag type
 router.post("/:id/approve", requireAuth, ctrl.approveTagType);
 
 export default router;
