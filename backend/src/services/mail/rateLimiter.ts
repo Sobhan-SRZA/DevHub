@@ -1,6 +1,4 @@
-/* ==================================================================
-   محدودیت نرخ ارسال (per recipient)
-   ================================================================== */
+
 interface RateLimiterOptions {
     maxPerWindow: number;
     windowMs: number;
@@ -11,6 +9,10 @@ interface ConsumeResult {
     retryAfterMs?: number;
 }
 
+/**
+ * In-memory rate limiter that enforces request limits independently
+ * for each key using a sliding time window.
+ */
 export class RateLimiter {
     private store = new Map<string, number[]>();
     private readonly max: number;
@@ -21,26 +23,36 @@ export class RateLimiter {
         this.max = opts.maxPerWindow;
         this.windowMs = opts.windowMs;
 
-        // پاک‌سازی خودکار هر ۵ دقیقه
-        this.cleanupTimer = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+        // Periodically remove expired entries to prevent unbounded memory growth.
+        this.cleanupTimer = setInterval(
+            () => this.cleanup(),
+            5 * 60 * 1000
+        );
+
+        // Allow the process to exit naturally when no other work remains.
         this.cleanupTimer.unref();
     }
 
     /**
-     * اگه مجاز بود، ثبت می‌کنه و true برمی‌گردونه.
-     * اگه رد شد، مدت زمان انتظار رو برمی‌گردونه.
+     * Checks whether an operation is allowed and records it if permitted.
+     *
+     * Returns the remaining wait time when the configured limit is exceeded.
      */
     consume(key: string): ConsumeResult {
         const now = Date.now();
         const existing = this.store.get(key) || [];
-        const recent = existing.filter((t) => now - t < this.windowMs);
+
+        // Retain only timestamps within the active sliding window.
+        const recent = existing.filter(
+            (timestamp) => now - timestamp < this.windowMs
+        );
 
         if (recent.length >= this.max) {
             const oldest = recent[0];
 
             return {
                 ok: false,
-                retryAfterMs: this.windowMs - (now - oldest),
+                retryAfterMs: this.windowMs - (now - oldest)
             };
         }
 
@@ -50,19 +62,29 @@ export class RateLimiter {
         return { ok: true };
     }
 
-    private cleanup() {
+    /**
+     * Removes expired timestamps and deletes keys with no active entries.
+     */
+    private cleanup(): void {
         const now = Date.now();
-        for (const [key, timestamps] of this.store) {
-            const recent = timestamps.filter((t) => now - t < this.windowMs);
-            if (recent.length === 0)
-                this.store.delete(key);
 
-            else
+        for (const [key, timestamps] of this.store) {
+            const recent = timestamps.filter(
+                (timestamp) => now - timestamp < this.windowMs
+            );
+
+            if (recent.length === 0) {
+                this.store.delete(key);
+            } else {
                 this.store.set(key, recent);
+            }
         }
     }
 
-    dispose() {
+    /**
+     * Stops the cleanup timer and releases all stored rate-limit data.
+     */
+    dispose(): void {
         clearInterval(this.cleanupTimer);
         this.store.clear();
     }
