@@ -4,44 +4,50 @@ import { requireAuth } from "../middleware/auth";
 import noCache from "../middleware/noCache";
 import {
     authLimiter,
-    sensitiveLimiter
+    sensitiveLimiter,
 } from "../middleware/security";
 
 const router = Router();
 
-/* -------------------- Public Authentication Routes -------------------- */
+/* -------------------------------------------------------------------------- */
+/*                         Public Authentication Routes                       */
+/* -------------------------------------------------------------------------- */
 
-// Rate-limited authentication endpoints.
+// Apply rate limiting to authentication endpoints to mitigate brute-force
+// attacks and reduce abuse.
 router.post("/register", authLimiter, ctrl.register);
 router.post("/login", authLimiter, ctrl.login);
 router.post("/refresh", authLimiter, ctrl.refresh);
 router.post("/logout", ctrl.logout);
 
+// Apply stricter rate limits to password recovery endpoints.
 router.post(
     "/forgot-password",
     sensitiveLimiter,
-    ctrl.forgotPassword
+    ctrl.forgotPassword,
 );
 
 router.post(
     "/reset-password",
     sensitiveLimiter,
-    ctrl.resetPassword
+    ctrl.resetPassword,
 );
 
 router.post(
     "/resend-password-reset",
     sensitiveLimiter,
-    ctrl.resendPasswordReset
+    ctrl.resendPasswordReset,
 );
 
-// Email verification requires authentication and is rate-limited.
+// Email verification endpoints require authentication to prevent unauthenticated
+// users from manipulating verification flows. Disable caching to avoid storing
+// sensitive verification responses.
 router.post(
     "/verify-email",
     noCache,
     requireAuth,
     sensitiveLimiter,
-    ctrl.verifyEmail
+    ctrl.verifyEmail,
 );
 
 router.post(
@@ -49,11 +55,14 @@ router.post(
     noCache,
     requireAuth,
     sensitiveLimiter,
-    ctrl.resendVerification
+    ctrl.resendVerification,
 );
 
-/* -------------------- Protected Authentication Routes -------------------- */
+/* -------------------------------------------------------------------------- */
+/*                       Protected Authentication Routes                      */
+/* -------------------------------------------------------------------------- */
 
+// Require an authenticated session before accessing account or session data.
 router.get("/me", requireAuth, ctrl.me);
 router.post("/logout-all", requireAuth, ctrl.logoutAll);
 router.get("/sessions", requireAuth, ctrl.listSessions);
