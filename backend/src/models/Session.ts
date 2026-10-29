@@ -5,7 +5,8 @@ import {
     Types
 } from "mongoose";
 
-/* ---------------- sub-documents ---------------- */
+/* -------------------- Subdocuments -------------------- */
+
 export interface IDeviceInfo {
     userAgent: string;
     deviceType: "desktop" | "mobile" | "tablet" | "bot" | "unknown";
@@ -38,12 +39,13 @@ export interface IClientIdentifiers {
     deviceId?: string;
 }
 
-/* ---------------- main ---------------- */
+/* -------------------- Main Session Interface -------------------- */
+
 export interface ISession {
     user: Types.ObjectId;
-    sessionId: string;       // random id, in JWT as `sid`
-    deviceHash: string;      // sha256(userAgent + fingerprint) — for dedup
-    token: string;           // access token
+    sessionId: string; // Random session identifier included in the JWT as `sid`.
+    deviceHash: string; // SHA-256 hash of the user agent and fingerprint, used for deduplication.
+    token: string; // Access token.
     refreshToken?: string;
 
     device: IDeviceInfo;
@@ -64,10 +66,14 @@ export interface ISessionMethods {
 
 type SessionModel = Model<ISession, {}, ISessionMethods>;
 
-/* ---------------- sub-schemas ---------------- */
+/* -------------------- Subschemas -------------------- */
+
 const deviceSchema = new Schema<IDeviceInfo>(
     {
-        userAgent: { type: String, required: true },
+        userAgent: {
+            type: String,
+            required: true
+        },
         deviceType: {
             type: String,
             enum: ["desktop", "mobile", "tablet", "bot", "unknown"],
@@ -80,15 +86,24 @@ const deviceSchema = new Schema<IDeviceInfo>(
         browser: String,
         browserVersion: String,
         engine: String,
-        isBot: { type: Boolean, default: false }
+        isBot: {
+            type: Boolean,
+            default: false
+        }
     },
     { _id: false }
 );
 
 const locationSchema = new Schema<ILocationInfo>(
     {
-        ip: { type: String, required: true },
-        ipVersion: { type: Number, enum: [4, 6] },
+        ip: {
+            type: String,
+            required: true
+        },
+        ipVersion: {
+            type: Number,
+            enum: [4, 6]
+        },
         country: String,
         countryCode: String,
         region: String,
@@ -96,24 +111,33 @@ const locationSchema = new Schema<ILocationInfo>(
         latitude: Number,
         longitude: Number,
         timezone: String,
-        isp: String,
+        isp: String
     },
     { _id: false }
 );
 
 const clientSchema = new Schema<IClientIdentifiers>(
     {
-        macAddress: { type: String, default: null },
+        macAddress: {
+            type: String,
+            default: null
+        },
         fingerprint: String,
         deviceId: String
     },
     { _id: false }
 );
 
-/* ---------------- session schema ---------------- */
+/* -------------------- Session Schema -------------------- */
+
 const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
     {
-        user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true
+        },
 
         sessionId: {
             type: String,
@@ -128,33 +152,64 @@ const sessionSchema = new Schema<ISession, SessionModel, ISessionMethods>(
             index: true
         },
 
-        token: { type: String, required: true, unique: true, index: true },
-        refreshToken: { type: String, select: false },
+        token: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true
+        },
+        refreshToken: {
+            type: String,
+            select: false
+        },
 
-        device: { type: deviceSchema, required: true },
-        location: { type: locationSchema, required: true },
-        client: { type: clientSchema, default: () => ({}) },
+        device: {
+            type: deviceSchema,
+            required: true
+        },
+        location: {
+            type: locationSchema,
+            required: true
+        },
+        client: {
+            type: clientSchema,
+            default: () => ({})
+        },
 
-        loginAt: { type: Date, default: () => new Date() },
-        lastActiveAt: { type: Date, default: () => new Date() },
-        expiresAt: { type: Date, required: true }
+        loginAt: {
+            type: Date,
+            default: () => new Date()
+        },
+        lastActiveAt: {
+            type: Date,
+            default: () => new Date()
+        },
+        expiresAt: {
+            type: Date,
+            required: true
+        }
     },
     { timestamps: true }
 );
 
-/* ---------------- indexes ---------------- */
-// برای پیدا کردن سریع سشن فعلی کاربر روی یه دستگاه
+/* -------------------- Indexes -------------------- */
+
+// Supports efficient lookup of a user's active sessions by device.
 sessionSchema.index({ user: 1, deviceHash: 1, expiresAt: 1 });
 
-// TTL: پاک‌سازی خودکار سشن‌های منقضی
+// Automatically removes expired sessions using MongoDB's TTL mechanism.
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-/* ---------------- methods ---------------- */
+/* -------------------- Instance Methods -------------------- */
+
 sessionSchema.method("isExpired", function () {
     return this.expiresAt <= new Date();
 });
 
-export const Session = model<ISession, SessionModel>("Session", sessionSchema);
+export const Session = model<ISession, SessionModel>(
+    "Session",
+    sessionSchema
+);
 
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
