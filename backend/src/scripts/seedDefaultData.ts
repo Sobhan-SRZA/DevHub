@@ -1,12 +1,14 @@
+
 import { TagType } from "../models/TagType";
 import { Tag } from "../models/Tag";
 
-/* ==================================================================
-   کتگوری‌های پیش‌فرض
-   ================================================================== */
+/* ==========================================================================
+ * Default Tag Categories
+ * ========================================================================== */
+
 const DEFAULT_TAG_TYPES = [
     {
-        name: "زبان برنامه‌نویسی",
+        name: "Programming Language",
         slug: "programming-language",
         color: "#6ebbff",
         icon: "💻",
@@ -15,11 +17,11 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "JavaScript", "TypeScript", "Python", "Go", "Rust", "Java",
             "C#", "C++", "C", "PHP", "Ruby", "Swift", "Kotlin", "Dart",
-            "Elixir", "Scala", "Haskell", "Lua", "R", "Perl"
-        ]
+            "Elixir", "Scala", "Haskell", "Lua", "R", "Perl",
+        ],
     },
     {
-        name: "فریمورک",
+        name: "Framework",
         slug: "framework",
         color: "#a78bfa",
         icon: "🧩",
@@ -29,11 +31,11 @@ const DEFAULT_TAG_TYPES = [
             "React", "Vue", "Angular", "Svelte", "Next.js", "Nuxt",
             "Remix", "Astro", "Express", "NestJS", "Fastify", "Koa",
             "Django", "Flask", "FastAPI", "Laravel", "Rails", "Spring",
-            "Gin", "Fiber", "Echo", "Actix", "Rocket"
-        ]
+            "Gin", "Fiber", "Echo", "Actix", "Rocket",
+        ],
     },
     {
-        name: "دیتابیس",
+        name: "Database",
         slug: "database",
         color: "#34d399",
         icon: "🗄️",
@@ -42,11 +44,11 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "MongoDB", "PostgreSQL", "MySQL", "SQLite", "Redis",
             "Cassandra", "DynamoDB", "Elasticsearch", "Neo4j",
-            "MariaDB", "Oracle", "SQL Server", "CouchDB", "Firebase"
-        ]
+            "MariaDB", "Oracle", "SQL Server", "CouchDB", "Firebase",
+        ],
     },
     {
-        name: "سئو",
+        name: "SEO",
         slug: "seo",
         color: "#f59e0b",
         icon: "🔍",
@@ -54,11 +56,11 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "SEO", "Google Analytics", "Search Console", "Sitemap",
-            "Meta Tags", "Structured Data", "Core Web Vitals", "Backlinks"
-        ]
+            "Meta Tags", "Structured Data", "Core Web Vitals", "Backlinks",
+        ],
     },
     {
-        name: "دواپس",
+        name: "DevOps",
         slug: "devops",
         color: "#ef4444",
         icon: "⚙️",
@@ -67,11 +69,11 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "Docker", "Kubernetes", "CI/CD", "GitHub Actions", "GitLab CI",
             "Jenkins", "Terraform", "Ansible", "Nginx", "Apache",
-            "AWS", "GCP", "Azure", "DigitalOcean", "Cloudflare"
-        ]
+            "AWS", "GCP", "Azure", "DigitalOcean", "Cloudflare",
+        ],
     },
     {
-        name: "هوش مصنوعی",
+        name: "Artificial Intelligence",
         slug: "ai",
         color: "#ec4899",
         icon: "🤖",
@@ -80,11 +82,11 @@ const DEFAULT_TAG_TYPES = [
         tags: [
             "Machine Learning", "Deep Learning", "NLP", "Computer Vision",
             "TensorFlow", "PyTorch", "OpenAI", "LangChain", "LLM",
-            "Stable Diffusion", "Hugging Face"
-        ]
+            "Stable Diffusion", "Hugging Face",
+        ],
     },
     {
-        name: "موبایل",
+        name: "Mobile Development",
         slug: "mobile",
         color: "#06b6d4",
         icon: "📱",
@@ -92,11 +94,11 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "React Native", "Flutter", "Ionic", "Capacitor",
-            "Android", "iOS", "Kotlin Multiplatform", "Expo"
-        ]
+            "Android", "iOS", "Kotlin Multiplatform", "Expo",
+        ],
     },
     {
-        name: "امنیت",
+        name: "Security",
         slug: "security",
         color: "#dc2626",
         icon: "🛡️",
@@ -104,11 +106,11 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "JWT", "OAuth", "Authentication", "Encryption", "HTTPS",
-            "CORS", "XSS", "CSRF", "SQL Injection", "Penetration Testing"
-        ]
+            "CORS", "XSS", "CSRF", "SQL Injection", "Penetration Testing",
+        ],
     },
     {
-        name: "دیزاین",
+        name: "Design",
         slug: "design",
         color: "#f472b6",
         icon: "🎨",
@@ -116,11 +118,11 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "UI", "UX", "Figma", "Tailwind CSS", "Bootstrap",
-            "Material UI", "Ant Design", "Sass", "CSS", "Responsive"
-        ]
+            "Material UI", "Ant Design", "Sass", "CSS", "Responsive Design",
+        ],
     },
     {
-        name: "عمومی",
+        name: "General",
         slug: "general",
         color: "#94a3b8",
         icon: "🌐",
@@ -128,14 +130,22 @@ const DEFAULT_TAG_TYPES = [
         allowUserTags: true,
         tags: [
             "Open Source", "API", "REST", "GraphQL", "WebSocket",
-            "CLI", "Library", "Plugin", "Template", "Boilerplate"
-        ]
+            "CLI", "Library", "Plugin", "Template", "Boilerplate",
+        ],
     },
 ];
 
-/* ==================================================================
-   Helper — slugify
-   ================================================================== */
+/* ==========================================================================
+ * Utility Functions
+ * ========================================================================== */
+
+/**
+ * Converts a string into a normalized URL-friendly slug.
+ *
+ * @param input - The string to convert.
+ * @returns A lowercase slug containing alphanumeric characters and hyphens,
+ *          limited to 40 characters.
+ */
 function slugify(input: string): string {
     return input
         .trim()
@@ -146,18 +156,27 @@ function slugify(input: string): string {
         .slice(0, 40);
 }
 
-/* ==================================================================
-   Seed
-   ================================================================== */
+/* ==========================================================================
+ * Default Tag Seeding
+ * ========================================================================== */
+
+/**
+ * Seeds the database with default tag categories and their associated tags.
+ *
+ * Existing categories and tags are preserved to prevent duplicate records.
+ *
+ * @returns The number of newly created categories and tags.
+ */
 export async function seedDefaultTags() {
-    console.log("🌱 Seeding default tags & categories...");
+    console.log("Seeding default tag categories and tags...");
+
     let typesCreated = 0;
     let tagsCreated = 0;
 
     for (const typeData of DEFAULT_TAG_TYPES) {
         const { tags: tagNames, ...typeFields } = typeData;
 
-        /* ---------- کتگوری ---------- */
+        // Find an existing category or create a new system-managed category.
         let type = await TagType.findOne({ slug: typeFields.slug });
 
         if (!type) {
@@ -165,18 +184,24 @@ export async function seedDefaultTags() {
                 ...typeFields,
                 isSystem: true,
                 isApproved: true,
-                createdBy: null
+                createdBy: null,
             });
 
             typesCreated++;
         }
 
-        /* ---------- تگ‌ها ---------- */
+        // Create only tags that do not already exist in this category.
         for (const tagName of tagNames) {
             const slug = slugify(tagName);
-            const exists = await Tag.findOne({ slug, type: type._id });
-            if (exists)
-                 continue;
+
+            const existingTag = await Tag.findOne({
+                slug,
+                type: type._id,
+            });
+
+            if (existingTag) {
+                continue;
+            }
 
             await Tag.create({
                 name: tagName,
@@ -186,15 +211,21 @@ export async function seedDefaultTags() {
                 isSystem: true,
                 isApproved: true,
                 createdBy: null,
-                usageCount: 0
+                usageCount: 0,
             });
-            
+
             tagsCreated++;
         }
     }
 
-    console.log(`✅ Seeded ${typesCreated} categories and ${tagsCreated} tags`);
-    return { typesCreated, tagsCreated };
+    console.log(
+        `Default tag seeding completed: ${typesCreated} categories and ${tagsCreated} tags created.`
+    );
+
+    return {
+        typesCreated,
+        tagsCreated,
+    };
 }
 
 /**
