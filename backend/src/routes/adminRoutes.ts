@@ -1,6 +1,6 @@
-import { requireAdmin } from "../middleware/roles";
-import { requireAuth } from "../middleware/auth";
 import { Router } from "express";
+import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/roles";
 import * as ctrl from "../controllers/adminController";
 
 const router = Router();
@@ -8,7 +8,7 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireAdmin);
 
-/* ---------- کاربران ---------- */
+// User management
 router.get("/users", ctrl.listUsers);
 router.post("/users/:id/role", ctrl.changeRole);
 router.post("/users/:id/ban", ctrl.toggleBan);
