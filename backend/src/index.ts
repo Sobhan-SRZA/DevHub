@@ -1,3 +1,4 @@
+
 import {
     cleanupVerificationCodes,
     syncAllIndexes
@@ -12,74 +13,86 @@ import { logger } from "./services/logger";
 import app from "./app";
 
 /* ============================================================
-   Process-level guards
+   Process-Level Error Handling
    ============================================================ */
 
-// 1. Promise های بدون catch
+// 1. Handle unhandled promise rejections.
 process.on("unhandledRejection", (reason, promise) => {
     console.error("🔴 [UNHANDLED REJECTION]");
     console.error("   Reason :", reason);
     console.error("   Promise:", promise);
-    // ⚠️ پروسه رو نمی‌کُشیم — فقط لاگ
+
+    // Log the rejection without terminating the process.
 });
 
-// 2. خطاهای سنکرون خارج از try/catch
+// 2. Handle uncaught synchronous exceptions.
 process.on("uncaughtException", (err) => {
     console.error("🔴 [UNCAUGHT EXCEPTION]");
     console.error(err);
 
-    // در پروداکشن، معمولاً بهتره ری‌استارت بشه
-    // چون state برنامه قابل اعتماد نیست
+    // In production, terminate the process because the application
+    // state may no longer be reliable. Process managers such as PM2
+    // or Docker can then restart the application.
     if (process.env.NODE_ENV === "production") {
-        // PM2 یا Docker خودش ری‌استارت می‌کنه
         process.exit(1);
     }
 });
 
-// 3. بستن نرم‌افزاری (optional)
+// 3. Handle graceful termination requests.
 process.on("SIGTERM", () => {
-    console.log("👋 SIGTERM — shutting down...");
-    
+    console.log("👋 SIGTERM received. Shutting down...");
+
     mailer.shutdown();
     process.exit(0);
 });
 
 /* ============================================================
-   Start
+   Server Initialization
    ============================================================ */
+
 const startServer = async () => {
     logger.info("🚀 Server starting...");
 
     try {
+        // Establish the database connection.
         await connectDB();
 
-        // verify SMTP (فقط اگه mode=smtp)
+        // Verify the mail service configuration at startup.
+        // This check is relevant when the SMTP transport is enabled.
         await mailer.verifyOnStartup();
 
-        // await cleanupOldVerificationCodes()
+        // Perform optional verification-code cleanup tasks.
+        // await cleanupOldVerificationCodes();
         // await cleanupVerificationCodes();
+
+        // Ensure the default developer account and database indexes exist.
         await ensureDeveloperExists();
         await syncAllIndexes();
+
+        // Seed the default tags if they are missing.
         await seedDefaultTags();
 
+        // Start accepting incoming HTTP requests.
         const server = app.listen(config.port, () => {
-            console.log(`🚀 Server running on http://localhost:${config.port}`);
+            console.log(
+                `🚀 Server running at http://localhost:${config.port}`
+            );
         });
 
-        // مدیریت خطاهای server (مثل EADDRINUSE)
+        // Handle HTTP server errors, including port conflicts.
         server.on("error", (err: any) => {
             if (err.code === "EADDRINUSE") {
-                console.error(`❌ پورت ${config.port} در حال استفاده است`);
+                console.error(
+                    `❌ Port ${config.port} is already in use.`
+                );
 
                 process.exit(1);
             }
 
-            console.error("🔴 Server error:", err);
+            console.error("🔴 HTTP server error:", err);
         });
-    }
-
-    catch (err) {
-        console.error("❌ Failed to start server:", err);
+    } catch (err) {
+        console.error("❌ Failed to start the server:", err);
         process.exit(1);
     }
 };
