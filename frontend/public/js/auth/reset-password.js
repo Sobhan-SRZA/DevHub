@@ -1,10 +1,14 @@
 /* ============================================================
    Reset Password Page
+   ============================================================
+   Handles the password reset flow: restores the reset context
+   from session storage, validates the OTP and new password,
+   submits the reset request, and manages the resend cooldown.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const $ = (s) => document.querySelector(s);
-    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
     const form = $('#resetForm');
     const emailDisplay = $('#emailDisplay');
@@ -16,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ============================================================
        State
+       ============================================================
+       The reset context (token + email + expiry) is restored from
+       session storage. `resendCooldown` tracks the remaining seconds
+       before another code may be requested.
        ============================================================ */
     const STORAGE_KEY = 'password_reset_state';
     let state = null;
@@ -23,47 +31,64 @@ document.addEventListener('DOMContentLoaded', () => {
     let resendTimer = null;
 
     /* ============================================================
-       Load / save / clear state
+       State Persistence
        ============================================================ */
+
+    /**
+     * Restore the reset state from session storage. Returns `null`
+     * when the stored state is missing, malformed, or expired.
+     */
     function loadState() {
         try {
             const raw = sessionStorage.getItem(STORAGE_KEY);
             if (!raw) return null;
+
             const parsed = JSON.parse(raw);
             if (!parsed?.resetToken || !parsed?.email) return null;
 
-            // چک انقضا
+            // Discard the stored state if it has already expired.
             if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
                 sessionStorage.removeItem(STORAGE_KEY);
                 return null;
             }
+
             return parsed;
         } catch {
             return null;
         }
     }
 
+    /* Remove the reset state from session storage. */
     function clearState() {
         try {
             sessionStorage.removeItem(STORAGE_KEY);
-        } catch { }
+        } catch { /* Ignore storage errors — state is discarded regardless. */ }
     }
 
+    /**
+     * Abort the reset flow, clear the stored state, and redirect the
+     * user back to the forgot-password page.
+     */
     function redirectBack() {
         clearState();
+
         if (typeof openDialogError === 'function') {
             openDialogError(
-                'لینک منقضی شده',
-                'لطفاً دوباره از صفحه فراموشی رمز شروع کنید'
+                'Link expired',
+                'Please start again from the forgot-password page.'
             );
         }
+
         setTimeout(() => {
             location.href = '/auth/forgot-password';
         }, 2500);
     }
 
     /* ============================================================
-       API
+       API Helper
+       ============================================================
+       POST a JSON payload and normalise failures into Error
+       objects that preserve the server payload and status.
        ============================================================ */
     async function api(path, body) {
         const res = await fetch(path, {
@@ -72,18 +97,26 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
+
         let data = null;
-        try { data = await res.json(); } catch { }
+        try {
+            data = await res.json();
+        } catch { /* Ignore JSON parse failures. */ }
+
         if (!res.ok) {
-            const err = new Error(data?.message || 'خطا');
+            const err = new Error(data?.message || 'Error');
             Object.assign(err, data || {}, { status: res.status });
             throw err;
         }
+
         return data;
     }
 
     /* ============================================================
-       Password strength (same as settings)
+       Password Strength Evaluation
+       ============================================================
+       Applies the strength checklist, updates the indicator bars
+       and label, and returns `true` only when every rule passes.
        ============================================================ */
     function evaluatePassword(pw) {
         const rules = {
@@ -108,30 +141,35 @@ document.addEventListener('DOMContentLoaded', () => {
             label.textContent = '';
         } else if (score <= 1) {
             strength.classList.add('weak');
-            label.textContent = 'ضعیف';
+            label.textContent = 'Weak';
         } else if (score === 2) {
             strength.classList.add('fair');
-            label.textContent = 'متوسط';
+            label.textContent = 'Fair';
         } else if (score === 3) {
             strength.classList.add('good');
-            label.textContent = 'خوب';
+            label.textContent = 'Good';
         } else {
             strength.classList.add('strong');
-            label.textContent = 'قوی';
+            label.textContent = 'Strong';
         }
 
         return score === 4;
     }
 
+    /* Show or clear the inline mismatch message between the new
+       password and its confirmation. */
     function checkMatch() {
         const errEl = $('#matchError');
+
         if (!confirmInput.value) {
             errEl.textContent = '';
             errEl.classList.remove('visible');
+
             return;
         }
+
         if (newPasswordInput.value !== confirmInput.value) {
-            errEl.textContent = 'رمز و تکرار آن یکسان نیستند';
+            errEl.textContent = 'The password and its confirmation do not match.';
             errEl.classList.add('visible');
         } else {
             errEl.textContent = '';
@@ -147,28 +185,40 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmInput.addEventListener('input', checkMatch);
 
     /* ============================================================
-       Password visibility toggle
+       Password Visibility Toggle
+       ============================================================
+       Switches the referenced input between `password` and `text`,
+       and updates the toggle's ARIA state.
        ============================================================ */
     $$('.toggle-pass').forEach((btn) => {
         btn.addEventListener('click', () => {
             const input = document.getElementById(btn.dataset.target);
             if (!input) return;
+
             const isPwd = input.type === 'password';
             input.type = isPwd ? 'text' : 'password';
+
             btn.classList.toggle('active', isPwd);
-            btn.setAttribute('aria-label', isPwd ? 'پنهان کردن رمز' : 'نمایش رمز');
+            btn.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
         });
     });
 
     /* ============================================================
-       OTP input — auto-submit on 6 digits
+       OTP Input
+       ============================================================
+       Restricts the verification code field to digits and caps it
+       at six characters.
        ============================================================ */
     codeInput.addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
     });
 
     /* ============================================================
-       Submit
+       Submit Handler
+       ============================================================
+       Validates the OTP and new password, then submits the reset
+       request. On success, clears the stored state and redirects
+       to the login page.
        ============================================================ */
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -184,16 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
         FormKit.clearAllErrors(form);
 
         const errors = {};
+
         if (!/^\d{6}$/.test(code)) {
-            errors.code = 'کد باید ۶ رقم باشد';
+            errors.code = 'The code must be exactly 6 digits.';
         }
+
         if (!newPassword || newPassword.length < 8) {
-            errors.newPassword = 'رمز جدید باید حداقل ۸ کاراکتر باشد';
+            errors.newPassword = 'The new password must be at least 8 characters long.';
         } else if (!evaluatePassword(newPassword)) {
-            errors.newPassword = 'رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد';
+            errors.newPassword = 'The password must include a lowercase letter, an uppercase letter, and a digit.';
         }
+
         if (newPassword !== confirmPassword) {
-            errors.confirmPassword = 'رمز و تکرار آن یکسان نیستند';
+            errors.confirmPassword = 'The password and its confirmation do not match.';
         }
 
         if (Object.keys(errors).length) {
@@ -201,12 +254,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const input = form.querySelector(`[name="${field}"]`);
                 if (input) FormKit.showFieldError(input, msg);
             }
+
             return;
         }
 
         submitBtn.disabled = true;
         const original = submitBtn.textContent;
-        submitBtn.textContent = 'در حال تغییر…';
+        submitBtn.textContent = 'Changing…';
 
         try {
             const data = await api('/api/auth/reset-password', {
@@ -218,13 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             clearState();
 
-            toast('رمز عبور با موفقیت تغییر کرد', 'success');
+            toast('Your password has been changed successfully.', 'success');
 
-            // دیالوگ موفقیت + redirect به login
+            // Present a success dialog before redirecting to sign-in.
             if (typeof openDialogError === 'function') {
                 openDialogError(
-                    'موفق',
-                    data.message || 'اکنون می‌توانید با رمز جدید وارد شوید'
+                    'Success',
+                    data.message || 'You can now sign in with your new password.'
                 );
             }
 
@@ -232,8 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 location.href = '/auth/login';
             }, 2000);
         } catch (err) {
+            // An expired or invalid token requires restarting the flow.
             if (err.status === 401) {
-                // توکن منقضی — دوباره شروع کن
                 return redirectBack();
             }
 
@@ -250,7 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 FormKit.showFieldError(codeInput, err.message);
             }
-            toast(err.message || 'خطا در تغییر رمز', 'error');
+
+            toast(err.message || 'Failed to change the password.', 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = original;
@@ -258,36 +313,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ============================================================
-       Resend
+       Resend Code
+       ============================================================
+       Requests a fresh verification code, then starts a cooldown
+       to prevent repeated requests.
        ============================================================ */
     resendBtn.addEventListener('click', async () => {
         if (resendCooldown > 0 || !state?.resetToken) return;
 
         resendBtn.disabled = true;
         const original = resendBtn.textContent;
-        resendBtn.textContent = 'در حال ارسال…';
+        resendBtn.textContent = 'Sending…';
 
         try {
             const data = await api('/api/auth/resend-password-reset', {
                 resetToken: state.resetToken,
             });
 
-            toast(data.message || 'کد جدید ارسال شد', 'success');
+            toast(data.message || 'A new code has been sent.', 'success');
             startResendCooldown(60);
             codeInput.focus();
         } catch (err) {
             if (err.status === 401) {
                 return redirectBack();
             }
-            toast(err.message || 'خطا در ارسال', 'error');
+
+            toast(err.message || 'Failed to send the code.', 'error');
         } finally {
             resendBtn.disabled = false;
             resendBtn.textContent = original;
         }
     });
 
+    /**
+     * Begin a countdown that disables the resend button and shows
+     * the remaining seconds until another request is permitted.
+     */
     function startResendCooldown(seconds) {
         resendCooldown = seconds;
+
         const timer = $('#resendTimer');
         const countdownEl = $('#resendCountdown');
 
@@ -298,12 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tick = () => {
             countdownEl.textContent = resendCooldown;
+
             if (resendCooldown <= 0) {
                 clearInterval(resendTimer);
                 timer.style.display = 'none';
                 resendBtn.disabled = false;
+
                 return;
             }
+
             resendCooldown--;
         };
 
@@ -312,13 +379,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ============================================================
-       Init
+       Initialization
+       ============================================================
+       Restore the reset state. Redirect away when it is missing
+       or expired; otherwise populate the UI and start the cooldown.
        ============================================================ */
     (function init() {
         state = loadState();
 
         if (!state) {
             redirectBack();
+
             return;
         }
 
