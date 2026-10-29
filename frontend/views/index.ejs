@@ -1,89 +1,94 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
   <%- include("components/seo-head", {
-    title: "کشف پروژه‌های متن‌باز",
-    description: "DevHub — پلتفرم کشف، نقد و اشتراک‌گذاری پروژه‌های متن‌باز. محبوب‌ترین، تازه‌ترین و بهترین پروژه‌های برنامه‌نویسی ساخته‌شده توسط توسعه‌دهندگان ایرانی و جهانی را پیدا کنید.",
-    keywords: "پروژه متن‌باز, اپن سورس, DevHub, کشف پروژه, برنامه‌نویسی, GitHub, Product Hunt",
-    canonicalPath: "/",
-    ogType: "website",
-    extraStyles: ["/styles/dialog.css", "/styles/explore.css"],
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "DevHub",
-      "description": "پلتفرم کشف و بررسی پروژه‌های متن‌باز",
-      "inLanguage": "fa-IR",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "/explore?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-  }) %>
+        title: "Discover Open-Source Projects",
+        description: "DevHub is a platform for discovering, reviewing, and sharing open-source projects. Explore the most popular, newest, and highest-rated software projects built by developers around the world.",
+        keywords: "open-source projects, open source, DevHub, project discovery, software development, GitHub, Product Hunt",
+        canonicalPath: "/",
+        ogType: "website",
+        extraStyles: ["/styles/dialog.css", "/styles/explore.css"],
+        jsonLd: {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "DevHub",
+            "description": "A platform for discovering and reviewing open-source projects.",
+            "inLanguage": "en",
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": "/explore?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+            }
+        }
+    }) %>
 </head>
 
 <body>
   <%- include("components/header") %>
   <%- include("components/dialogError") %>
 
-  <!-- ============ HERO ============ -->
+  <!-- ============ HERO SECTION ============ -->
   <section class="home-hero">
     <div class="home-hero__glow"></div>
 
     <div class="home-hero__inner">
       <h1 class="home-hero__title">
-        پروژه‌های متن‌باز را کشف کنید
+        Discover Open-Source Projects
       </h1>
+
       <p class="home-hero__sub">
-        محبوب‌ترین، تازه‌ترین و بهترین پروژه‌های برنامه‌نویسی —
-        ساخته‌شده توسط توسعه‌دهندگان ایرانی و جهانی
+        Explore the most popular, newest, and best software projects
+        built by developers around the world.
       </p>
 
       <div class="home-hero__stats" id="heroStats">
         <div class="hero-stat">
           <span class="hero-stat__value" id="statProjects">—</span>
-          <span class="hero-stat__label">پروژه</span>
+          <span class="hero-stat__label">Projects</span>
         </div>
+
         <div class="hero-stat">
           <span class="hero-stat__value" id="statUsers">—</span>
-          <span class="hero-stat__label">کاربر</span>
+          <span class="hero-stat__label">Users</span>
         </div>
+
         <div class="hero-stat">
           <span class="hero-stat__value" id="statTags">—</span>
-          <span class="hero-stat__label">تگ</span>
+          <span class="hero-stat__label">Tags</span>
         </div>
+
         <div class="hero-stat">
           <span class="hero-stat__value" id="statDownloads">—</span>
-          <span class="hero-stat__label">دانلود</span>
+          <span class="hero-stat__label">Downloads</span>
         </div>
       </div>
 
       <div class="home-hero__cta">
         <a href="/explore" class="btn-primary">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          کاوش پروژه‌ها
+          Explore Projects
         </a>
+
         <a href="/dashboard/projects" class="btn-outline">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          پروژه خودت را بساز
+          Create Your Project
         </a>
       </div>
     </div>
   </section>
 
-  <!-- ============ SECTIONS ============ -->
+  <!-- ============ MAIN CONTENT ============ -->
   <main class="home-main" id="homeMain">
     <div class="home-loading">
       <div class="home-loading__spinner"></div>
-      <p>در حال بارگذاری…</p>
+      <p>Loading projects...</p>
     </div>
   </main>
 
