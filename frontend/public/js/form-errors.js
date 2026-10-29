@@ -1,5 +1,9 @@
 /* ============================================================
-   FormKit — مدیریت خطای فرم (نسخه مقاوم)
+   FormKit — Resilient Form Error Management
+   ============================================================
+   Centralised utility for validating forms, displaying field-level
+   and form-level errors, presenting server error payloads, and
+   managing submission loading state. Exposed as `window.FormKit`.
    ============================================================ */
 
 (function (global) {
@@ -7,13 +11,20 @@
 
     /* --------------------------------------------------------
        DEBUG
+       --------------------------------------------------------
+       Verbose logging is enabled only on local development hosts.
        -------------------------------------------------------- */
     const DEBUG = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const log = (...args) => DEBUG && console.log("🟦 [FormKit]", ...args);
     const warn = (...args) => console.warn("🟨 [FormKit]", ...args);
 
     /* --------------------------------------------------------
-       Safe global access (toast, dialog functions)
+       Safe Global Accessors
+       --------------------------------------------------------
+       Gracefully invoke optional global helpers (toast, dialog,
+       confirm) when available, falling back to native browser
+       primitives otherwise. Prevents a missing helper from
+       breaking the error pipeline.
        -------------------------------------------------------- */
     function safeToast(message, type = "info") {
         if (typeof global.toast === "function") {
@@ -28,7 +39,7 @@
             }
         }
 
-        // fallback
+        // Fallback to the console when no toast helper is present.
         if (type === "error")
             console.error("[toast]", message);
 
@@ -64,8 +75,8 @@
             }
         }
 
-        // fallback به confirm مرورگر
-        return Promise.resolve(global.confirm(opts.message || "مطمئنید؟"));
+        // Fall back to the native browser confirmation dialog.
+        return Promise.resolve(global.confirm(opts.message || "Are you sure?"));
     }
 
     /* --------------------------------------------------------
@@ -91,6 +102,7 @@
         INTERNAL_ERROR: "INTERNAL_ERROR"
     };
 
+    /* Maps server error codes to the form field that should own them. */
     const CODE_TO_FIELD = {
         [ERROR_CODES.USERNAME_TAKEN]: "username",
         [ERROR_CODES.EMAIL_TAKEN]: "email",
@@ -110,24 +122,26 @@
     const qa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
     /**
-     * فیلد wrapper رو پیدا می‌کنه.
-     * - اول .field رو نگاه می‌کنه
-     * - اگه نبود، والد مستقیم که input رو در بر می‌گیره
-     * - اگه input داخل .password-wrap بود، باید بالاتر بره
+     * Resolve the field wrapper element that owns the given input.
+     *
+     * Resolution order:
+     *   1. The nearest `.field` ancestor.
+     *   2. The parent of a `.password-wrap` (common when the input
+     *      is paired with a visibility toggle button).
+     *   3. The input's direct parent as a final fallback.
      */
     function findFieldWrapper(input) {
         if (!input)
             return null;
 
-        // 1. .field مستقیم
+        // 1. Direct `.field` ancestor.
         let wrapper = input.closest(".field");
         if (wrapper)
             return wrapper;
 
-        // 2. .password-wrap (input کنار دکمه toggle)
+        // 2. `.password-wrap` — the field wrapper lives one level up.
         const pwdWrap = input.closest(".password-wrap");
         if (pwdWrap && pwdWrap.parentElement) {
-            // ببین والد والدش .field هست؟
             const above = pwdWrap.parentElement;
             if (above.classList.contains("field"))
                 return above;
@@ -135,16 +149,18 @@
             return above;
         }
 
-        // 3. fallback: والد مستقیم
+        // 3. Fallback: the input's direct parent.
         return input.parentElement;
     }
 
+    /* Collect all enabled, non-hidden input controls within a form. */
     function getInputs(form) {
         return qa("input[name], textarea[name], select[name]", form).filter(
             (el) => el.type !== "hidden" && !el.disabled
         );
     }
 
+    /* Ensure the field wrapper owns an error slot element, creating one if absent. */
     function ensureErrorSlot(field) {
         if (!field)
             return null;
@@ -164,8 +180,14 @@
     }
 
     /* --------------------------------------------------------
-       Field error display
+       Field Error Display
        -------------------------------------------------------- */
+
+    /**
+     * Mark the given input's field wrapper as invalid and render the
+     * supplied message. Also triggers a shake animation and scrolls
+     * the field into view once per validation cycle.
+     */
     function showFieldError(input, message) {
         if (!input)
             return;
@@ -183,25 +205,25 @@
 
         const slot = ensureErrorSlot(field);
         if (slot) {
-            slot.textContent = message || "این فیلد نامعتبر است";
-            slot.style.display = "";        // reset inline style if any
-            slot.style.maxHeight = "";      // reset
-            slot.style.opacity = "";        // reset
+            slot.textContent = message || "This field is invalid";
+            slot.style.display = "";        // Reset any inline style.
+            slot.style.maxHeight = "";      // Reset any inline style.
+            slot.style.opacity = "";        // Reset any inline style.
         }
 
         input.setAttribute("aria-invalid", "true");
 
-        // حذف انیمیشن بعد از اتمام
+        // Remove the shake class when the animation ends.
         const onEnd = () => field.classList.remove("shake");
         field.addEventListener("animationend", onEnd, { once: true });
 
-        // اگه animationend نرسید (CSS نبود)، بعد 500ms حذف کن
+        // Safety net in case `animationend` never fires (no CSS animation).
         setTimeout(() => {
             field.classList.remove("shake");
             field.removeEventListener("animationend", onEnd);
         }, 600);
 
-        // scroll
+        // Scroll the invalid field into view once per validation cycle.
         if (!field.dataset.scrolled) {
             field.dataset.scrolled = "1";
             try {
@@ -214,6 +236,7 @@
         }
     }
 
+    /* Clear the error state and message associated with a single input. */
     function clearFieldError(input) {
         const field = findFieldWrapper(input);
         if (!field)
@@ -228,6 +251,7 @@
             slot.textContent = "";
     }
 
+    /* Clear every field-level error and the form-level banner. */
     function clearAllErrors(form) {
         getInputs(form).forEach(clearFieldError);
         form.querySelectorAll(".has-error, .shake").forEach((el) => {
@@ -244,8 +268,13 @@
     }
 
     /* --------------------------------------------------------
-       Form-level banner
+       Form-Level Banner
        -------------------------------------------------------- */
+
+    /**
+     * Render a form-level error banner. The banner element is created
+     * lazily and inserted as the first child of the form.
+     */
     function showFormBanner(form, message) {
         let banner = form.querySelector(".form-error-banner");
         if (!banner) {
@@ -263,8 +292,18 @@
     }
 
     /* --------------------------------------------------------
-       Extract field errors
+       Server Error Extraction
        -------------------------------------------------------- */
+
+    /**
+     * Normalise the many shapes of server error payloads into a
+     * field-name → messages map. Supported shapes include:
+     *   - `details` / `fields` objects (values as strings or arrays)
+     *   - `errors` array of `{ path, msg | message }`
+     *   - single `{ field, message }` pair
+     *   - `{ code, message }` mapped through `CODE_TO_FIELD`
+     *   - `_form` messages promoted to a `__form__` bucket
+     */
     function extractFieldErrors(payload) {
         if (!payload || typeof payload !== "object")
             return {};
@@ -281,7 +320,7 @@
                 map[k].push(String(msg));
         };
 
-        // 1. details
+        // 1. `details` object.
         if (payload.details && typeof payload.details === "object") {
             for (const [key, val] of Object.entries(payload.details)) {
                 if (Array.isArray(val))
@@ -295,7 +334,7 @@
             }
         }
 
-        // 2. fields
+        // 2. `fields` object.
         if (payload.fields && typeof payload.fields === "object") {
             for (const [key, val] of Object.entries(payload.fields)) {
                 if (Array.isArray(val))
@@ -309,7 +348,7 @@
             }
         }
 
-        // 3. errors array
+        // 3. `errors` array.
         if (Array.isArray(payload.errors)) {
             payload.errors.forEach((e) => {
                 if (e && e.path)
@@ -317,19 +356,19 @@
             });
         }
 
-        // 4. single field
+        // 4. Single `{ field, message }` pair.
         if (payload.field && payload.message && Object.keys(map).length === 0) {
             push(payload.field, payload.message);
         }
 
-        // 5. code mapping
+        // 5. `{ code, message }` mapped through CODE_TO_FIELD.
         else if (payload.code && payload.message && Object.keys(map).length === 0) {
             const fieldFromCode = CODE_TO_FIELD[payload.code];
             if (fieldFromCode)
                 push(fieldFromCode, payload.message);
         }
 
-        // 6. _form → form-level
+        // 6. Promote a lone `_form` entry to `__form__` (form-level).
         if (map._form && Object.keys(map).length === 1) {
             const formMsgs = map._form;
             delete map._form;
@@ -341,14 +380,18 @@
         return map;
     }
 
+    /**
+     * Apply server-supplied errors to their corresponding form fields.
+     * Returns `true` when at least one field-level error was rendered.
+     */
     function applyServerErrors(form, payload) {
         const map = extractFieldErrors(payload);
         const fieldKeys = Object.keys(map).filter((k) => k !== "__form__");
         let firstInvalid = null;
 
         for (const name of fieldKeys) {
-            // چک‌باکس terms ممکنه داخل .field نباشه
-            // ولی input[name] همچنان پیدا می‌شه
+            // The `terms` checkbox may sit outside a `.field` wrapper, but
+            // it is still selectable via `input[name]`.
             const input = form.querySelector(`[name="${CSS.escape(name)}"]`);
             if (!input) {
                 warn(`input not found for field: ${name}`);
@@ -361,7 +404,7 @@
                 firstInvalid = input;
         }
 
-        // اگه فیلد مشخصی نبود ولی خطای فرم داشت
+        // Fall back to the banner when only form-level errors exist.
         if (!firstInvalid && map.__form__ && map.__form__.length) {
             showFormBanner(form, map.__form__[0]);
         }
@@ -380,12 +423,18 @@
     }
 
     /* --------------------------------------------------------
-       Present error based on code
+       Error Presentation
        -------------------------------------------------------- */
+
+    /**
+     * Present an error payload to the user using the most appropriate
+     * channel (field-level, form banner, toast, or modal dialog),
+     * chosen based on the error code.
+     */
     function presentError(form, payload, opts = {}) {
         const { showDialogOnError = false } = opts;
         const code = payload?.code || "";
-        const message = payload?.message || "خطای غیرمنتظره رخ داد";
+        const message = payload?.message || "An unexpected error occurred";
 
         log("presenting error:", { code, message, payload });
 
@@ -420,7 +469,7 @@
             case ERROR_CODES.TOO_MANY_ATTEMPTS:
             case ERROR_CODES.ACCOUNT_DISABLED:
             case ERROR_CODES.SESSION_EXPIRED:
-                safeDialog("خطا", message);
+                safeDialog("Error", message);
 
                 return {
                     handled: "dialog",
@@ -437,7 +486,8 @@
                 };
 
             case ERROR_CODES.INTERNAL_ERROR:
-                safeDialog("خطای سرور", message);
+                safeDialog("Server Error", message);
+
                 return {
                     handled: "server",
                     code
@@ -446,7 +496,7 @@
             default:
                 showFormBanner(form, message);
                 if (showDialogOnError)
-                    safeDialog("خطا", message);
+                    safeDialog("Error", message);
 
                 else
                     safeToast(message, "error");
@@ -459,8 +509,14 @@
     }
 
     /* --------------------------------------------------------
-       Loading state
+       Loading State
        -------------------------------------------------------- */
+
+    /**
+     * Toggle a form's submission loading state. While loading, the
+     * submit button is disabled and all other controls are locked to
+     * prevent duplicate submissions.
+     */
     function setFormLoading(form, loading) {
         const btn = form.querySelector("button[type='submit'], .auth-btn");
         if (!btn)
@@ -491,10 +547,17 @@
     }
 
     /* --------------------------------------------------------
-       Read values
+       Value Reading
        -------------------------------------------------------- */
+
+    /**
+     * Collect the current values of all named controls in the form.
+     * Checkboxes resolve to booleans, radio groups to the selected
+     * value, and text-like inputs are trimmed.
+     */
     function readValues(form) {
         const out = {};
+
         getInputs(form).forEach((el) => {
             if (el.type === "checkbox")
                 out[el.name] = el.checked;
@@ -507,12 +570,19 @@
             else
                 out[el.name] = el.value.trim();
         });
+
         return out;
     }
 
     /* --------------------------------------------------------
-       Native validation
+       Native Validation
        -------------------------------------------------------- */
+
+    /**
+     * Run the browser's built-in constraint validation across every
+     * eligible control. Invalid fields receive an inline error and
+     * the first invalid control is focused.
+     */
     function runNativeValidation(form) {
         let valid = true;
         let firstInvalid = null;
@@ -525,7 +595,7 @@
                 return;
 
             valid = false;
-            showFieldError(el, el.validationMessage || "این فیلد نامعتبر است");
+            showFieldError(el, el.validationMessage || "This field is invalid");
             if (!firstInvalid)
                 firstInvalid = el;
         });
@@ -546,6 +616,22 @@
     /* --------------------------------------------------------
        Attach
        -------------------------------------------------------- */
+
+    /**
+     * Bind submission handling to a form.
+     *
+     * @param {string|HTMLFormElement} target   Form selector or element.
+     * @param {object} options
+     *   - validate(values):  Sync client-side validation returning a map of
+     *                        field → message. A `__form__` key is treated as
+     *                        a form-level error.
+     *   - submit(values):    Async submit handler; may throw server payloads.
+     *   - onSuccess(data):   Invoked after a successful submission.
+     *   - onError(payload):  Invoked after a failed submission.
+     *   - showDialogOnError: Prefer modal dialogs for generic errors.
+     *   - successMessage:    Optional toast shown after successful submit.
+     *   - clearOnInput:      Automatically clear field errors on user input.
+     */
     function attach(target, options = {}) {
         const form = typeof target === "string" ? q(target) : target;
         if (!form)
@@ -561,9 +647,11 @@
             clearOnInput = true,
         } = options;
 
+        // Clear field-level errors as soon as the user edits the field.
         if (clearOnInput) {
             getInputs(form).forEach((input) => {
                 const evt = input.type === "checkbox" || input.type === "radio" ? "change" : "input";
+
                 input.addEventListener(evt, () => {
                     const field = findFieldWrapper(input);
                     if (field && field.classList.contains("has-error")) {
@@ -585,28 +673,31 @@
             const values = readValues(form);
             log("values:", values);
 
-            // 1. native
+            // 1. Native constraint validation.
             if (!runNativeValidation(form)) {
                 log("native validation failed");
 
                 return;
             }
 
-            // 2. custom validation
+            // 2. Custom client-side validation.
             if (typeof validate === "function") {
                 let errors;
+
                 try {
                     errors = validate(values) || {};
                 }
 
                 catch (err) {
-                    errors = { __form__: [err.message || "خطا در اعتبارسنجی"] };
+                    errors = { __form__: [err.message || "Validation failed"] };
                 }
 
                 const keys = Object.keys(errors);
                 if (keys.length) {
                     log("client validation failed:", errors);
+
                     let firstInvalid = null;
+
                     for (const key of keys) {
                         if (key === "__form__") {
                             const msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
@@ -642,13 +733,16 @@
                 }
             }
 
-            // 3. submit
-            if (typeof submit !== "function") return;
+            // 3. Submit to the server.
+            if (typeof submit !== "function")
+                return;
 
             setFormLoading(form, true);
+
             try {
                 const data = await submit(values);
                 log("submit success:", data);
+
                 if (successMessage)
                     safeToast(successMessage, "success");
 
@@ -689,7 +783,9 @@
             clearErrors: () => clearAllErrors(form),
             showError: (name, msg) => {
                 const input = form.querySelector(`[name="${CSS.escape(name)}"]`);
-                if (input) showFieldError(input, msg);
+
+                if (input)
+                    showFieldError(input, msg);
             },
             setLoading: (b) => setFormLoading(form, b),
             values: () => readValues(form)
@@ -697,10 +793,17 @@
     }
 
     /* --------------------------------------------------------
-       Fetch wrapper
+       Fetch Wrapper
        -------------------------------------------------------- */
+
+    /**
+     * POST a JSON payload and normalise both network failures and
+     * non-2xx responses into a consistent error object thrown to
+     * the caller.
+     */
     async function postJSON(url, body, extra = {}) {
         let res;
+
         try {
             res = await fetch(url, {
                 method: "POST",
@@ -713,26 +816,35 @@
 
         catch (networkErr) {
             console.error("❌ network error:", networkErr);
-            const err = {
+
+            throw {
                 code: ERROR_CODES.NETWORK_ERROR,
-                message: "اتصال به سرور برقرار نشد",
+                message: "Failed to connect to the server",
                 status: 0
             };
-
-            throw err;
         }
 
         let data = null;
         const ct = res.headers.get("content-type") || "";
+
         if (ct.includes("application/json")) {
-            try { data = await res.json(); } catch (e) { warn("json parse failed:", e); }
-        } else {
-            // پاسخ غیر JSON
+            try {
+                data = await res.json();
+            }
+
+            catch (e) {
+                warn("json parse failed:", e);
+            }
+        }
+
+        else {
+            // Non-JSON response — surface a generic server error.
             const txt = await res.text().catch(() => "");
             warn("non-JSON response:", res.status, txt.slice(0, 200));
+
             data = {
                 code: res.ok ? null : ERROR_CODES.INTERNAL_ERROR,
-                message: res.ok ? "" : `خطای سرور (${res.status})`,
+                message: res.ok ? "" : `Server error (${res.status})`,
             };
         }
 
@@ -741,15 +853,17 @@
         if (!res.ok) {
             const err = data && typeof data === "object"
                 ? data
-                : { message: "خطای شبکه", code: ERROR_CODES.NETWORK_ERROR };
+                : { message: "Network error", code: ERROR_CODES.NETWORK_ERROR };
+
             err.status = res.status;
             throw err;
         }
+
         return data;
     }
 
     /* --------------------------------------------------------
-       Expose
+       Public API
        -------------------------------------------------------- */
     global.FormKit = {
         ERROR_CODES,
