@@ -1,3 +1,4 @@
+
 export interface MailAddress {
     name?: string;
     address: string;
@@ -22,11 +23,16 @@ export interface SmtpConfig {
     host: string;
     port: number;
     secure: boolean;
-    auth: { user: string; pass: string };
+    auth: {
+        user: string;
+        pass: string;
+    };
     connectionTimeout?: number;
     greetingTimeout?: number;
     socketTimeout?: number;
-    tls?: { rejectUnauthorized?: boolean };
+    tls?: {
+        rejectUnauthorized?: boolean;
+    };
     debug?: boolean;
 }
 
@@ -39,7 +45,10 @@ export interface MailConfig {
 
 export interface MailTransport {
     name: "log" | "smtp";
-    send(opts: SendMailOptions, config: MailConfig): Promise<SendMailResult>;
+    send(
+        opts: SendMailOptions,
+        config: MailConfig
+    ): Promise<SendMailResult>;
 }
 
 /**
