@@ -3,7 +3,7 @@ import { Router } from "express";
 const router = Router();
 
 router.get("/", (req, res) => {
-    return res.status(404).render("404", { req });
+    return res.status(404).render("pages/404", { req });
 });
 
 export default router;
