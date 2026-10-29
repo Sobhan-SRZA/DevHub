@@ -26,7 +26,7 @@ import { TagType } from "../models/TagType";
 import { Tag } from "../models/Tag";
 
 /* ==================================================================
-   Helpers
+   Helper utilities
    ================================================================== */
 const GENERAL_SLUG = "general";
 
@@ -45,16 +45,16 @@ function slugify(input: string): string {
 }
 
 /**
- * کتگوری «عمومی» رو برمی‌گردونه (اگه نبود می‌سازه).
+ * Retrieves the default "General" tag type, creating it if necessary.
  */
 async function getGeneralType(): Promise<{ _id: Types.ObjectId; color: string }> {
     let general = await TagType.findOne({ slug: GENERAL_SLUG }).lean();
 
     if (!general) {
         const created = await TagType.create({
-            name: "عمومی",
+            name: "General",
             slug: GENERAL_SLUG,
-            description: "کتگوری پیش‌فرض برای تگ‌هایی که کتگوری مشخصی ندارند",
+            description: "The default category for tags without a specific category.",
             color: "#94a3b8",
             icon: "🌐",
             isSystem: true,
@@ -63,10 +63,11 @@ async function getGeneralType(): Promise<{ _id: Types.ObjectId; color: string }>
             order: 99,
             createdBy: null
         });
+
         return { _id: created._id, color: created.color };
     }
 
-    // اگه سیستمیش دستکاری شده، درستش کن
+    // Restore the required system and approval flags if they have been modified.
     if (!general.isApproved || !general.isSystem) {
         await TagType.updateOne(
             { _id: general._id },
@@ -74,41 +75,61 @@ async function getGeneralType(): Promise<{ _id: Types.ObjectId; color: string }>
         );
     }
 
-    return { _id: general._id as any, color: general.color || "#94a3b8" };
+    return {
+        _id: general._id as any,
+        color: general.color || "#94a3b8"
+    };
 }
 
 /* ==================================================================
-   TAG TYPES — عمومی
+   TAG TYPES — List all available tag types
    ================================================================== */
 export const listTagTypes = asyncHandler(async (req: any, res: Response) => {
     const isAdmin = isAdminUser(req.user);
     const includeUnapproved = req.query.all === "true" && isAdmin;
 
     const filter: Record<string, unknown> = {};
-    if (!includeUnapproved) filter.isApproved = true;
 
-    const types = await TagType.find(filter).sort({ order: 1, name: 1 }).lean();
+    if (!includeUnapproved) {
+        filter.isApproved = true;
+    }
+
+    const types = await TagType.find(filter)
+        .sort({ order: 1, name: 1 })
+        .lean();
 
     const counts = await Tag.aggregate([
         { $match: { isApproved: true } },
-        { $group: { _id: "$type", count: { $sum: 1 } } },
+        { $group: { _id: "$type", count: { $sum: 1 } } }
     ]);
-    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    const countMap = new Map(
+        counts.map((entry) => [String(entry._id), entry.count])
+    );
 
     res.json({
         ok: true,
-        types: types.map((t) => ({
-            ...t,
-            tagCount: countMap.get(String(t._id)) || 0
+        types: types.map((type) => ({
+            ...type,
+            tagCount: countMap.get(String(type._id)) || 0
         }))
     });
 });
 
+/* ==================================================================
+   GET TAG TYPE — Retrieve a tag type and its approved tags
+   ================================================================== */
 export const getTagType = asyncHandler(async (req: Request, res: Response) => {
     const type = await TagType.findById(req.params.id).lean();
-    if (!type) throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
 
-    const tags = await Tag.find({ type: type._id, isApproved: true })
+    if (!type) {
+        throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    }
+
+    const tags = await Tag.find({
+        type: type._id,
+        isApproved: true
+    })
         .sort({ usageCount: -1, name: 1 })
         .lean();
 
@@ -116,13 +137,13 @@ export const getTagType = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ==================================================================
-   TAG TYPE — ادمین فقط (ساخت مستقیم)
+   CREATE TAG TYPE — Admin and developer access only
    ================================================================== */
 export const createTagType = asyncHandler(async (req: any, res: Response) => {
     if (!isAdminUser(req.user)) {
         throw Forbidden(
             ErrorCodes.PROJECT_NOT_OWNED,
-            "فقط ادمین یا دولوپر می‌تواند کتگوری بسازد. از مسیر /request استفاده کنید"
+            "Only administrators and developers can create tag types directly. Use the /request endpoint instead."
         );
     }
 
@@ -130,13 +151,16 @@ export const createTagType = asyncHandler(async (req: any, res: Response) => {
     const slug = data.slug || slugify(data.name);
 
     const existing = await TagType.findOne({ slug }).lean();
-    if (existing) throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+
+    if (existing) {
+        throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+    }
 
     const type = await TagType.create({
         ...data,
         slug,
         isSystem: false,
-        isApproved: true, // ادمین مستقیم می‌سازه → approved
+        isApproved: true,
         createdBy: req.user._id
     });
 
@@ -144,25 +168,29 @@ export const createTagType = asyncHandler(async (req: any, res: Response) => {
 });
 
 /* ==================================================================
-   TAG TYPE — درخواست کاربر عادی (pending)
+   REQUEST TAG TYPE — Submit a tag type for administrative approval
    ================================================================== */
 export const requestTagType = asyncHandler(async (req: any, res: Response) => {
     const data = validate(requestTagTypeSchema, req.body);
     const slug = slugify(data.name);
 
     const existing = await TagType.findOne({ slug }).lean();
-    if (existing) throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
 
-    // چک: درخواست pending قبلی با همین slug هست؟
-    const pendingDup = await TagType.findOne({
+    if (existing) {
+        throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+    }
+
+    // Prevent duplicate requests for tag types awaiting approval.
+    const pendingDuplicate = await TagType.findOne({
         slug,
-        isApproved: false,
+        isApproved: false
     }).lean();
-    if (pendingDup) {
+
+    if (pendingDuplicate) {
         throw new AppError(
             400,
             ErrorCodes.VALIDATION_ERROR,
-            "درخواست مشابهی قبلاً ثبت شده و در انتظار بررسی است"
+            "A similar request has already been submitted and is awaiting review."
         );
     }
 
@@ -172,7 +200,7 @@ export const requestTagType = asyncHandler(async (req: any, res: Response) => {
         description: data.description,
         color: data.color || "#6ebbff",
         icon: data.icon,
-        order: 100, // انتهای لیست
+        order: 100,
         isSystem: false,
         isApproved: false,
         allowUserTags: true,
@@ -180,37 +208,41 @@ export const requestTagType = asyncHandler(async (req: any, res: Response) => {
     });
 
     console.log(
-        `📋 [TAG TYPE REQUEST] user=${req.user._id} name="${data.name}" slug="${slug}"`
+        `[TAG TYPE REQUEST] user=${req.user._id} name="${data.name}" slug="${slug}"`
     );
 
     res.status(201).json({
         ok: true,
         type,
-        message: "درخواست شما ثبت شد و در انتظار تایید ادمین است"
+        message: "Your request has been submitted and is awaiting administrative approval."
     });
 });
 
 /* ==================================================================
-   TAG TYPE — آپدیت (ادمین فقط)
+   UPDATE TAG TYPE — Admin and developer access only
    ================================================================== */
 export const updateTagType = asyncHandler(async (req: any, res: Response) => {
     if (!isAdminUser(req.user)) {
         throw Forbidden(
             ErrorCodes.PROJECT_NOT_OWNED,
-            "فقط ادمین می‌تواند کتگوری ویرایش کند"
+            "Only administrators and developers can update tag types."
         );
     }
 
     const data = validate(updateTagTypeSchema, req.body);
 
     const type = await TagType.findById(req.params.id);
-    if (!type)
+
+    if (!type) {
         throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    }
 
     if (data.slug && data.slug !== type.slug) {
-        const dup = await TagType.findOne({ slug: data.slug }).lean();
-        if (dup)
+        const duplicate = await TagType.findOne({ slug: data.slug }).lean();
+
+        if (duplicate) {
             throw Conflict(ErrorCodes.TAG_TYPE_TAKEN);
+        }
     }
 
     Object.assign(type, data);
@@ -220,37 +252,45 @@ export const updateTagType = asyncHandler(async (req: any, res: Response) => {
 });
 
 /* ==================================================================
-   TAG TYPE — حذف (ادمین فقط)
+   DELETE TAG TYPE — Admin and developer access only
    ================================================================== */
 export const deleteTagType = asyncHandler(async (req: any, res: Response) => {
     if (!isAdminUser(req.user)) {
         throw Forbidden(
             ErrorCodes.PROJECT_NOT_OWNED,
-            "فقط ادمین می‌تواند کتگوری حذف کند"
+            "Only administrators and developers can delete tag types."
         );
     }
 
     const type = await TagType.findById(req.params.id);
-    if (!type)
+
+    if (!type) {
         throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    }
 
     if (type.isSystem) {
         throw Forbidden(
             ErrorCodes.TAG_TYPE_IS_SYSTEM,
-            "کتگوری‌های سیستمی قابل حذف نیستند"
+            "System-defined tag types cannot be deleted."
         );
     }
 
     const tagCount = await Tag.countDocuments({ type: type._id });
-    if (tagCount > 0)
+
+    if (tagCount > 0) {
         throw Conflict(ErrorCodes.TAG_TYPE_HAS_TAGS);
+    }
 
     await type.deleteOne();
-    res.json({ ok: true, message: "کتگوری حذف شد" });
+
+    res.json({
+        ok: true,
+        message: "Tag type deleted successfully."
+    });
 });
 
 /* ==================================================================
-   TAG TYPE — تایید (ادمین فقط)
+   APPROVE TAG TYPE — Admin and developer access only
    ================================================================== */
 export const approveTagType = asyncHandler(async (req: any, res: Response) => {
     if (!isAdminUser(req.user)) {
@@ -258,8 +298,10 @@ export const approveTagType = asyncHandler(async (req: any, res: Response) => {
     }
 
     const type = await TagType.findById(req.params.id);
-    if (!type)
+
+    if (!type) {
         throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+    }
 
     type.isApproved = true;
     await type.save();
@@ -268,17 +310,19 @@ export const approveTagType = asyncHandler(async (req: any, res: Response) => {
 });
 
 /* ==================================================================
-   LIST TAGS — عمومی
+   LIST TAGS — Retrieve tags with filtering and pagination
    ================================================================== */
 export const listTags = asyncHandler(async (req: any, res: Response) => {
-    const q = validate(listQuerySchema, req.query);
+    const query = validate(listQuerySchema, req.query);
 
     const filter: Record<string, unknown> = {};
-    if (q.type)
-        filter.type = q.type;
 
-    // ✅ mine: فقط تگ‌های خودم
-    if (q.mine) {
+    if (query.type) {
+        filter.type = query.type;
+    }
+
+    // Return only tags created by the authenticated user when requested.
+    if (query.mine) {
         if (!req.user) {
             throw new AppError(401, ErrorCodes.UNAUTHENTICATED);
         }
@@ -286,22 +330,25 @@ export const listTags = asyncHandler(async (req: any, res: Response) => {
         filter.createdBy = req.user._id;
     }
 
-    if (q.search) {
+    if (query.search) {
         filter.$or = [
-            { name: { $regex: q.search, $options: "i" } },
-            { slug: { $regex: q.search, $options: "i" } }
+            { name: { $regex: query.search, $options: "i" } },
+            { slug: { $regex: query.search, $options: "i" } }
         ];
     }
 
-    if (q.approved) filter.isApproved = true;
+    if (query.approved) {
+        filter.isApproved = true;
+    }
 
     const sortMap: Record<string, Record<string, 1 | -1>> = {
         name: { name: 1 },
         usage: { usageCount: -1, name: 1 },
-        recent: { createdAt: -1 },
+        recent: { createdAt: -1 }
     };
-    const sort = sortMap[q.sort] || sortMap.usage;
-    const skip = (q.page - 1) * q.limit;
+
+    const sort = sortMap[query.sort] || sortMap.usage;
+    const skip = (query.page - 1) * query.limit;
 
     const [tags, total] = await Promise.all([
         Tag.find(filter)
@@ -309,7 +356,7 @@ export const listTags = asyncHandler(async (req: any, res: Response) => {
             .populate("createdBy", "name username")
             .sort(sort)
             .skip(skip)
-            .limit(q.limit)
+            .limit(query.limit)
             .lean(),
 
         Tag.countDocuments(filter)
@@ -319,97 +366,103 @@ export const listTags = asyncHandler(async (req: any, res: Response) => {
         ok: true,
         tags,
         pagination: {
-            page: q.page,
-            limit: q.limit,
+            page: query.page,
+            limit: query.limit,
             total,
-            pages: Math.ceil(total / q.limit)
+            pages: Math.ceil(total / query.limit)
         }
     });
 });
 
 /* ==================================================================
-   GET TAG
+   GET TAG — Retrieve a tag and its associated public projects
    ================================================================== */
 export const getTag = asyncHandler(async (req: Request, res: Response) => {
     const tag = await Tag.findById(req.params.id)
         .populate("type", "name slug color icon")
         .lean();
 
-    if (!tag)
+    if (!tag) {
         throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
+    }
 
     const projectCount = await Project.countDocuments({
         tags: tag._id,
         status: "published",
-        isPublic: true,
+        isPublic: true
     });
 
     res.json({ ok: true, tag, projectCount });
 });
 
 /* ==================================================================
-   SUGGEST — autocomplete
+   SUGGEST TAGS — Provide autocomplete suggestions
    ================================================================== */
 export const suggestTags = asyncHandler(async (req: Request, res: Response) => {
-    const q = validate(suggestTagsSchema, req.query);
+    const query = validate(suggestTagsSchema, req.query);
 
     const filter: Record<string, unknown> = { isApproved: true };
-    if (q.type)
-        filter.type = q.type;
 
-    if (q.q) {
-        const safe = q.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (query.type) {
+        filter.type = query.type;
+    }
+
+    if (query.q) {
+        const safeQuery = query.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
         filter.$or = [
-            { name: { $regex: "^" + safe, $options: "i" } },
-            { name: { $regex: safe, $options: "i" } },
+            { name: { $regex: "^" + safeQuery, $options: "i" } },
+            { name: { $regex: safeQuery, $options: "i" } }
         ];
     }
 
     const tags = await Tag.find(filter)
         .populate("type", "name slug color icon")
         .sort({ usageCount: -1, name: 1 })
-        .limit(q.limit)
+        .limit(query.limit)
         .lean();
 
     res.json({ ok: true, tags });
 });
 
 /* ==================================================================
-   FIND OR CREATE — قلب picker (type اختیاری → عمومی)
+   FIND OR CREATE TAG — Resolve the tag type and create tags as needed
    ================================================================== */
 export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
     const data = validate(findOrCreateTagSchema, req.body);
     const slug = slugify(data.name);
 
-    /* ---------- resolve type (پیش‌فرض: عمومی) ---------- */
+    /* ---------- Resolve the tag type; default to General ---------- */
     let typeId: Types.ObjectId;
     let typeColor: string;
 
     if (data.type) {
         const type = await TagType.findById(data.type);
-        if (!type)
+
+        if (!type) {
             throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+        }
 
         if (!type.isApproved) {
             throw new AppError(
                 400,
                 ErrorCodes.TAG_TYPE_NOT_FOUND,
-                "این کتگوری تایید نشده"
+                "This tag type has not been approved."
             );
         }
 
         typeId = type._id as any;
         typeColor = type.color;
-    }
-
-    else {
+    } else {
         const general = await getGeneralType();
+
         typeId = general._id;
         typeColor = general.color;
     }
 
-    /* ---------- چک وجود تگ ---------- */
+    /* ---------- Return an existing tag when available ---------- */
     const existing = await Tag.findOne({ slug, type: typeId });
+
     if (existing) {
         const populated = await existing.populate(
             "type",
@@ -419,28 +472,30 @@ export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
         return res.json({ ok: true, tag: populated, created: false });
     }
 
-    /* ---------- چک allowUserTags ---------- */
+    /* ---------- Enforce tag creation permissions ---------- */
     const typeDoc = await TagType.findById(typeId).lean();
+
     if (typeDoc && !typeDoc.allowUserTags && !isAdminUser(req.user)) {
         throw Forbidden(
             ErrorCodes.TAG_TYPE_IS_SYSTEM,
-            `در کتگوری «${typeDoc.name}» فقط ادمین می‌تواند تگ بسازد`
+            `Only administrators can create tags in the "${typeDoc.name}" category.`
         );
     }
 
-    /* ---------- چک سقف تگ ---------- */
+    /* ---------- Enforce the maximum number of tags per type ---------- */
     if (typeDoc?.maxTags != null) {
         const count = await Tag.countDocuments({ type: typeId });
+
         if (count >= typeDoc.maxTags) {
             throw new AppError(
                 400,
                 ErrorCodes.MEDIA_LIMIT_REACHED,
-                `این کتگوری به حداکثر تعداد تگ (${typeDoc.maxTags}) رسیده است`
+                `The "${typeDoc.name}" category has reached its maximum limit of ${typeDoc.maxTags} tags.`
             );
         }
     }
 
-    /* ---------- ساخت تگ (همیشه approved — مثل گیت‌هاب) ---------- */
+    /* ---------- Create an approved tag, following GitHub's approach ---------- */
     const tag = await Tag.create({
         name: data.name,
         slug,
@@ -457,46 +512,53 @@ export const findOrCreateTag = asyncHandler(async (req: any, res: Response) => {
 });
 
 /* ==================================================================
-   CREATE TAG — مستقیم
+   CREATE TAG — Create a tag directly
    ================================================================== */
 export const createTag = asyncHandler(async (req: any, res: Response) => {
     const data = validate(createTagSchema, req.body);
     const slug = data.slug || slugify(data.name);
 
-    /* ---------- resolve type ---------- */
+    /* ---------- Resolve the tag type ---------- */
     let typeId: Types.ObjectId;
     let typeColor: string;
 
     if (data.type) {
         const type = await TagType.findById(data.type).lean();
-        if (!type)
+
+        if (!type) {
             throw new AppError(404, ErrorCodes.TAG_TYPE_NOT_FOUND);
+        }
 
         if (!type.isApproved) {
-            throw new AppError(400, ErrorCodes.TAG_TYPE_NOT_FOUND, "کتگوری تایید نشده");
+            throw new AppError(
+                400,
+                ErrorCodes.TAG_TYPE_NOT_FOUND,
+                "This tag type has not been approved."
+            );
         }
 
         if (!type.allowUserTags && !isAdminUser(req.user)) {
             throw Forbidden(
                 ErrorCodes.TAG_TYPE_IS_SYSTEM,
-                `در کتگوری «${type.name}» فقط ادمین می‌تواند تگ بسازد`
+                `Only administrators can create tags in the "${type.name}" category.`
             );
         }
 
         typeId = type._id as any;
         typeColor = type.color;
-    }
-
-    else {
+    } else {
         const general = await getGeneralType();
+
         typeId = general._id;
         typeColor = general.color;
     }
 
-    /* ---------- چک تکراری ---------- */
-    const dup = await Tag.findOne({ slug, type: typeId }).lean();
-    if (dup)
+    /* ---------- Prevent duplicate tags within the same type ---------- */
+    const duplicate = await Tag.findOne({ slug, type: typeId }).lean();
+
+    if (duplicate) {
         throw Conflict(ErrorCodes.TAG_TAKEN);
+    }
 
     const tag = await Tag.create({
         name: data.name,
@@ -505,31 +567,35 @@ export const createTag = asyncHandler(async (req: any, res: Response) => {
         color: data.color || typeColor,
         description: data.description,
         isSystem: false,
-        isApproved: true, // ← همیشه approved (مثل گیت‌هاب)
-        createdBy: req.user._id,
+        isApproved: true,
+        createdBy: req.user._id
     });
 
     const populated = await tag.populate("type", "name slug color icon");
+
     res.status(201).json({ ok: true, tag: populated });
 });
 
 /* ==================================================================
-   UPDATE TAG — ادمین یا سازنده
+   UPDATE TAG — Allow administrators or tag creators to update a tag
    ================================================================== */
 export const updateTag = asyncHandler(async (req: any, res: Response) => {
-    const tag = req.tag; // از middleware
+    const tag = req.tag; // Attached by the authorization middleware.
     const data = validate(updateTagSchema, req.body);
 
     if (data.name && !data.slug) {
         const newSlug = slugify(data.name);
+
         if (newSlug !== tag.slug) {
-            const dup = await Tag.findOne({
+            const duplicate = await Tag.findOne({
                 slug: newSlug,
                 type: tag.type,
                 _id: { $ne: tag._id }
             }).lean();
-            if (dup)
+
+            if (duplicate) {
                 throw Conflict(ErrorCodes.TAG_TAKEN);
+            }
 
             data.slug = newSlug;
         }
@@ -539,47 +605,59 @@ export const updateTag = asyncHandler(async (req: any, res: Response) => {
     await tag.save();
 
     const populated = await tag.populate("type", "name slug color icon");
+
     res.json({ ok: true, tag: populated });
 });
 
 /* ==================================================================
-   DELETE TAG — ادمین یا سازنده
+   DELETE TAG — Allow administrators or tag creators to delete a tag
    ================================================================== */
 export const deleteTag = asyncHandler(async (req: any, res: Response) => {
     const tag = req.tag;
 
     const inUse = await Project.countDocuments({ tags: tag._id });
-    if (inUse > 0)
+
+    if (inUse > 0) {
         throw Conflict(ErrorCodes.TAG_IN_USE);
+    }
 
     await tag.deleteOne();
-    res.json({ ok: true, message: "تگ حذف شد" });
+
+    res.json({
+        ok: true,
+        message: "Tag deleted successfully."
+    });
 });
 
 /* ==================================================================
-   APPROVE TAG — ادمین
+   APPROVE TAG — Approve a tag
    ================================================================== */
 export const approveTag = asyncHandler(async (req: any, res: Response) => {
-    if (!isAdminUser(req.user))
+    if (!isAdminUser(req.user)) {
         throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+    }
 
     const tag = await Tag.findById(req.params.id);
-    if (!tag)
+
+    if (!tag) {
         throw new AppError(404, ErrorCodes.TAG_NOT_FOUND);
+    }
 
     tag.isApproved = true;
     await tag.save();
 
     const populated = await tag.populate("type", "name slug color icon");
+
     res.json({ ok: true, tag: populated });
 });
 
 /* ==================================================================
-   PENDING — ادمین
+   LIST PENDING ITEMS — Retrieve pending tags and tag types for review
    ================================================================== */
 export const listPending = asyncHandler(async (req: any, res: Response) => {
-    if (!isAdminUser(req.user))
+    if (!isAdminUser(req.user)) {
         throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+    }
 
     const [tags, types] = await Promise.all([
         Tag.find({ isApproved: false })
@@ -601,7 +679,7 @@ export const listPending = asyncHandler(async (req: any, res: Response) => {
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
  * Licensed under the BSD 3-Clause License.
- * See the LICENSE file in the project root for license information.
+ * See the LICENSE file in the project root for licensing details.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
