@@ -1,26 +1,36 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
   <%- include("components/seo-head", {
-    title: "صفحه پیدا نشد",
-    description: "صفحه‌ای که به دنبال آن بودید وجود ندارد یا حذف شده است.",
-    noindex: true,
-    canonicalPath: "/404"
-  }) %>
+        title: "Page Not Found",
+        description: "The page you are looking for does not exist or may have been removed.",
+        noindex: true,
+        canonicalPath: "/404"
+    }) %>
 </head>
 
 <body>
   <%- include("components/header") %>
 
   <main class="container" style="padding: 4rem 1rem; text-align: center;">
-    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">۴۰۴</h1>
-    <p style="font-size: 1.25rem; opacity: 0.85; margin-bottom: 0.5rem;">صفحه پیدا نشد</p>
-    <p style="opacity: 0.65; max-width: 28rem; margin: 0 auto 1.5rem;">
-      آدرسی که وارد کرده‌اید اشتباه است یا صفحه حذف شده است.
+    <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">
+      404
+    </h1>
+
+    <p style="font-size: 1.25rem; opacity: 0.85; margin-bottom: 0.5rem;">
+      Page Not Found
     </p>
-    <a href="/" class="btn-primary">بازگشت به خانه</a>
+
+    <p style="opacity: 0.65; max-width: 28rem; margin: 0 auto 1.5rem;">
+      The URL you entered may be incorrect, or the page may have been removed.
+    </p>
+
+    <a href="/" class="btn-primary">
+      Back to Home
+    </a>
   </main>
+
   <%- include("components/footer") %>
 </body>
 
