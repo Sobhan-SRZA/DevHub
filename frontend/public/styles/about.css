@@ -1,0 +1,377 @@
+/* ============================================================
+   ABOUT PAGE
+   ============================================================
+   Layout and visual treatment for the /about page: hero, feature
+   sections, audience cards, feature list, and closing CTA.
+   ============================================================ */
+
+/* ---------- Page container ---------- */
+.about-page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    color: #ccc;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.about-hero {
+    position: relative;
+    padding: 72px 0 56px;
+    overflow: hidden;
+}
+
+.about-hero__glow {
+    position: absolute;
+    top: -120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 720px;
+    height: 720px;
+    background: radial-gradient(circle,
+            rgba(0, 123, 255, 0.16) 0%,
+            rgba(110, 187, 255, 0.06) 35%,
+            transparent 70%);
+    pointer-events: none;
+    filter: blur(40px);
+    z-index: 0;
+}
+
+.about-hero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+}
+
+.about-hero__badge {
+    display: inline-block;
+    padding: 5px 12px;
+    margin-bottom: 18px;
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.3);
+    border-radius: 999px;
+    color: #6ebbff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.about-hero__title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    margin: 0 0 20px;
+}
+
+.about-hero__lead {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: #aaa;
+    margin: 0 0 32px;
+}
+
+.about-hero__lead strong {
+    color: #fff;
+    font-weight: 700;
+}
+
+.about-hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ============================================================
+   SECTION
+   ============================================================ */
+.about-section {
+    padding: 48px 0;
+    border-top: 1px solid #141414;
+}
+
+.about-section__head {
+    margin-bottom: 32px;
+    max-width: 640px;
+}
+
+.about-section__title {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    line-height: 1.3;
+}
+
+.about-section__sub {
+    color: #888;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* ============================================================
+   WHY CARDS — 3-column grid
+   ============================================================ */
+.about-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.about-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px 22px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.about-card:hover {
+    border-color: #262626;
+    transform: translateY(-2px);
+}
+
+.about-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+    color: var(--c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.about-card__title {
+    color: #fff;
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.35;
+}
+
+.about-card__body {
+    color: #999;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ============================================================
+   AUDIENCE — 3-column grid with numbered badges
+   ============================================================ */
+.about-audience {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.about-audience__item {
+    position: relative;
+    padding: 26px 22px 22px;
+    background: linear-gradient(135deg, #0a0a0a, #0d0d0d);
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+}
+
+.about-audience__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 14px;
+    background: rgba(0, 123, 255, 0.12);
+    border: 1px solid rgba(0, 123, 255, 0.28);
+    border-radius: 9px;
+    color: #6ebbff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.about-audience__title {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.about-audience__body {
+    color: #999;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ============================================================
+   FEATURE LIST — 2-column grid of feature items
+   ============================================================ */
+.about-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.about-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 12px;
+    transition: border-color 0.2s ease;
+}
+
+.about-feature:hover {
+    border-color: #262626;
+}
+
+.about-feature__icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.about-feature div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.about-feature strong {
+    color: #e6e6e6;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.about-feature span {
+    color: #888;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+/* ============================================================
+   CLOSING CTA
+   ============================================================ */
+.about-cta {
+    margin-top: 32px;
+    border-top: 1px solid #141414;
+    padding-top: 48px;
+}
+
+.about-cta__inner {
+    padding: 40px 32px;
+    background: linear-gradient(135deg, #0b1220, #0a0a0a);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    border-radius: 16px;
+    text-align: center;
+}
+
+.about-cta__title {
+    color: #fff;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+}
+
+.about-cta__sub {
+    color: #999;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin: 0 0 24px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.about-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 720px) {
+    .about-page {
+        padding: 0 18px 60px;
+    }
+
+    .about-hero {
+        padding: 48px 0 40px;
+    }
+
+    .about-hero__lead {
+        font-size: 0.98rem;
+    }
+
+    .about-section {
+        padding: 36px 0;
+    }
+
+    .about-section__title {
+        font-size: 1.35rem;
+    }
+
+    .about-cta__inner {
+        padding: 32px 20px;
+    }
+
+    .about-cta__title {
+        font-size: 1.25rem;
+    }
+
+    .about-hero__cta,
+    .about-cta__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .about-hero__cta>*,
+    .about-cta__actions>* {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+    .about-card,
+    .about-feature {
+        transition: none;
+    }
+}
+
+/**
+ * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
+ *
+ * Licensed under the BSD 3-Clause License.
+ * See the LICENSE file in the project root for license information.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
