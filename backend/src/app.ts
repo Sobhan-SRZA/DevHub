@@ -178,7 +178,7 @@ Promise.all(
                 });
             }
 
-            return res.status(404).render("404", { req });
+            return res.status(404).render("pages/404", { req });
         });
 
         /* ------------------------------------------------------------------ */
