@@ -1,12 +1,6 @@
 <div class="theme-wrap">
-  <button type="button"
-          class="h-icon-btn"
-          id="themeBtn"
-          aria-label="انتخاب تم"
-          aria-haspopup="true"
-          aria-expanded="false"
-          title="تم ظاهری">
-    <!-- Moon (shown in light mode → click to go dark context) -->
+  <button type="button" class="h-icon-btn" id="themeBtn" aria-label="Choose theme" aria-haspopup="true" aria-expanded="false" title="Appearance Settings">
+    <!-- Moon (shown in light mode → click to switch to dark mode) -->
     <svg data-icon="moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
     </svg>
@@ -24,17 +18,17 @@
     </svg>
   </button>
 
-  <div class="theme-panel" id="themePanel" role="dialog" aria-label="تنظیمات تم">
+  <div class="theme-panel" id="themePanel" role="dialog" aria-label="Theme Settings">
     <div class="theme-panel__section">
-      <p class="theme-panel__title">حالت نمایش</p>
-      <div class="theme-modes" role="group" aria-label="حالت شب و روز">
+      <p class="theme-panel__title">Display Mode</p>
+      <div class="theme-modes" role="group" aria-label="Light and Dark Mode">
         <button type="button" class="theme-mode-btn" data-mode="system" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2"></rect>
             <line x1="8" y1="21" x2="16" y2="21"></line>
             <line x1="12" y1="17" x2="12" y2="21"></line>
           </svg>
-          سیستم
+          System
         </button>
         <button type="button" class="theme-mode-btn" data-mode="light" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -48,28 +42,28 @@
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
           </svg>
-          روز
+          Light
         </button>
         <button type="button" class="theme-mode-btn" data-mode="dark" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
-          شب
+          Dark
         </button>
       </div>
     </div>
 
     <div class="theme-panel__section">
-      <p class="theme-panel__title">رنگ تم</p>
-      <div class="theme-accents" role="group" aria-label="رنگ‌های تم">
-        <button type="button" class="theme-accent-btn" data-accent="blue" title="آبی" aria-label="آبی" aria-pressed="false"></button>
-        <button type="button" class="theme-accent-btn" data-accent="violet" title="بنفش" aria-label="بنفش" aria-pressed="false"></button>
-        <button type="button" class="theme-accent-btn" data-accent="emerald" title="سبز" aria-label="سبز" aria-pressed="false"></button>
-        <button type="button" class="theme-accent-btn" data-accent="amber" title="کهربایی" aria-label="کهربایی" aria-pressed="false"></button>
-        <button type="button" class="theme-accent-btn" data-accent="rose" title="صورتی" aria-label="صورتی" aria-pressed="false"></button>
-        <button type="button" class="theme-accent-btn" data-accent="cyan" title="فیروزه‌ای" aria-label="فیروزه‌ای" aria-pressed="false"></button>
+      <p class="theme-panel__title">Theme Color</p>
+      <div class="theme-accents" role="group" aria-label="Theme Colors">
+        <button type="button" class="theme-accent-btn" data-accent="blue" title="Blue" aria-label="Blue" aria-pressed="false"></button>
+        <button type="button" class="theme-accent-btn" data-accent="violet" title="Violet" aria-label="Violet" aria-pressed="false"></button>
+        <button type="button" class="theme-accent-btn" data-accent="emerald" title="Emerald" aria-label="Emerald" aria-pressed="false"></button>
+        <button type="button" class="theme-accent-btn" data-accent="amber" title="Amber" aria-label="Amber" aria-pressed="false"></button>
+        <button type="button" class="theme-accent-btn" data-accent="rose" title="Rose" aria-label="Rose" aria-pressed="false"></button>
+        <button type="button" class="theme-accent-btn" data-accent="cyan" title="Cyan" aria-label="Cyan" aria-pressed="false"></button>
       </div>
-      <p class="theme-panel__hint">انتخاب شما در همین مرورگر ذخیره می‌شود.</p>
+      <p class="theme-panel__hint">Your preferences are saved in this browser.</p>
     </div>
   </div>
 </div>
