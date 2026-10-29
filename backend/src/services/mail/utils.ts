@@ -1,70 +1,103 @@
+
 import type {
     MailAddress,
     SendMailOptions
 } from "./types";
 
-/* ==================================================================
-   HTML escape
-   ================================================================== */
-export function escapeHtml(s: unknown): string {
-    if (s === null || s === undefined) return "";
-    return String(s)
+/**
+ * Escapes HTML-sensitive characters to prevent markup injection.
+ */
+export function escapeHtml(value: unknown): string {
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/"/g, "&#39;");
+        .replace(/'/g, "&#39;");
 }
 
-/* ==================================================================
-   Address normalization
-   ================================================================== */
-export function normalizeAddress(addr: MailAddress | string): MailAddress {
-    if (typeof addr === "string") {
-        return { address: addr.trim() };
+/**
+ * Normalizes an email address into a consistent representation.
+ *
+ * String inputs are converted to address objects, and surrounding
+ * whitespace is removed from email addresses.
+ */
+export function normalizeAddress(
+    address: MailAddress | string
+): MailAddress {
+    if (typeof address === "string") {
+        return { address: address.trim() };
     }
 
-    return { name: addr.name, address: addr.address.trim() };
+    return {
+        name: address.name,
+        address: address.address.trim()
+    };
 }
 
+/**
+ * Normalizes a recipient value into an array of email addresses.
+ *
+ * Supports a single address string, a single address object,
+ * or an array containing multiple recipients.
+ */
 export function normalizeRecipients(
     to: SendMailOptions["to"]
 ): MailAddress[] {
-    if (typeof to === "string")
-        return [{ address: to }];
+    if (typeof to === "string") {
+        return [{ address: to.trim() }];
+    }
 
-    if (Array.isArray(to))
+    if (Array.isArray(to)) {
         return to.map(normalizeAddress);
+    }
 
     return [normalizeAddress(to)];
 }
 
-/* ==================================================================
-   RFC 5322 formatting: "Name" <email@example.com>
-   ================================================================== */
-export function formatAddress(addr: MailAddress): string {
-    if (!addr.name)
-        return addr.address;
-
-    // نویسه‌های خطرناک رو پاک کن
-    const safe = String(addr.name).replace(/["\\<>]/g, "").trim();
-
-    if (!safe)
-        return addr.address;
-
-    // اگه نویسه غیر-ASCII داشت، encode کن
-    if (/[^\x20-\x7E]/.test(safe)) {
-        const encoded = `=?UTF-8?B?${Buffer.from(safe, "utf8").toString("base64")}?=`;
-
-        return `${encoded} <${addr.address}>`;
+/**
+ * Formats an email address with an optional display name.
+ *
+ * ASCII display names are quoted and sanitized. Non-ASCII display
+ * names are encoded using UTF-8 Base64 encoded-word syntax.
+ */
+export function formatAddress(address: MailAddress): string {
+    if (!address.name) {
+        return address.address;
     }
 
-    return `"${safe}" <${addr.address}>`;
+    // Remove characters that could interfere with address formatting.
+    const safeName = String(address.name)
+        .replace(/["\\<>]/g, "")
+        .trim();
+
+    if (!safeName) {
+        return address.address;
+    }
+
+    // Encode non-ASCII display names for email header compatibility.
+    if (/[^\x20-\x7E]/.test(safeName)) {
+        const encodedName = `=?UTF-8?B?${Buffer.from(
+            safeName,
+            "utf8"
+        ).toString("base64")}?=`;
+
+        return `${encodedName} <${address.address}>`;
+    }
+
+    return `"${safeName}" <${address.address}>`;
 }
 
-/* ==================================================================
-   Email regex (RFC 5322 simplified)
-   ================================================================== */
+/**
+ * Performs basic email address validation using a simplified pattern.
+ *
+ * This check is intended for preliminary input validation and does
+ * not guarantee that an address exists or can receive email.
+ */
 export function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
