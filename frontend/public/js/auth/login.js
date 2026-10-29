@@ -1,24 +1,29 @@
 /* ============================================================
-   Login page
-   ============================================================ */
+ * Login Page
+ * ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
-    /* fingerprint.js — یه fingerprint ساده و سبک (بدون کتابخانه) */
+    /**
+     * Generates a lightweight client fingerprint without external dependencies.
+     *
+     * @returns {string} A hexadecimal hash derived from client characteristics.
+     */
     function getClientFingerprint() {
         const parts = [
             navigator.userAgent,
             navigator.language,
-            navigator.languages?.join(',') || '',
+            navigator.languages?.join(",") || "",
             screen.colorDepth,
-            screen.width + 'x' + screen.height,
+            `${screen.width}x${screen.height}`,
             new Date().getTimezoneOffset(),
-            navigator.hardwareConcurrency || '',
-            navigator.platform || ''
+            navigator.hardwareConcurrency || "",
+            navigator.platform || ""
         ];
 
-        // hash ساده (FNV-1a)
+        // Generate a 32-bit hash using the FNV-1a algorithm.
         let hash = 0x811c9dc5;
-        const str = parts.join('|');
+        const str = parts.join("|");
+
         for (let i = 0; i < str.length; i++) {
             hash ^= str.charCodeAt(i);
             hash = (hash * 0x01000193) >>> 0;
@@ -27,89 +32,106 @@ document.addEventListener("DOMContentLoaded", () => {
         return hash.toString(16);
     }
 
-    // ذخیره در localStorage برای پایداری بین سشن‌ها
+    /**
+     * Retrieves the persistent device identifier or creates a new one.
+     *
+     * The identifier is stored in localStorage to maintain consistency
+     * across browser sessions.
+     *
+     * @returns {string} The persistent device identifier.
+     */
     function getOrCreateDeviceId() {
-        let id = localStorage.getItem('deviceId');
+        let id = localStorage.getItem("deviceId");
+
         if (!id) {
             id = crypto.randomUUID
                 ? crypto.randomUUID()
-                : 'dev-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+                : `dev-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 
-            localStorage.setItem('deviceId', id);
+            localStorage.setItem("deviceId", id);
         }
 
         return id;
     }
 
     const form = document.getElementById("loginForm");
-    if (!form)
+
+    if (!form) {
         return;
+    }
 
     FormKit.attach(form, {
-        /* ---------------- اعتبارسنجی سمت کلاینت ---------------- */
-        validate(v) {
+        /* ---------------- Client-Side Validation ---------------- */
+
+        validate(values) {
             const errors = {};
 
-            if (!v.identifier) {
-                errors.identifier = "ایمیل یا نام کاربری الزامی است";
-            }
-            else if (v.identifier.length < 3) {
-                errors.identifier = "حداقل ۳ کاراکتر وارد کنید";
-            }
-            else if (v.identifier.length > 254) {
-                errors.identifier = "مقدار وارد شده خیلی طولانی است";
+            if (!values.identifier) {
+                errors.identifier = "Email address or username is required.";
+            } else if (values.identifier.length < 3) {
+                errors.identifier = "Please enter at least 3 characters.";
+            } else if (values.identifier.length > 254) {
+                errors.identifier = "The provided value exceeds the maximum allowed length.";
             }
 
-            if (!v.password) {
-                errors.password = "رمز عبور الزامی است";
-            }
-            else if (v.password.length < 6) {
-                errors.password = "رمز عبور باید حداقل ۶ کاراکتر باشد";
+            if (!values.password) {
+                errors.password = "Password is required.";
+            } else if (values.password.length < 6) {
+                errors.password = "Password must contain at least 6 characters.";
             }
 
             return errors;
         },
 
-        /* ---------------- ارسال ---------------- */
-        submit(v) {
+        /* ---------------- Form Submission ---------------- */
+
+        submit(values) {
             return FormKit.postJSON("/api/auth/login", {
-                identifier: v.identifier,
-                password: v.password,
-                remember: !!v.remember,
+                identifier: values.identifier,
+                password: values.password,
+                remember: Boolean(values.remember),
                 fingerprint: getClientFingerprint(),
                 deviceId: getOrCreateDeviceId()
             });
         },
 
-        /* ---------------- success ---------------- */
-        onSuccess(data) {
-            toast('ورود موفق', 'success');
+        /* ---------------- Successful Authentication ---------------- */
 
+        onSuccess(data) {
+            toast("Login successful.", "success");
+
+            // Redirect users with unverified email addresses to verification.
             if (data?.user && data.user.emailVerified === false) {
-                // کاربر ایمیل تأیید نشده — برو به صفحه تایید
                 setTimeout(() => {
-                    location.href = '/auth/verify-email';
+                    location.href = "/auth/verify-email";
                 }, 500);
+
                 return;
             }
 
+            // Redirect developers to their dashboard and other users to the homepage.
             setTimeout(() => {
-                location.href = data?.user?.role === 'developer'
-                    ? '/dashboard'
-                    : '/';
+                location.href = data?.user?.role === "developer"
+                    ? "/dashboard"
+                    : "/";
             }, 500);
         },
 
+        /* ---------------- Error Handling ---------------- */
+
         onError(payload) {
+            // Log authentication errors locally for development and debugging.
             if (location.hostname === "localhost") {
-                console.debug("[login error]", payload);
+                console.debug("[Login Error]", payload);
             }
 
-            // اگه خطای invalid credentials بود → روی فیلد password تمرکز کن
+            // Select the password field when the credentials are invalid.
             if (payload?.code === FormKit.ERROR_CODES.INVALID_CREDENTIALS) {
-                const pw = form.querySelector(`[name="password"]`);
-                if (pw)
-                    pw.select?.();
+                const passwordInput = form.querySelector('[name="password"]');
+
+                if (passwordInput) {
+                    passwordInput.select?.();
+                }
             }
         }
     });
