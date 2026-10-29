@@ -1,13 +1,16 @@
+
 import dotenv from "dotenv";
 import path from "path";
 
-// Load .env file from the project root
+// Load environment variables from the project root.
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
-const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET", "PORT"];
+const requiredEnvVars = ["MONGODB_URI", "JWT_SECRET", "PORT"] as const;
+
+// Validate required environment variables before application startup.
 for (const varName of requiredEnvVars) {
     if (!process.env[varName]) {
-        console.error(`FATAL ERROR: Environment variable ${varName} is not set.`);
+        console.error(`FATAL ERROR: Required environment variable "${varName}" is not set.`);
         process.exit(1);
     }
 }
@@ -17,8 +20,12 @@ export const config = {
     mongoUri: process.env.MONGODB_URI!,
     jwtSecret: process.env.JWT_SECRET!,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
-    /** پایه URL عمومی سایت برای canonical / OG / sitemap */
-    appUrl: (process.env.APP_URL || "").replace(/\/$/, "") || undefined
+
+    /**
+     * Public application URL used for canonical URLs, Open Graph metadata,
+     * and sitemap generation. Trailing slashes are removed.
+     */
+    appUrl: (process.env.APP_URL || "").replace(/\/+$/, "") || undefined
 };
 
 /**
