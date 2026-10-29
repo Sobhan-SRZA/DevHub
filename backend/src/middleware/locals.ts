@@ -5,14 +5,15 @@ import type {
 import { User } from "../models/User";
 
 /**
- * کاربر رو با فیلدهای کامل از DB می‌خونه و تو res.locals می‌ذاره.
- * EJS از locals.currentUser استفاده می‌کنه.
+ * Retrieves the authenticated user's complete profile from the database
+ * and attaches it to res.locals for use in server-rendered templates.
  *
- * روی همه‌ی روت‌های HTML اجرا می‌شه.
+ * EJS templates access the user profile through locals.currentUser.
+ * This middleware runs on all HTML routes.
  */
 export async function attachUserLocals(req: any, res: Response, next: NextFunction) {
     try {
-        // اگه req.user از قبل هست (توسط requireAuth/optionalAuth)، از همون id استفاده کن
+        // Reuse the user ID already available from requireAuth or optionalAuth.
         const userId = req.user?._id || req.user?.id;
 
         if (userId) {
@@ -28,8 +29,9 @@ export async function attachUserLocals(req: any, res: Response, next: NextFuncti
             }
         }
     } catch (err) {
-        console.warn("[attachUserLocals]", (err as Error).message);
+        console.warn("[attachUserLocals] Failed to attach user locals:", (err as Error).message);
     }
+
     next();
 }
 
