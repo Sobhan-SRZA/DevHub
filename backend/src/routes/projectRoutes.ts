@@ -1,7 +1,8 @@
+
 import {
     mwUploadImages,
     mwUploadVideo,
-    mwUploadZip,
+    mwUploadZip
 } from "../middleware/upload";
 import {
     loadProject,
@@ -16,35 +17,62 @@ import commentRoutes from "./commentRoutes";
 import reviewRoutes from "./reviewRoutes";
 import * as ctrl from "../controllers/projectController";
 
-
 const router = Router();
 
-/* ==================================================================
-   Public
-   ================================================================== */
+/* ==========================================================================
+ * Public Routes
+ * ========================================================================== */
+
 router.get("/", optionalAuth, ctrl.listProjects);
 router.get("/explore", ctrl.explore);
 router.get("/home-feed", ctrl.homeFeeds);
 router.get("/:idOrSlug", optionalAuth, ctrl.getProject);
 
-/* ==================================================================
-   Nested routes — reviews و comments
-   ================================================================== */
+/* ==========================================================================
+ * Nested Routes: Reviews and Comments
+ * ========================================================================== */
+
 router.use("/:idOrSlug/reviews", reviewRoutes);
 router.use("/:idOrSlug/comments", commentRoutes);
 
-/* ==================================================================
-   Protected — CRUD پروژه
-   ================================================================== */
-router.post("/", requireAuth, ctrl.createProject);
-router.put("/:id", requireAuth, requireProjectOwnership, ctrl.updateProject);
-router.delete("/:id", requireAuth, requireProjectOwnership, ctrl.deleteProject);
-router.post("/:id/sync-github", requireAuth, requireProjectOwnership, ctrl.syncGithub);
-router.patch("/:id/status", requireAuth, requireProjectOwnership, ctrl.toggleStatus);
+/* ==========================================================================
+ * Protected Routes: Project Management
+ * ========================================================================== */
 
-/* ==================================================================
-   Uploads
-   ================================================================== */
+router.post("/", requireAuth, ctrl.createProject);
+
+router.put(
+    "/:id",
+    requireAuth,
+    requireProjectOwnership,
+    ctrl.updateProject
+);
+
+router.delete(
+    "/:id",
+    requireAuth,
+    requireProjectOwnership,
+    ctrl.deleteProject
+);
+
+router.post(
+    "/:id/sync-github",
+    requireAuth,
+    requireProjectOwnership,
+    ctrl.syncGithub
+);
+
+router.patch(
+    "/:id/status",
+    requireAuth,
+    requireProjectOwnership,
+    ctrl.toggleStatus
+);
+
+/* ==========================================================================
+ * Project Image Management
+ * ========================================================================== */
+
 router.post(
     "/:id/images",
     requireAuth,
@@ -52,18 +80,24 @@ router.post(
     mwUploadImages,
     ctrl.uploadProjectImages
 );
+
 router.delete(
     "/:id/images/:imageId",
     requireAuth,
     requireProjectOwnership,
     ctrl.deleteProjectImage
 );
+
 router.patch(
     "/:id/images/order",
     requireAuth,
     requireProjectOwnership,
     ctrl.reorderImages
 );
+
+/* ==========================================================================
+ * Project Video Management
+ * ========================================================================== */
 
 router.post(
     "/:id/video",
@@ -72,12 +106,17 @@ router.post(
     mwUploadVideo,
     ctrl.uploadProjectVideo
 );
+
 router.delete(
     "/:id/video",
     requireAuth,
     requireProjectOwnership,
     ctrl.deleteProjectVideo
 );
+
+/* ==========================================================================
+ * Project Archive Management
+ * ========================================================================== */
 
 router.post(
     "/:id/file",
@@ -86,6 +125,7 @@ router.post(
     mwUploadZip,
     ctrl.uploadProjectZip
 );
+
 router.delete(
     "/:id/file",
     requireAuth,
@@ -93,10 +133,16 @@ router.delete(
     ctrl.deleteProjectZip
 );
 
-/* ==================================================================
-   Download
-   ================================================================== */
-router.get("/:idOrSlug/download", optionalAuth, loadProject, ctrl.downloadProject);
+/* ==========================================================================
+ * Project Downloads
+ * ========================================================================== */
+
+router.get(
+    "/:idOrSlug/download",
+    optionalAuth,
+    loadProject,
+    ctrl.downloadProject
+);
 
 export default router;
 
