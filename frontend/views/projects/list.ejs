@@ -1,11 +1,10 @@
-<!-- views/projects/list.ejs -->
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
   <%- include("../components/seo-head", {
-    title: "پروژه‌های عمومی",
-    description: "لیست پروژه‌های منتشرشده توسط کاربران در DevHub — کشف پروژه‌های متن‌باز ایرانی و جهانی.",
+    title: "Public Projects",
+    description: "Browse projects published by DevHub users and discover open-source projects from Iran and around the world.",
     canonicalPath: "/projects",
     extraStyles: ["/styles/projects.css"]
   }) %>
@@ -15,16 +14,16 @@
   <%- include("../components/header") %>
 
   <section class="container projects-page">
-    <h1 class="page-title">پروژه‌های عمومی</h1>
-    <p class="page-sub">پروژه‌های منتشرشده توسط کاربران</p>
+    <h1 class="page-title">Public Projects</h1>
+    <p class="page-sub">Projects published by users</p>
 
     <div class="projects-filters">
-      <input type="text" id="searchProjects" placeholder="جستجو...">
+      <input type="text" id="searchProjects" placeholder="Search projects...">
       <select id="sortProjects">
-        <option value="recent">جدیدترین</option>
-        <option value="rating">بیشترین امتیاز</option>
-        <option value="downloads">بیشترین دانلود</option>
-        <option value="stars">بیشترین ستاره</option>
+        <option value="recent">Newest</option>
+        <option value="rating">Highest Rated</option>
+        <option value="downloads">Most Downloaded</option>
+        <option value="stars">Most Starred</option>
       </select>
     </div>
 
