@@ -1,16 +1,17 @@
+
 import {
     Session,
     type IDeviceInfo,
-    type ILocationInfo
+    type ILocationInfo,
 } from "../models/Session";
 import {
     randomToken,
     signAccessToken,
-    signRefreshToken
+    signRefreshToken,
 } from "../utils/token";
 import {
     lookupIp,
-    getClientIp
+    getClientIp,
 } from "../utils/geoip";
 import { parseUserAgent } from "../utils/parseUserAgent";
 import type { Request } from "express";
@@ -18,31 +19,47 @@ import { Types } from "mongoose";
 import crypto from "crypto";
 
 /* ==================================================================
-   Device fingerprint (deterministic hash)
+   Device Fingerprinting
    ================================================================== */
+
+/**
+ * Generates a deterministic SHA-256 hash from the user agent and
+ * an optional client-provided fingerprint or device identifier.
+ *
+ * This hash is used to identify sessions associated with the same device.
+ */
 export function computeDeviceHash(
     userAgent: string,
     fingerprint?: string,
     deviceId?: string
 ): string {
-    const fp = fingerprint || deviceId || "";
+    const deviceFingerprint = fingerprint || deviceId || "";
 
     return crypto
         .createHash("sha256")
-        .update(`${userAgent}|${fp}`)
+        .update(`${userAgent}|${deviceFingerprint}`)
         .digest("hex");
 }
 
 /* ==================================================================
-   Build device + location metadata
+   Device and Location Metadata
    ================================================================== */
+
+/**
+ * Collects device, network, and location metadata from an HTTP request.
+ *
+ * Device parsing and IP geolocation are handled independently so that
+ * a failure in either operation does not prevent session creation.
+ */
 async function buildMetadata(
     req: Request,
     fingerprint?: string,
     deviceId?: string,
     macAddress?: string | null
 ) {
-    const userAgent = (req.headers["user-agent"] as string) || "unknown";
+    const userAgent =
+        (req.headers["user-agent"] as string) || "unknown";
+
     const ip = getClientIp(req);
 
     const [deviceResult, locationResult] = await Promise.allSettled([
@@ -53,7 +70,10 @@ async function buildMetadata(
     const device: IDeviceInfo =
         deviceResult.status === "fulfilled"
             ? deviceResult.value
-            : { userAgent, deviceType: "unknown" as const };
+            : {
+                userAgent,
+                deviceType: "unknown",
+            };
 
     const location: ILocationInfo =
         locationResult.status === "fulfilled"
@@ -68,19 +88,18 @@ async function buildMetadata(
         client: {
             deviceId,
             fingerprint,
-            macAddress: macAddress ?? null
-        }
+            macAddress: macAddress ?? null,
+        },
     };
 }
 
 /* ==================================================================
-   startSession — create OR reuse
-   ==================================================================
-   رفتار:
-     - اگه کاربر روی همون دستگاه سشن فعال داشته باشه → آپدیت می‌شه
-       (توکن جدید، expiry جدید، metadata جدید)
-     - اگه نداشته باشه → سشن جدید ساخته می‌شه
+   Session Creation and Reuse
    ================================================================== */
+
+/**
+ * Options for creating or reusing an authenticated session.
+ */
 export interface StartSessionOptions {
     fingerprint?: string;
     deviceId?: string;
@@ -88,6 +107,17 @@ export interface StartSessionOptions {
     ttlDays?: number;
 }
 
+/**
+ * Creates a new session or refreshes an existing active session
+ * associated with the same user and device.
+ *
+ * When an active session is reused, its session ID remains unchanged,
+ * while its tokens, expiration time, activity timestamp, and metadata
+ * are refreshed.
+ *
+ * @returns The persisted session, access token, refresh token,
+ * and a flag indicating whether the session was reused.
+ */
 export async function startSession(
     userId: Types.ObjectId | string,
     req: Request,
@@ -100,97 +130,141 @@ export async function startSession(
         ttlDays = 7,
     } = opts;
 
-    const meta = await buildMetadata(req, fingerprint, deviceId, macAddress);
-    const deviceHash = computeDeviceHash(meta.userAgent, fingerprint, deviceId);
+    const metadata = await buildMetadata(
+        req,
+        fingerprint,
+        deviceId,
+        macAddress
+    );
+
+    const deviceHash = computeDeviceHash(
+        metadata.userAgent,
+        fingerprint,
+        deviceId
+    );
 
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(
+        now.getTime() + ttlDays * 24 * 60 * 60 * 1000
+    );
 
-    /* -------- تلاش برای پیدا کردن سشن فعال موجود -------- */
+    // Reuse an unexpired session belonging to the same user and device.
     let session = await Session.findOne({
         user: userId,
         deviceHash,
-        expiresAt: { $gt: now }
+        expiresAt: { $gt: now },
     });
 
     let reused = false;
 
     if (session) {
-        // سشن موجود رو آپدیت کن — sessionId عوض نمی‌شه
-        session.device = meta.device;
-        session.location = meta.location;
-        session.client = meta.client;
+        // Preserve the existing session ID while refreshing session data.
+        session.device = metadata.device;
+        session.location = metadata.location;
+        session.client = metadata.client;
         session.lastActiveAt = now;
         session.loginAt = now;
         session.expiresAt = expiresAt;
+
         reused = true;
-    } 
-    
-    else {
-        // سشن جدید
+    } else {
+        // Create a new session with a unique session identifier.
         session = new Session({
             user: userId,
             sessionId: randomToken(16),
             deviceHash,
-            device: meta.device,
-            location: meta.location,
-            client: meta.client,
+            device: metadata.device,
+            location: metadata.location,
+            client: metadata.client,
             loginAt: now,
             lastActiveAt: now,
-            expiresAt
+            expiresAt,
         });
     }
 
-    // توکن‌ها رو با sessionId فعلی امضا کن
-    // (اگه سشن قبلی بود، همون sessionId حفظ می‌شه)
+    // Sign new tokens using the session ID, preserving it when reusing
+    // an existing session.
     const access = signAccessToken({
         sub: userId.toString(),
-        sid: session.sessionId
+        sid: session.sessionId,
     });
 
     const refresh = signRefreshToken({
         sub: userId.toString(),
-        sid: session.sessionId
+        sid: session.sessionId,
     });
 
     session.token = access;
     session.refreshToken = refresh;
+
     await session.save();
 
-    return { session, access, refresh, reused };
+    return {
+        session,
+        access,
+        refresh,
+        reused,
+    };
 }
 
 /* ==================================================================
-   endSession — delete a single session
+   Single Session Termination
    ================================================================== */
+
+/**
+ * Deletes a session by its session ID.
+ *
+ * When a user ID is provided, deletion is restricted to that user.
+ *
+ * @returns `true` if a session was deleted; otherwise, `false`.
+ */
 export async function endSession(
     sessionId: string,
     userId?: Types.ObjectId | string
 ): Promise<boolean> {
     const filter: Record<string, unknown> = { sessionId };
-    if (userId) 
+
+    if (userId) {
         filter.user = userId;
+    }
 
     const result = await Session.deleteOne(filter);
-    
+
     return (result.deletedCount ?? 0) > 0;
 }
 
 /* ==================================================================
-   endAllSessions — delete all sessions for a user
+   Terminate All User Sessions
    ================================================================== */
+
+/**
+ * Deletes all sessions associated with the specified user.
+ *
+ * @returns The number of sessions deleted.
+ */
 export async function endAllSessions(
     userId: Types.ObjectId | string
 ): Promise<number> {
-    const result = await Session.deleteMany({ user: userId });
+    const result = await Session.deleteMany({
+        user: userId,
+    });
 
     return result.deletedCount ?? 0;
 }
 
 /* ==================================================================
-   touchSession — update lastActiveAt (fire-and-forget)
+   Session Activity Tracking
    ================================================================== */
-export async function touchSession(sessionId: string): Promise<void> {
+
+/**
+ * Updates the last activity timestamp for the specified session.
+ *
+ * This operation can be invoked asynchronously by the authentication
+ * middleware to track session activity.
+ */
+export async function touchSession(
+    sessionId: string
+): Promise<void> {
     await Session.updateOne(
         { sessionId },
         { lastActiveAt: new Date() }
