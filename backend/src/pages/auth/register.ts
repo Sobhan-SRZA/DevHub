@@ -1,12 +1,19 @@
-import { redirectProfile } from "../../middleware/auth";
 import { Router } from "express";
+import { redirectProfile } from "../../middleware/auth";
 import noCache from "../../middleware/noCache";
 
 const router = Router();
 
-router.get("/register", noCache, redirectProfile, (req, res) => {
-    return res.render("auth/register");
-});
+/* -------------------- Registration Page -------------------- */
+
+router.get(
+    "/register",
+    noCache,
+    redirectProfile,
+    (req, res) => {
+        return res.render("auth/register");
+    }
+);
 
 export default router;
 
