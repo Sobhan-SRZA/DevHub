@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- SEO metadata for the login page -->
   <%- include("../components/seo-head", {
-    title: "ورود",
-    description: "ورود به حساب کاربری DevHub",
+    title: "Sign In",
+    description: "Sign in to your DevHub account.",
     noindex: true,
     canonicalPath: "/auth/login",
     extraStyles: ["/styles/auth.css", "/styles/form-errors.css"]
@@ -12,46 +13,49 @@
 </head>
 
 <body>
+  <!-- Site header and global error dialog -->
   <%- include("../components/header") %>
   <%- include("../components/dialogError") %>
 
   <section class="container auth">
     <div class="auth-card">
+      <h2 class="auth-title">Welcome</h2>
+      <p class="auth-sub">Sign in to your account to continue.</p>
 
-      <h2 class="auth-title">خوش آمدید</h2>
-      <p class="auth-sub">برای ادامه وارد حساب خود شوید</p>
-
+      <!-- Sign-in form -->
       <form class="auth-form" id="loginForm" action="/api/auth/login" method="POST">
-
+        <!-- Account identifier (email or username) -->
         <div class="field">
-          <label for="login-identifier">ایمیل یا نام کاربری</label>
-          <input id="login-identifier" type="text" name="identifier" placeholder="example@mail.com یا username" autocomplete="username" required>
+          <label for="login-identifier">Email or Username</label>
+          <input id="login-identifier" type="text" name="identifier" placeholder="example@mail.com or username" autocomplete="username" required>
         </div>
 
+        <!-- Password with visibility toggle -->
         <div class="field">
-          <label for="login-password">رمز عبور</label>
+          <label for="login-password">Password</label>
           <div class="password-wrap">
             <input id="login-password" type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
-            <button type="button" class="toggle-pass" data-target="login-password" aria-label="نمایش رمز"></button>
+            <button type="button" class="toggle-pass" data-target="login-password" aria-label="Show password"></button>
           </div>
         </div>
 
+        <!-- Remember-me and forgot-password link -->
         <div class="auth-row">
           <label class="checkbox">
             <input type="checkbox" name="remember">
-            <span>مرا به خاطر بسپار</span>
+            <span>Remember me</span>
           </label>
-          <a href="/auth/forgot-password" class="auth-link">فراموشی رمز؟</a>
+          <a href="/auth/forgot-password" class="auth-link">Forgot password?</a>
         </div>
 
-        <button type="submit" class="auth-btn">ورود</button>
+        <button type="submit" class="auth-btn">Sign In</button>
 
+        <!-- Link to the registration page -->
         <p class="auth-foot">
-          حساب نداری؟
-          <a href="/auth/register" class="auth-link">ثبت نام کن</a>
+          Don't have an account?
+          <a href="/auth/register" class="auth-link">Sign up</a>
         </p>
       </form>
-
     </div>
   </section>
 </body>
