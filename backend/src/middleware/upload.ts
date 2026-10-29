@@ -7,7 +7,8 @@ import {
 import type {
     Request,
     Response,
-    NextFunction
+    NextFunction,
+    RequestHandler
 } from "express";
 import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
@@ -16,26 +17,39 @@ import multer from "multer";
 export const mwUploadAvatar = wrap(uploadAvatar);
 
 /**
- * Multer رو با هندل خطا wrap می‌کنه.
- * - خطاهای multer (LIMIT_FILE_SIZE, ...) رو به AppError تبدیل می‌کنه.
+ * Wraps a Multer middleware to handle upload errors.
+ *
+ * Converts Multer errors (e.g., LIMIT_FILE_SIZE) into AppError instances
+ * with appropriate HTTP status codes and application error codes.
  */
-function wrap(mw: any) {
+function wrap(mw: RequestHandler): RequestHandler {
     return (req: Request, res: Response, next: NextFunction) => {
-        mw(req, res, (err: any) => {
-            if (!err)
+        mw(req, res, (err?: unknown) => {
+            if (!err) {
                 return next();
+            }
 
             if (err instanceof multer.MulterError) {
                 switch (err.code) {
                     case "LIMIT_FILE_SIZE":
-                        return next(new AppError(413, ErrorCodes.FILE_TOO_LARGE));
+                        return next(
+                            new AppError(413, ErrorCodes.FILE_TOO_LARGE)
+                        );
 
                     case "LIMIT_FILE_COUNT":
                     case "LIMIT_UNEXPECTED_FILE":
-                        return next(new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED));
+                        return next(
+                            new AppError(400, ErrorCodes.MEDIA_LIMIT_REACHED)
+                        );
 
                     default:
-                        return next(new AppError(400, ErrorCodes.FILE_UPLOAD_FAILED, err.message));
+                        return next(
+                            new AppError(
+                                400,
+                                ErrorCodes.FILE_UPLOAD_FAILED,
+                                err.message
+                            )
+                        );
                 }
             }
 
