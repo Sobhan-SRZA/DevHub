@@ -1,61 +1,80 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint to prevent flashing. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/home.css">
-  <title>داشبورد</title>
+
+  <title>Dashboard</title>
 </head>
 
 <body>
   <%- include("../components/dialogError") %>
 
   <%
-        /* ---------- منبع واحد ---------- */
-        const cu          = (locals && locals.currentUser) || null;
-        const role        = (locals && locals.userRole) || cu?.role || 'user';
-        const isAdmin     = (locals && typeof locals.isAdmin === 'boolean') ? locals.isAdmin : ['admin', 'developer'].includes(role);
-        const isDeveloper = (locals && typeof locals.isDeveloper === 'boolean') ? locals.isDeveloper : role === 'developer';
-        const firstName   = (cu?.name || cu?.username || 'کاربر').split(' ')[0];
-        const emailVerified = !!cu?.emailVerified;
-        const roleLabel   = { user: 'کاربر', admin: 'ادمین', developer: 'دولوپر' }[role];
-    %>
+    /* ------------------------------------------------------------------
+     * Single source of truth for the current user and role flags.
+     * These values are consumed by the view and exposed to client-side
+     * scripts through window globals below.
+     * ------------------------------------------------------------------ */
+    const cu = (locals && locals.currentUser) || null;
+    const role = (locals && locals.userRole) || cu?.role || 'user';
+    const isAdmin = (locals && typeof locals.isAdmin === 'boolean')
+      ? locals.isAdmin
+      : ['admin', 'developer'].includes(role);
+    const isDeveloper = (locals && typeof locals.isDeveloper === 'boolean')
+      ? locals.isDeveloper
+      : role === 'developer';
+    const firstName = (cu?.name || cu?.username || 'User').split(' ')[0];
+    const emailVerified = !!cu?.emailVerified;
+    const roleLabel = { user: 'User', admin: 'Admin', developer: 'Developer' }[role];
+  %>
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: 	"نمای کلی" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "Overview" }) %>
 
     <main class="dash-main">
-      <!-- ============================================ -->
-      <!-- EMAIL VERIFY BANNER                          -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           EMAIL VERIFICATION BANNER
+           Displayed only when the current user's email is not verified.
+           ============================================================ -->
       <% if (!emailVerified) { %>
       <div class="home-alert home-alert--warn" id="emailVerifyBanner">
         <div class="home-alert__icon">
@@ -65,12 +84,14 @@
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
         </div>
+
         <div class="home-alert__body">
-          <strong>ایمیل شما تایید نشده است</strong>
-          <small>برای ساخت پروژه باید ابتدا ایمیل خود را تایید کنید</small>
+          <strong>Your email address is not verified</strong>
+          <small>You must verify your email before creating a project.</small>
         </div>
+
         <a href="/auth/verify-email" class="home-alert__action">
-          تایید ایمیل
+          Verify email
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
@@ -78,17 +99,21 @@
       </div>
       <% } %>
 
-      <!-- ============================================ -->
-      <!-- WELCOME HERO                                 -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           WELCOME HERO
+           Personalized greeting and primary project action.
+           ============================================================ -->
       <section class="home-welcome" data-role="<%= role %>">
         <div class="home-welcome__glow"></div>
+
         <div class="home-welcome__content">
           <div class="home-welcome__text">
             <h1 class="home-welcome__title">
-              سلام، <span class="home-welcome__name"><%= firstName %></span> 👋
+              Hello, <span class="home-welcome__name"><%= firstName %></span> 👋
             </h1>
-            <p class="home-welcome__sub" id="welcomeGreeting">به داشبورد خودت خوش آمدی</p>
+
+            <p class="home-welcome__sub" id="welcomeGreeting">Welcome to your dashboard.</p>
+
             <div class="home-welcome__role-badge" data-role="<%= role %>">
               <%= roleLabel %>
             </div>
@@ -100,15 +125,16 @@
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              پروژه جدید
+              New project
             </a>
           </div>
         </div>
       </section>
 
-      <!-- ============================================ -->
-      <!-- PRIMARY STATS                                -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           PRIMARY STATISTICS
+           Skeleton placeholders are replaced by client-side data.
+           ============================================================ -->
       <section class="home-stats" id="primaryStats">
         <div class="home-stat-card home-stat-card--skeleton"></div>
         <div class="home-stat-card home-stat-card--skeleton"></div>
@@ -116,9 +142,10 @@
         <div class="home-stat-card home-stat-card--skeleton"></div>
       </section>
 
-      <!-- ============================================ -->
-      <!-- ADMIN QUICK PANEL                            -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           ADMIN QUICK PANEL
+           Visible only to administrators and developers.
+           ============================================================ -->
       <% if (isAdmin) { %>
       <section class="home-section">
         <div class="home-section__head">
@@ -128,9 +155,10 @@
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
               </svg>
             </span>
-            پنل مدیریت
+            Administration panel
           </h2>
-          <p class="home-section__sub">دسترسی سریع به بخش‌های مدیریتی</p>
+
+          <p class="home-section__sub">Quick access to administrative sections.</p>
         </div>
 
         <div class="home-admin-grid">
@@ -143,8 +171,9 @@
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
+
             <div class="home-admin-card__body">
-              <strong>کاربران</strong>
+              <strong>Users</strong>
               <small id="adminUsersCount">—</small>
             </div>
           </a>
@@ -156,8 +185,9 @@
                 <line x1="7" y1="7" x2="7.01" y2="7"></line>
               </svg>
             </div>
+
             <div class="home-admin-card__body">
-              <strong>تگ‌ها</strong>
+              <strong>Tags</strong>
               <small id="adminTagsCount">—</small>
             </div>
           </a>
@@ -173,8 +203,9 @@
                 <line x1="3" y1="18" x2="3.01" y2="18"></line>
               </svg>
             </div>
+
             <div class="home-admin-card__body">
-              <strong>نوع تگ‌ها</strong>
+              <strong>Tag types</strong>
               <small id="adminTypesCount">—</small>
             </div>
           </a>
@@ -186,8 +217,9 @@
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
             </div>
+
             <div class="home-admin-card__body">
-              <strong>در انتظار تایید</strong>
+              <strong>Pending approval</strong>
               <small id="adminPendingCount">—</small>
             </div>
           </div>
@@ -195,9 +227,10 @@
       </section>
       <% } %>
 
-      <!-- ============================================ -->
-      <!-- DEV HEALTH                                   -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           DEVELOPER HEALTH
+           Technical and server resource information for developers.
+           ============================================================ -->
       <% if (isDeveloper) { %>
       <section class="home-section">
         <div class="home-section__head">
@@ -209,24 +242,28 @@
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
             </span>
-            وضعیت سیستم
+            System health
           </h2>
-          <p class="home-section__sub">اطلاعات فنی و منابع سرور</p>
+
+          <p class="home-section__sub">Technical information and server resources.</p>
         </div>
 
         <div class="dev-health-grid" id="devHealth">
           <div class="dev-health-card">
-            <span class="dev-health-card__label">وضعیت دیتابیس</span>
+            <span class="dev-health-card__label">Database status</span>
             <span class="dev-health-card__value dev-health-card__value--loading" id="devDbStatus">—</span>
           </div>
+
           <div class="dev-health-card">
             <span class="dev-health-card__label">Uptime</span>
             <span class="dev-health-card__value dev-health-card__value--loading" id="devUptime">—</span>
           </div>
+
           <div class="dev-health-card">
-            <span class="dev-health-card__label">حافظه</span>
+            <span class="dev-health-card__label">Memory</span>
             <span class="dev-health-card__value dev-health-card__value--loading" id="devMemory">—</span>
           </div>
+
           <div class="dev-health-card">
             <span class="dev-health-card__label">Node.js</span>
             <span class="dev-health-card__value dev-health-card__value--loading" id="devNode">—</span>
@@ -235,9 +272,10 @@
       </section>
       <% } %>
 
-      <!-- ============================================ -->
-      <!-- RECENT PROJECTS                              -->
-      <!-- ============================================ -->
+      <!-- ============================================================
+           RECENT PROJECTS
+           Latest projects are loaded client-side into this container.
+           ============================================================ -->
       <section class="home-section">
         <div class="home-section__head">
           <h2 class="home-section__title">
@@ -247,10 +285,11 @@
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
               </svg>
             </span>
-            پروژه‌های اخیر
+            Recent projects
           </h2>
+
           <a href="/dashboard/projects" class="home-section__link">
-            مشاهده همه
+            View all
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -263,17 +302,21 @@
           </div>
         </div>
       </section>
-
     </main>
   </div>
 
   <script>
-    /* ✅ JSON.stringify برای Boolean — جلوگیری از "undefined" string */
+    /*
+     * Expose server-rendered role and account flags to client-side modules.
+     * JSON.stringify is used for booleans to avoid serializing "undefined"
+     * as a string literal.
+     */
     window.__USER_ROLE__ = <%- JSON.stringify(role) %>;
     window.__IS_ADMIN__ = <%- JSON.stringify(!!isAdmin) %>;
     window.__IS_DEVELOPER__ = <%- JSON.stringify(!!isDeveloper) %>;
     window.__EMAIL_VERIFIED__ = <%- JSON.stringify(emailVerified) %>;
   </script>
+
   <script src="/js/dashboard-nav.js"></script>
   <script src="/js/dashboard/home.js"></script>
 </body>
