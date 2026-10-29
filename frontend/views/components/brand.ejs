@@ -1,41 +1,64 @@
 <%
     /*
-        پارامترها:
-        - brandGradientId (اجباری): شناسه یکتای gradient
-        - brandSize (پیش‌فرض 32): اندازه
-        - brandShowText (پیش‌فرض true): نمایش نام
-        - brandHref (پیش‌فرض '/'): لینک
-        - brandName (پیش‌فرض 'DevHub'): نام برند
-        - brandClass (اختیاری): کلاس اضافه
-    */
-    const gradientId = typeof brandGradientId !== 'undefined' ? brandGradientId : 'brandGradDefault';
-    const size = typeof brandSize !== 'undefined' ? brandSize : 32;
-    const showText = typeof brandShowText !== 'undefined' ? brandShowText : true;
-    const href = typeof brandHref !== 'undefined' ? brandHref : '/';
-    const name = typeof brandName !== 'undefined' ? brandName : 'DevHub';
-    const extraClass = typeof brandClass !== 'undefined' ? ` ${brandClass}` : '';
+     * Component Parameters:
+     * - brandGradientId (required): Unique identifier for the SVG gradient.
+     * - brandSize (default: 32): Width and height of the brand icon.
+     * - brandShowText (default: true): Whether to display the brand name.
+     * - brandHref (default: '/'): Destination URL for the brand link.
+     * - brandName (default: 'DevHub'): Brand name displayed to users.
+     * - brandClass (optional): Additional CSS classes for the brand link.
+     */
+    const gradientId = typeof brandGradientId !== "undefined"
+        ? brandGradientId
+        : "brandGradDefault";
+
+    const size = typeof brandSize !== "undefined"
+        ? brandSize
+        : 32;
+
+    const showText = typeof brandShowText !== "undefined"
+        ? brandShowText
+        : true;
+
+    const href = typeof brandHref !== "undefined"
+        ? brandHref
+        : "/";
+
+    const name = typeof brandName !== "undefined"
+        ? brandName
+        : "DevHub";
+
+    const extraClass = typeof brandClass !== "undefined"
+        ? ` ${brandClass}`
+        : "";
 %>
+
 <a href="<%= href %>" class="h-logo<%= extraClass %>" aria-label="<%= name %>">
-  <svg width="<%= size %>" height="<%= size %>" viewBox="7 7 50 50" xmlns="http://www.w3.org/2000/svg" class="h-logo__icon-svg">
+  <svg width="<%= size %>" height="<%= size %>" viewBox="7 7 50 50" xmlns="http://www.w3.org/2000/svg" class="h-logo__icon-svg" aria-hidden="true">
     <defs>
       <linearGradient id="<%= gradientId %>" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="#007bff"></stop>
         <stop offset="100%" stop-color="#6ebbff"></stop>
       </linearGradient>
     </defs>
+
     <g stroke="#6ebbff" stroke-width="2.5" opacity="0.5">
       <line x1="32" y1="32" x2="32" y2="12"></line>
       <line x1="32" y1="32" x2="32" y2="52"></line>
       <line x1="32" y1="32" x2="12" y2="32"></line>
       <line x1="32" y1="32" x2="52" y2="32"></line>
     </g>
+
     <circle cx="32" cy="12" r="4" fill="#6ebbff"></circle>
     <circle cx="32" cy="52" r="4" fill="#6ebbff"></circle>
     <circle cx="12" cy="32" r="4" fill="#6ebbff"></circle>
     <circle cx="52" cy="32" r="4" fill="#6ebbff"></circle>
+
     <circle cx="32" cy="32" r="12" fill="url(#<%= gradientId %>)"></circle>
+
     <text x="32" y="35" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="monospace">&lt;/&gt;</text>
   </svg>
+
   <% if (showText) { %>
   <span class="h-logo__text"><%= name %></span>
   <% } %>
