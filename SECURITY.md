@@ -9,11 +9,11 @@
 
 ما فقط آخرین نسخه‌ی پایدار را پشتیبانی امنیتی می‌کنیم:
 
-| Version | Supported | Notes |
-|---------|:---------:|-------|
-| `main` (latest) | ✅ | دریافت patch امنیتی |
-| `v1.x` | ✅ | فقط critical fixes |
-| `< v1.0` | ❌ | استفاده نکنید |
+| Version         | Supported | Notes               |
+| --------------- | :-------: | ------------------- |
+| `main` (latest) |     ✅     | دریافت patch امنیتی |
+| `v1.x`          |     ✅     | فقط critical fixes  |
+| `< v1.0`        |     ❌     | استفاده نکنید       |
 
 > **توصیه:** همیشه از آخرین commit روی `main` استفاده کنید.
 
@@ -27,11 +27,11 @@
 
 ### 📧 راه‌های ارتباط خصوصی
 
-| روش | آدرس | اولویت |
-|------|------|:------:|
-| **GitHub Security Advisory** | [Report privately](https://github.com/Sobhan-SRZA/manage-projects/security/advisories/new) | ⭐ توصیه‌شده |
-| **Email** | `security@example.com` | جایگزین |
-| **PGP** (اختیاری) | [کلید عمومی](./.well-known/security.asc) | برای اطلاعات حساس |
+| روش                          | آدرس                                                                                       |      اولویت       |
+| ---------------------------- | ------------------------------------------------------------------------------------------ | :---------------: |
+| **GitHub Security Advisory** | [Report privately](https://github.com/Sobhan-SRZA/manage-projects/security/advisories/new) |    ⭐ توصیه‌شده     |
+| **Email**                    | `security@example.com`                                                                     |      جایگزین      |
+| **PGP** (اختیاری)            | [کلید عمومی](./.well-known/security.asc)                                                   | برای اطلاعات حساس |
 
 ### 📝 چه چیزی در گزارش بنویسیم؟
 
@@ -64,13 +64,13 @@
 
 ### ⏱️ Timeline پاسخ‌دهی
 
-| مرحله | زمان تعهد |
-|-------|:---------:|
-| تأیید دریافت گزارش | **≤ 48 ساعت** |
-| ارزیابی اولیه و شدت | **≤ 5 روز کاری** |
-| برنامه fix و ETA | **≤ 10 روز کاری** |
-| انتشار patch | بسته به شدت (critical: 7d، high: 30d) |
-| انتشار عمومی (advisory) | بعد از fix |
+| مرحله                   |               زمان تعهد               |
+| ----------------------- | :-----------------------------------: |
+| تأیید دریافت گزارش      |             **≤ 48 ساعت**             |
+| ارزیابی اولیه و شدت     |           **≤ 5 روز کاری**            |
+| برنامه fix و ETA        |           **≤ 10 روز کاری**           |
+| انتشار patch            | بسته به شدت (critical: 7d، high: 30d) |
+| انتشار عمومی (advisory) |              بعد از fix               |
 
 ---
 
@@ -107,22 +107,22 @@
 
 ### 🔐 Authentication & Sessions
 
-| مورد | پیاده‌سازی | فایل |
-|------|-----------|------|
-| **Password hashing** | bcrypt (12 rounds، auto salt) | `models/User.ts` |
-| **Password policy** | حداقل ۸ کاراکتر، حداقل حرف + عدد | `validators/authValidator.ts` |
-| **Login rate** | OTP-based با cooldown | `services/verificationService.ts` |
-| **OTP hash** | SHA-256 + random salt | `models/VerificationCode.ts` |
-| **OTP attempts** | ۵ تلاش، بعد حذف | `services/verificationService.ts` |
-| **OTP cooldown** | ۶۰ ثانیه بین درخواست‌ها | `services/verificationService.ts` |
-| **OTP TTL** | ۱۰ دقیقه | `services/verificationService.ts` |
-| **JWT** | access 15min + refresh 30d | `utils/token.ts` |
-| **JWT `typ` check** | access و refresh جدا | `middleware/auth.ts` |
-| **Refresh rotation** | هر refresh → access جدید | `controllers/authController.ts` |
-| **Session revocation** | روی password change | `controllers/profileController.ts` |
-| **Session storage** | DB با device + location | `models/Session.ts` |
-| **Email verification** | اجباری قبل از login | `controllers/authController.ts` |
-| **Email change** | دو مرحله‌ای (old + new) | `controllers/profileController.ts` |
+| مورد                   | پیاده‌سازی                        | فایل                               |
+| ---------------------- | -------------------------------- | ---------------------------------- |
+| **Password hashing**   | bcrypt (12 rounds، auto salt)    | `models/User.ts`                   |
+| **Password policy**    | حداقل ۸ کاراکتر، حداقل حرف + عدد | `validators/authValidator.ts`      |
+| **Login rate**         | OTP-based با cooldown            | `services/verificationService.ts`  |
+| **OTP hash**           | SHA-256 + random salt            | `models/VerificationCode.ts`       |
+| **OTP attempts**       | ۵ تلاش، بعد حذف                  | `services/verificationService.ts`  |
+| **OTP cooldown**       | ۶۰ ثانیه بین درخواست‌ها           | `services/verificationService.ts`  |
+| **OTP TTL**            | ۱۰ دقیقه                         | `services/verificationService.ts`  |
+| **JWT**                | access 15min + refresh 30d       | `utils/token.ts`                   |
+| **JWT `typ` check**    | access و refresh جدا             | `middleware/auth.ts`               |
+| **Refresh rotation**   | هر refresh → access جدید         | `controllers/authController.ts`    |
+| **Session revocation** | روی password change              | `controllers/profileController.ts` |
+| **Session storage**    | DB با device + location          | `models/Session.ts`                |
+| **Email verification** | اجباری قبل از login              | `controllers/authController.ts`    |
+| **Email change**       | دو مرحله‌ای (old + new)           | `controllers/profileController.ts` |
 
 ### 🍪 Cookie Security
 
@@ -141,12 +141,12 @@ const cookieOpts = {
 
 ### 🔍 Input Validation
 
-| لایه | ابزار | محل |
-|------|-------|-----|
-| **Body** | Zod schemas | `validators/*.ts` |
-| **Query** | Zod + coerce | `validators/*QuerySchema` |
-| **Params** | regex + ObjectId check | controllers |
-| **File** | MIME + size + ext | `config/upload.ts` |
+| لایه       | ابزار                  | محل                       |
+| ---------- | ---------------------- | ------------------------- |
+| **Body**   | Zod schemas            | `validators/*.ts`         |
+| **Query**  | Zod + coerce           | `validators/*QuerySchema` |
+| **Params** | regex + ObjectId check | controllers               |
+| **File**   | MIME + size + ext      | `config/upload.ts`        |
 
 **قواعد سختگیرانه**:
 - Username: `[a-zA-Z0-9_.-]{3,20}` — بدون `@`, بدون فاصله، بدون حروف غیرانگلیسی
@@ -157,28 +157,28 @@ const cookieOpts = {
 
 ### 🛡️ XSS Prevention
 
-| مورد | پیاده‌سازی |
-|------|-----------|
-| **EJS `<%= %>`** | auto-escape |
-| **`escapeHtml()`** | قبل از `innerHTML` در همه‌ی JS |
-| **Markdown sanitize** | whitelist تگ‌ها + strip `on*` + `javascript:` | `components/markdown-editor.js` |
-| **Allowed tags** | `H1-H6, P, STRONG, EM, A, IMG, CODE, PRE, TABLE, ...` | `parseMarkdown` |
-| **Forbidden tags** | `script, style, iframe, object, form, meta, svg, math` | `sanitizeHtml` |
-| **URL check** | `javascript:`, `vbscript:`, `data:` (جز `data:image/`) مسدود | `sanitizeHtml` |
-| **`rel="noopener noreferrer"`** | روی همه‌ی لینک‌های خارجی | `sanitizeHtml` |
+| مورد                            | پیاده‌سازی                                                    |
+| ------------------------------- | ------------------------------------------------------------ |
+| **EJS `<%= %>`**                | auto-escape                                                  |
+| **`escapeHtml()`**              | قبل از `innerHTML` در همه‌ی JS                                |
+| **Markdown sanitize**           | whitelist تگ‌ها + strip `on*` + `javascript:`                 | `components/markdown-editor.js` |
+| **Allowed tags**                | `H1-H6, P, STRONG, EM, A, IMG, CODE, PRE, TABLE, ...`        | `parseMarkdown`                 |
+| **Forbidden tags**              | `script, style, iframe, object, form, meta, svg, math`       | `sanitizeHtml`                  |
+| **URL check**                   | `javascript:`, `vbscript:`, `data:` (جز `data:image/`) مسدود | `sanitizeHtml`                  |
+| **`rel="noopener noreferrer"`** | روی همه‌ی لینک‌های خارجی                                       | `sanitizeHtml`                  |
 
 ### 📁 File Upload Security
 
-| مورد | پیاده‌سازی |
-|------|-----------|
-| **Storage** | خارج از `public/`، فقط در `uploads/` |
-| **Filename** | random hash + ext اصلي (نه original name) |
-| **MIME check** | whitelist (`image/jpeg`, `video/mp4`, `application/zip`, ...) |
-| **Size limits** | image 5MB / video 200MB / file 500MB |
-| **Count limits** | حداکثر ۱۰ تصویر، ۱ ویدیو، ۱ فایل |
-| **Path traversal** | `path.basename()` + `path.resolve()` + prefix check |
-| **Static serving** | `X-Content-Type-Options: nosniff` |
-| **Download** | `Content-Disposition: attachment` |
+| مورد               | پیاده‌سازی                                                     |
+| ------------------ | ------------------------------------------------------------- |
+| **Storage**        | خارج از `public/`، فقط در `uploads/`                          |
+| **Filename**       | random hash + ext اصلي (نه original name)                     |
+| **MIME check**     | whitelist (`image/jpeg`, `video/mp4`, `application/zip`, ...) |
+| **Size limits**    | image 5MB / video 200MB / file 500MB                          |
+| **Count limits**   | حداکثر ۱۰ تصویر، ۱ ویدیو، ۱ فایل                              |
+| **Path traversal** | `path.basename()` + `path.resolve()` + prefix check           |
+| **Static serving** | `X-Content-Type-Options: nosniff`                             |
+| **Download**       | `Content-Disposition: attachment`                             |
 
 **پیشنهاد برای آینده** (فعلاً پیاده نشده):
 - [ ] بررسی magic bytes (`file-type` package)
@@ -187,11 +187,11 @@ const cookieOpts = {
 
 ### 🚦 Rate Limiting
 
-| Endpoint | Limit | محل |
-|----------|-------|-----|
-| **ارسال OTP** | ۵ ایمیل / دقیقه (per recipient) | `services/mail/rateLimiter.ts` |
+| Endpoint                | Limit                            | محل                               |
+| ----------------------- | -------------------------------- | --------------------------------- |
+| **ارسال OTP**           | ۵ ایمیل / دقیقه (per recipient)  | `services/mail/rateLimiter.ts`    |
 | **Create verification** | ۱ در ۶۰ ثانیه (per user+purpose) | `services/verificationService.ts` |
-| **OTP verification** | ۵ تلاش | `services/verificationService.ts` |
+| **OTP verification**    | ۵ تلاش                           | `services/verificationService.ts` |
 
 **پیشنهاد برای آینده**:
 - [ ] Rate limit روی `/api/auth/login` (per IP + per user)
@@ -201,12 +201,12 @@ const cookieOpts = {
 
 ### 🔒 Authorization
 
-| لایه | فایل |
-|------|------|
-| **Authentication** | `middleware/auth.ts` (requireAuth, optionalAuth) |
-| **Page auth** | `middleware/pageAuth.ts` (redirect به login) |
-| **Role check** | `middleware/roles.ts` (requireAdmin, requireDeveloper) |
-| **Ownership** | `middleware/ownership.ts` (requireProjectOwnership, requireTagOwnership) |
+| لایه               | فایل                                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| **Authentication** | `middleware/auth.ts` (requireAuth, optionalAuth)                         |
+| **Page auth**      | `middleware/pageAuth.ts` (redirect به login)                             |
+| **Role check**     | `middleware/roles.ts` (requireAdmin, requireDeveloper)                   |
+| **Ownership**      | `middleware/ownership.ts` (requireProjectOwnership, requireTagOwnership) |
 
 **قواعد**:
 - کاربر فقط پروژه‌های خودش رو ویرایش/حذف می‌کنه
@@ -216,13 +216,13 @@ const cookieOpts = {
 
 ### 🗄️ Database Security
 
-| مورد | پیاده‌سازی |
-|------|-----------|
+| مورد                | پیاده‌سازی                                                        |
+| ------------------- | ---------------------------------------------------------------- |
 | **NoSQL injection** | Mongoose schema + Zod cast → بدون `$where` یا operator injection |
-| **Unique indexes** | email، usernameLower، slug، sessionId |
-| **TTL indexes** | Session (`expiresAt`)، VerificationCode (`expiresAt`) |
-| **Select: false** | `password`، `refreshToken` |
-| **Connection** | `MONGODB_URI` در env، نه در کد |
+| **Unique indexes**  | email، usernameLower، slug، sessionId                            |
+| **TTL indexes**     | Session (`expiresAt`)، VerificationCode (`expiresAt`)            |
+| **Select: false**   | `password`، `refreshToken`                                       |
+| **Connection**      | `MONGODB_URI` در env، نه در کد                                   |
 
 **قواعد نوشتن**:
 - هرگز رشته‌ی خام کاربر رو در query مونگو نذار
@@ -231,33 +231,33 @@ const cookieOpts = {
 
 ### 📧 Email Security
 
-| مورد | پیاده‌سازی |
-|------|-----------|
-| **TLS** | `minVersion: 'TLSv1.2'`، `rejectUnauthorized: true` (prod) |
-| **Timeout** | connection/greeting/socket |
-| **Anti-abuse** | rate limit per recipient |
-| **Anti-enumeration** | پیام یکسان: «اگر ایمیل موجود باشد، کد ارسال می‌شود» |
-| **Log mode** | `MAIL_MODE=log` برای dev (فقط کنسول) |
-| **HTML escape** | در `otpTemplate.ts` |
+| مورد                 | پیاده‌سازی                                                  |
+| -------------------- | ---------------------------------------------------------- |
+| **TLS**              | `minVersion: 'TLSv1.2'`، `rejectUnauthorized: true` (prod) |
+| **Timeout**          | connection/greeting/socket                                 |
+| **Anti-abuse**       | rate limit per recipient                                   |
+| **Anti-enumeration** | پیام یکسان: «اگر ایمیل موجود باشد، کد ارسال می‌شود»         |
+| **Log mode**         | `MAIL_MODE=log` برای dev (فقط کنسول)                       |
+| **HTML escape**      | در `otpTemplate.ts`                                        |
 
 ### 🚫 Anti-Enumeration
 
-| مورد | پاسخ |
-|------|------|
-| **Login (user exists?)** | پیام یکسان: «ایمیل/نام کاربری یا رمز اشتباه است» |
+| مورد                        | پاسخ                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| **Login (user exists?)**    | پیام یکسان: «ایمیل/نام کاربری یا رمز اشتباه است»                                           |
 | **Register (user exists?)** | کد اختصاصی (`USERNAME_TAKEN` / `EMAIL_TAKEN`) — فقط برای UX بهتر، چون register عامدانه است |
-| **Forgot password** | پیام یکسان: «اگر ایمیل موجود باشد...» + توکن fake برای ایمیل ناموجود |
-| **Change email** | چک تکراری در مرحله verify |
+| **Forgot password**         | پیام یکسان: «اگر ایمیل موجود باشد...» + توکن fake برای ایمیل ناموجود                       |
+| **Change email**            | چک تکراری در مرحله verify                                                                  |
 
 ### 📝 Logging & Monitoring
 
-| مورد | پیاده‌سازی |
-|------|-----------|
-| **App logs** | فایل روزانه در `logs/app-YYYY-MM-DD.log` |
-| **Sensitive data** | ❌ password، token، OTP، full JWT هرگز لاگ نمی‌شن |
-| **OTP in log mode** | در `MAIL_MODE=log` فقط، برای dev |
-| **Error logging** | `[UNHANDLED ERROR]` با stack (فقط dev) |
-| **Production** | فقط message عمومی، نه stack |
+| مورد                | پیاده‌سازی                                       |
+| ------------------- | ----------------------------------------------- |
+| **App logs**        | فایل روزانه در `logs/app-YYYY-MM-DD.log`        |
+| **Sensitive data**  | ❌ password، token، OTP، full JWT هرگز لاگ نمی‌شن |
+| **OTP in log mode** | در `MAIL_MODE=log` فقط، برای dev                |
+| **Error logging**   | `[UNHANDLED ERROR]` با stack (فقط dev)          |
+| **Production**      | فقط message عمومی، نه stack                     |
 
 **❌ چه چیزهایی هرگز لاگ نمی‌شن:**
 - `password` (هرگز)
@@ -296,14 +296,14 @@ app.use(helmet({
 
 **وضعیت فعلی:**
 
-| Header | وضعیت |
-|--------|:-----:|
+| Header                            |         وضعیت          |
+| --------------------------------- | :--------------------: |
 | `X-Content-Type-Options: nosniff` | ✅ (فقط روی `/uploads`) |
-| `Content-Security-Policy` | ❌ TODO |
-| `Strict-Transport-Security` | ❌ TODO (بعد از HTTPS) |
-| `X-Frame-Options: DENY` | ❌ TODO |
-| `Referrer-Policy` | ❌ TODO |
-| `Permissions-Policy` | ❌ TODO |
+| `Content-Security-Policy`         |         ❌ TODO         |
+| `Strict-Transport-Security`       | ❌ TODO (بعد از HTTPS)  |
+| `X-Frame-Options: DENY`           |         ❌ TODO         |
+| `Referrer-Policy`                 |         ❌ TODO         |
+| `Permissions-Policy`              |         ❌ TODO         |
 
 ---
 
@@ -311,18 +311,18 @@ app.use(helmet({
 
 ### در وضعیت فعلی، این موارد پیاده **نشده‌اند**:
 
-| مورد | ریسک | برنامه |
-|------|:----:|--------|
-| **Rate limit روی login** | 🟡 brute force | v1.1 |
-| **CAPTCHA روی register** | 🟡 spam bots | v1.1 (اگه لازم شد) |
-| **2FA (TOTP)** | 🟡 account takeover | v2.0 |
-| **Magic bytes check** | 🟡 fake MIME | v1.2 |
-| **Antivirus scan** | 🟡 malware upload | نیاز به ClamAV |
-| **CSP header** | 🟡 XSS depth | v1.1 |
-| **HSTS** | 🟡 downgrade | بعد از HTTPS setup |
-| **Audit log (DB)** | 🟢 forensics | v1.2 |
-| **IP whitelist (admin)** | 🟢 admin panel | v1.2 |
-| **Email change notification** | 🟢 alert به ایمیل قبلی | v1.1 |
+| مورد                          |         ریسک          | برنامه             |
+| ----------------------------- | :-------------------: | ------------------ |
+| **Rate limit روی login**      |     🟡 brute force     | v1.1               |
+| **CAPTCHA روی register**      |      🟡 spam bots      | v1.1 (اگه لازم شد) |
+| **2FA (TOTP)**                |  🟡 account takeover   | v2.0               |
+| **Magic bytes check**         |      🟡 fake MIME      | v1.2               |
+| **Antivirus scan**            |   🟡 malware upload    | نیاز به ClamAV     |
+| **CSP header**                |      🟡 XSS depth      | v1.1               |
+| **HSTS**                      |      🟡 downgrade      | بعد از HTTPS setup |
+| **Audit log (DB)**            |      🟢 forensics      | v1.2               |
+| **IP whitelist (admin)**      |     🟢 admin panel     | v1.2               |
+| **Email change notification** | 🟢 alert به ایمیل قبلی | v1.1               |
 
 ### 🔴 موارد زیر **خارج از کنترل پروژه** هستند:
 
@@ -338,16 +338,16 @@ app.use(helmet({
 
 ### Algorithms Used
 
-| کاربرد | الگوریتم | پارامترها |
-|--------|----------|-----------|
-| Password hash | **bcrypt** | rounds=12 |
-| OTP hash | **SHA-256** | + 16-byte random salt |
-| JWT signing | **HS256** | با `JWT_SECRET` (min 32 chars) |
-| Session ID | **crypto.randomBytes(16)** | hex (32 char) |
-| File name | **crypto.randomBytes(12)** | hex + timestamp |
-| Device fingerprint | **SHA-256** | userAgent + client fingerprint |
-| Password reset token | **JWT** (typ=password_reset) | expiry=15min |
-| Email verify token | **JWT** (typ=email_verify) | expiry=1h |
+| کاربرد               | الگوریتم                     | پارامترها                      |
+| -------------------- | ---------------------------- | ------------------------------ |
+| Password hash        | **bcrypt**                   | rounds=12                      |
+| OTP hash             | **SHA-256**                  | + 16-byte random salt          |
+| JWT signing          | **HS256**                    | با `JWT_SECRET` (min 32 chars) |
+| Session ID           | **crypto.randomBytes(16)**   | hex (32 char)                  |
+| File name            | **crypto.randomBytes(12)**   | hex + timestamp                |
+| Device fingerprint   | **SHA-256**                  | userAgent + client fingerprint |
+| Password reset token | **JWT** (typ=password_reset) | expiry=15min                   |
+| Email verify token   | **JWT** (typ=email_verify)   | expiry=1h                      |
 
 ### Secret Management
 
@@ -411,14 +411,14 @@ app.use(helmet({
 
 ### 🛠️ ابزارهای پیشنهادی
 
-| ابزار | کاربرد |
-|-------|--------|
-| **OWASP ZAP** | DAST scan |
-| **Burp Suite Community** | Manual testing |
-| **npm audit** | Dependency vulns |
-| **Snyk** | CI/CD scanning |
-| **Semgrep** | SAST (code patterns) |
-| **Trivy** | Container scan |
+| ابزار                    | کاربرد               |
+| ------------------------ | -------------------- |
+| **OWASP ZAP**            | DAST scan            |
+| **Burp Suite Community** | Manual testing       |
+| **npm audit**            | Dependency vulns     |
+| **Snyk**                 | CI/CD scanning       |
+| **Semgrep**              | SAST (code patterns) |
+| **Trivy**                | Container scan       |
 
 ```bash
 # اجرا
@@ -470,9 +470,9 @@ _هنوز کسی ثبت نشده. اولین نفر باشید!_
 
 ## 🔄 Changelog امنیتی
 
-| تاریخ | نسخه | مورد |
-|-------|------|------|
-| — | — | (پروژه در حال توسعه) |
+| تاریخ | نسخه | مورد                 |
+| ----- | ---- | -------------------- |
+| —     | —    | (پروژه در حال توسعه) |
 
 ---
 
@@ -498,11 +498,11 @@ _هنوز کسی ثبت نشده. اولین نفر باشید!_
 
 ## 📞 Contact
 
-| نقش | آدرس |
-|------|------|
-| **Maintainer** | [@Sobhan-SRZA](https://github.com/Sobhan-SRZA) |
-| **Security Email** | `security@example.com` |
-| **PGP Key** | [`.well-known/security.asc`](./.well-known/security.asc) |
+| نقش                | آدرس                                                     |
+| ------------------ | -------------------------------------------------------- |
+| **Maintainer**     | [@Sobhan-SRZA](https://github.com/Sobhan-SRZA)           |
+| **Security Email** | `security@example.com`                                   |
+| **PGP Key**        | [`.well-known/security.asc`](./.well-known/security.asc) |
 
 ---
 
