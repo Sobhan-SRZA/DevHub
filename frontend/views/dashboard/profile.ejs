@@ -1,31 +1,40 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
+  <!-- Apply persisted theme and accent preferences before first paint. -->
   <meta charset="UTF-8">
   <script>
     (function() {
       try {
-        var m = localStorage.getItem('dh-mode') || 'system';
-        var a = localStorage.getItem('dh-accent') || 'blue';
-        var r = m === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m;
-        document.documentElement.setAttribute('data-mode', r);
-        document.documentElement.setAttribute('data-accent', a);
-        document.documentElement.style.colorScheme = r;
+        var mode = localStorage.getItem('dh-mode') || 'system';
+        var accent = localStorage.getItem('dh-accent') || 'blue';
+        var resolvedMode = mode === 'system' ?
+          (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') :
+          mode;
+
+        document.documentElement.setAttribute('data-mode', resolvedMode);
+        document.documentElement.setAttribute('data-accent', accent);
+        document.documentElement.style.colorScheme = resolvedMode;
       } catch (e) {}
     })();
   </script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts and global styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/styles/index.css">
   <link rel="stylesheet" href="/styles/themes.css">
+
   <!-- Favicon -->
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/logo.svg">
+
+  <!-- Page-specific styles -->
   <link rel="stylesheet" href="/styles/dialog.css">
   <link rel="stylesheet" href="/styles/form-errors.css">
   <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
@@ -33,7 +42,8 @@
   <link rel="stylesheet" href="/styles/tailwind.css">
   <link rel="stylesheet" href="/styles/dashboard/profile.css">
   <link rel="stylesheet" href="/styles/markdown-editor.css">
-  <title>نمای کلی حساب</title>
+
+  <title>Account overview</title>
 </head>
 
 <body>
@@ -41,11 +51,14 @@
 
   <div class="dash-layout">
     <%- include("../components/dashboard-nav") %>
-    <%- include("../components/dash-breadcrumb", { pageTitle: "پروفایل من" }) %>
+    <%- include("../components/dash-breadcrumb", { pageTitle: "My profile" }) %>
 
     <main class="profile-page container">
-
-      <!-- ============ HERO ============ -->
+      <!-- ============================================================
+           PROFILE HERO
+           Displays avatar, identity, role badge, email status, and
+           primary account actions.
+           ============================================================ -->
       <section class="profile-hero">
         <div class="profile-avatar-big" id="profileAvatarBig">
           <span id="profileAvatarInitial">?</span>
@@ -53,10 +66,12 @@
 
         <div class="profile-hero-info">
           <div class="profile-hero-line">
-            <h1 class="profile-hero-name" id="profileHeroName">در حال بارگذاری…</h1>
+            <h1 class="profile-hero-name" id="profileHeroName">Loading…</h1>
             <span class="role-badge" id="profileRoleBadge" hidden>—</span>
           </div>
+
           <p class="profile-hero-username" id="profileHeroUsername">@—</p>
+
           <div class="profile-hero-meta">
             <span class="profile-hero-email" id="profileHeroEmail">—</span>
             <span class="email-badge" id="profileEmailBadge" hidden></span>
@@ -65,67 +80,81 @@
 
         <div class="profile-hero-actions">
           <a class="btn-secondary" id="viewPublicBtn" href="#" target="_blank" rel="noopener">
-            مشاهده پروفایل عمومی
+            View public profile
           </a>
-          <a class="btn-secondary" href="/dashboard/settings">ویرایش پروفایل</a>
-          <a class="btn-secondary" href="/dashboard/security">امنیت و نشست‌ها</a>
+          <a class="btn-secondary" href="/dashboard/settings">Edit profile</a>
+          <a class="btn-secondary" href="/dashboard/security">Security and sessions</a>
         </div>
       </section>
 
-      <!-- ============ STATS ============ -->
+      <!-- ============================================================
+           PROFILE STATISTICS
+           Aggregated project, review, download, and rating metrics.
+           ============================================================ -->
       <section class="profile-stats">
         <div class="stat-card">
           <span class="stat-value" id="statProjects">—</span>
-          <span class="stat-label">پروژه</span>
+          <span class="stat-label">Projects</span>
         </div>
         <div class="stat-card">
           <span class="stat-value" id="statReviews">—</span>
-          <span class="stat-label">ریویو دریافتی</span>
+          <span class="stat-label">Reviews received</span>
         </div>
         <div class="stat-card">
           <span class="stat-value" id="statDownloads">—</span>
-          <span class="stat-label">دانلود</span>
+          <span class="stat-label">Downloads</span>
         </div>
         <div class="stat-card">
           <span class="stat-value" id="statRating">—</span>
-          <span class="stat-label">میانگین امتیاز</span>
+          <span class="stat-label">Average rating</span>
         </div>
       </section>
 
-      <!-- ============ RECENT PROJECTS ============ -->
+      <!-- ============================================================
+           RECENT PROJECTS
+           Latest projects are loaded client-side into this container.
+           ============================================================ -->
       <section class="profile-recent">
         <div class="section-head">
-          <h2 class="section-title">پروژه‌های من</h2>
-          <a class="section-link" href="/dashboard/projects">همه پروژه‌ها ←</a>
+          <h2 class="section-title">My projects</h2>
+          <a class="section-link" href="/dashboard/projects">All projects →</a>
         </div>
+
         <div id="recentProjects" class="recent-projects-grid">
-          <div class="recent-loading">در حال بارگذاری…</div>
+          <div class="recent-loading">Loading…</div>
         </div>
       </section>
 
-      <!-- ============ BIO — Display mode ============ -->
+      <!-- ============================================================
+           BIO — DISPLAY MODE
+           Renders the Markdown-formatted biography in read-only mode.
+           ============================================================ -->
       <section class="profile-bio" id="profileBioSection" hidden>
         <div class="section-head">
-          <h2 class="section-title">درباره من</h2>
-          <button type="button" class="section-link" id="editBioBtn">ویرایش ←</button>
+          <h2 class="section-title">About me</h2>
+          <button type="button" class="section-link" id="editBioBtn">Edit →</button>
         </div>
+
         <div id="profileBioDisplay" class="profile-bio-content">
           <div class="md-preview-content"></div>
         </div>
       </section>
 
-      <!-- ============ BIO — Edit mode (hidden by default) ============ -->
+      <!-- ============================================================
+           BIO — EDIT MODE
+           Hidden by default; hosts the Markdown editor for the bio.
+           ============================================================ -->
       <section class="profile-bio profile-bio--editing" id="profileBioEditSection" hidden>
         <div class="section-head">
-          <h2 class="section-title">ویرایش بیو</h2>
+          <h2 class="section-title">Edit bio</h2>
         </div>
 
-        <!-- MarkdownEditor اینجا mount می‌شود -->
+        <!-- Mount point for the Markdown editor component -->
         <div id="profileBioEditor"></div>
 
         <div class="profile-bio-actions">
-          <button type="button" class="btn-primary" id="saveBioBtn">ذخیره</button>
-          <button type="button" class="btn-secondary" id="cancelBioBtn">انصراف</button>
+          <button type="button" class="btn-primary" id="saveBioBtn">Save</button>
+          <button type="button" class="btn-secondary" id="cancelBioBtn">Cancel</button>
         </div>
       </section>
     </main>
