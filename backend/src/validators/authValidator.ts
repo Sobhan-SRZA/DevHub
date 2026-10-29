@@ -1,171 +1,218 @@
+/**
+ * backend/src/validators/authValidator.ts
+ * Server-side module — core application logic.
+ */
+
 import { z } from "zod";
 
-/* ----------------------------------------------------------------
-   Username rules:
-   - 3 تا 20 کاراکتر
-   - فقط حروف انگلیسی (a-zA-Z)، عدد، _ ، . ، -
-   - @ ممنوع
-   - فاصله ممنوع
-   - حروف غیرانگلیسی (فارسی، عربی، سیریلیک...) ممنوع
-   - حساس به case نیست (چک یکتایی توسط usernameLower)
----------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* Username Validation Rules                                                  */
+/* -------------------------------------------------------------------------- */
+
+// - Length: 3–20 characters.
+// - Allowed characters: English letters (a-z, A-Z), digits, underscores, periods, and hyphens.
+// - The @ symbol and whitespace are not allowed.
+// - Non-ASCII letters, including Persian, Arabic, and Cyrillic characters, are not allowed.
+// - Case-insensitive uniqueness is enforced through the usernameLower field.
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,20}$/;
 
-/* ----------------------------------------------------------------
-   Password rules:
-   - حداقل ۶ کاراکتر
-   - حداقل یک حرف و یک عدد
----------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* Password Validation Rules                                                 */
+/* -------------------------------------------------------------------------- */
+
+// Requires at least six characters, including at least one letter and one digit.
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
-/* ----------------------------------------------------------------
-   Email
----------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* Email Validation Rules                                                    */
+/* -------------------------------------------------------------------------- */
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/* ==================================================================
-   REGISTER
-   ================================================================== */
+/* ========================================================================== */
+/* Registration                                                               */
+/* ========================================================================== */
+
 export const registerSchema = z
     .object({
         name: z
-            .string({ error: "نام الزامی است" })
+            .string({ error: "Name is required." })
             .trim()
-            .min(2, "نام باید حداقل ۲ حرف باشد")
-            .max(60, "نام بیش از حد طولانی است"),
+            .min(2, "Name must be at least 2 characters long.")
+            .max(60, "Name must not exceed 60 characters."),
 
         username: z
-            .string({ error: "نام کاربری الزامی است" })
+            .string({ error: "Username is required." })
             .trim()
-            .min(3, "نام کاربری باید حداقل ۳ کاراکتر باشد")
-            .max(20, "نام کاربری باید حداکثر ۲۰ کاراکتر باشد")
-            .refine((v) => !v.includes("@"), "نام کاربری نمی‌تواند شامل @ باشد")
-            .refine((v) => !/\s/.test(v), "نام کاربری نمی‌تواند شامل فاصله باشد")
+            .min(3, "Username must be at least 3 characters long.")
+            .max(20, "Username must not exceed 20 characters.")
             .refine(
-                (v) => USERNAME_REGEX.test(v),
-                "نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد، _ ، . یا - باشد"
+                (value) => !value.includes("@"),
+                "Username cannot contain the @ symbol."
+            )
+            .refine(
+                (value) => !/\s/.test(value),
+                "Username cannot contain whitespace."
+            )
+            .refine(
+                (value) => USERNAME_REGEX.test(value),
+                "Username may only contain English letters, digits, underscores, periods, and hyphens."
             ),
 
         email: z
-            .string({ error: "ایمیل الزامی است" })
+            .string({ error: "Email is required." })
             .trim()
             .toLowerCase()
-            .max(254, "ایمیل بیش از حد طولانی است")
-            .refine((v) => EMAIL_REGEX.test(v), "ایمیل نامعتبر است"),
-
-        password: z
-            .string({ error: "رمز عبور الزامی است" })
-            .min(6, "رمز عبور باید حداقل ۶ کاراکتر باشد")
-            .max(128, "رمز عبور بیش از حد طولانی است")
+            .max(254, "Email must not exceed 254 characters.")
             .refine(
-                (v) => PASSWORD_REGEX.test(v),
-                "رمز عبور باید شامل حرف و عدد باشد"
+                (value) => EMAIL_REGEX.test(value),
+                "Please enter a valid email address."
             ),
 
-        confirmPassword: z.string({ error: "تکرار رمز عبور الزامی است" }),
+        password: z
+            .string({ error: "Password is required." })
+            .min(6, "Password must be at least 6 characters long.")
+            .max(128, "Password must not exceed 128 characters.")
+            .refine(
+                (value) => PASSWORD_REGEX.test(value),
+                "Password must contain at least one letter and one digit."
+            ),
+
+        confirmPassword: z.string({
+            error: "Password confirmation is required."
+        }),
 
         terms: z
-            .union([z.boolean(), z.literal("on"), z.literal("true"), z.literal("1")])
+            .union([
+                z.boolean(),
+                z.literal("on"),
+                z.literal("true"),
+                z.literal("1")
+            ])
             .optional()
     })
-    .refine((d) => d.password === d.confirmPassword, {
-        message: "رمز عبور و تکرار آن یکسان نیستند",
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Password and confirmation do not match.",
         path: ["confirmPassword"]
     })
-    .refine((d) => !!d.terms, {
-        message: "پذیرش قوانین الزامی است",
+    .refine((data) => Boolean(data.terms), {
+        message: "You must accept the terms and conditions.",
         path: ["terms"]
     });
 
-/* ==================================================================
-   LOGIN
-   ================================================================== */
+/* ========================================================================== */
+/* Login                                                                      */
+/* ========================================================================== */
+
 export const loginSchema = z.object({
     identifier: z
-        .string({ error: "ایمیل یا نام کاربری الزامی است" })
+        .string({ error: "Email or username is required." })
         .trim()
-        .min(1, "ایمیل یا نام کاربری الزامی است")
-        .max(254, "مقدار وارد شده خیلی طولانی است"),
+        .min(1, "Email or username is required.")
+        .max(254, "The provided identifier is too long."),
 
     password: z
-        .string({ error: "رمز عبور الزامی است" })
-        .min(1, "رمز عبور الزامی است"),
+        .string({ error: "Password is required." })
+        .min(1, "Password is required."),
 
     remember: z
-        .union([z.boolean(), z.literal("on"), z.literal("true"), z.literal("1")])
+        .union([
+            z.boolean(),
+            z.literal("on"),
+            z.literal("true"),
+            z.literal("1")
+        ])
         .optional()
 });
 
-/* ==================================================================
-   Verify Email (after register)
-   ================================================================== */
+/* ========================================================================== */
+/* Email Verification                                                         */
+/* ========================================================================== */
+
 export const verifyEmailSchema = z.object({
-    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10),
+    verifyToken: z
+        .string({ error: "Email verification token is required." })
+        .min(10),
+
     code: z
-        .string({ error: "کد تایید الزامی است" })
+        .string({ error: "Verification code is required." })
         .trim()
-        .regex(/^\d{6}$/, "کد باید ۶ رقم باشد")
+        .regex(/^\d{6}$/, "Verification code must contain exactly 6 digits.")
 });
 
-/* ==================================================================
-   Resend Verification
-   ================================================================== */
-export const resendVerificationSchema = z.object({
-    verifyToken: z.string({ error: "توکن تایید الزامی است" }).min(10)
+/* ========================================================================== */
+/* Resend Email Verification                                                  */
+/* ========================================================================== */
+
+export const resendVerifyEmailSchema = z.object({
+    verifyToken: z
+        .string()
+        .min(1, "Email verification token is required.")
 });
 
-/* ==================================================================
-   Forgot Password — Step 1
-   ================================================================== */
+/* ========================================================================== */
+/* Forgot Password — Step 1                                                  */
+/* ========================================================================== */
+
 export const forgotPasswordSchema = z.object({
     email: z
-        .string({ error: "ایمیل الزامی است" })
+        .string({ error: "Email is required." })
         .trim()
         .toLowerCase()
-        .email("ایمیل نامعتبر است")
-        .max(254)
+        .email("Please enter a valid email address.")
+        .max(254, "Email must not exceed 254 characters.")
 });
 
-/* ==================================================================
-   Reset Password — Step 2
-   ================================================================== */
+/* ========================================================================== */
+/* Reset Password — Step 2                                                   */
+/* ========================================================================== */
+
+// Requires at least eight characters, including a lowercase letter,
+// an uppercase letter, and a digit.
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 export const resetPasswordSchema = z
     .object({
         resetToken: z
-            .string({ error: "توکن بازیابی الزامی است" })
+            .string({ error: "Password reset token is required." })
             .min(10),
 
         code: z
-            .string({ error: "کد تایید الزامی است" })
+            .string({ error: "Verification code is required." })
             .trim()
-            .regex(/^\d{6}$/, "کد باید ۶ رقم باشد"),
+            .regex(/^\d{6}$/, "Verification code must contain exactly 6 digits."),
 
         newPassword: z
-            .string({ error: "رمز جدید الزامی است" })
-            .min(8, "رمز جدید باید حداقل ۸ کاراکتر باشد")
-            .max(128)
+            .string({ error: "New password is required." })
+            .min(8, "New password must be at least 8 characters long.")
+            .max(128, "New password must not exceed 128 characters.")
             .regex(
                 strongPasswordRegex,
-                "رمز باید شامل حرف کوچک، حرف بزرگ و عدد باشد"
+                "Password must contain at least one lowercase letter, one uppercase letter, and one digit."
             ),
 
-        confirmPassword: z.string({ error: "تکرار رمز الزامی است" })
+        confirmPassword: z.string({
+            error: "Password confirmation is required."
+        })
     })
-    .refine((d) => d.newPassword === d.confirmPassword, {
-        message: "رمز جدید و تکرار آن یکسان نیستند",
+    .refine((data) => data.newPassword === data.confirmPassword, {
+        message: "New password and confirmation do not match.",
         path: ["confirmPassword"]
     });
 
-/* ==================================================================
-   Resend Password Reset
-   ================================================================== */
+/* ========================================================================== */
+/* Resend Password Reset                                                      */
+/* ========================================================================== */
+
 export const resendPasswordResetSchema = z.object({
     resetToken: z
-        .string({ error: "توکن بازیابی الزامی است" })
+        .string({ error: "Password reset token is required." })
         .min(10)
 });
+
+/* ========================================================================== */
+/* Inferred Types                                                             */
+/* ========================================================================== */
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
