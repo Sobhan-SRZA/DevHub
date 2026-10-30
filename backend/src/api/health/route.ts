@@ -1,9 +1,11 @@
 import { healthCheck } from "../../controllers/healthController";
 import { Router } from "express";
+import { pageDeveloperGuard } from "../../middleware/roles";
+import { requireAuth } from "../../middleware/auth";
 
 const router = Router();
 
-router.get("/", healthCheck);
+router.get("/", requireAuth, pageDeveloperGuard, healthCheck);
 
 export default router;
 
