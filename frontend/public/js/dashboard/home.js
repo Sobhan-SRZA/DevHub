@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Developer-only: server uptime is surfaced in the dev health panel.
         if (isDeveloper) {
-            const health = await api('/api/health');
+            const health = await api('/api/health/detailed');
 
             if (health) {
                 cards.push({
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDevHealth() {
         if (!isDeveloper) return;
 
-        const data = await api('/api/health');
+        const data = await api('/api/health/detailed');
 
         if (!data) {
             document.querySelectorAll('.dev-health-card__value--loading').forEach((el) => {
