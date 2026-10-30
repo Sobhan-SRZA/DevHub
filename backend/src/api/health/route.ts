@@ -1,11 +1,13 @@
-import { healthCheck } from "../../controllers/healthController";
-import { Router } from "express";
-import { pageDeveloperGuard } from "../../middleware/roles";
+import { requireDeveloper } from "../../middleware/roles";
 import { requireAuth } from "../../middleware/auth";
+import * as ctrl from "../../controllers/healthController";
+import { Router } from "express";
 
 const router = Router();
 
-router.get("/", requireAuth, pageDeveloperGuard, healthCheck);
+router.get("/", (req, res) => res.json({ status: "ok" }));
+
+router.get("/detailed", requireAuth, requireDeveloper, ctrl.healthCheck);
 
 export default router;
 
