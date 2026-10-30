@@ -116,9 +116,9 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-body > main,
-body > section,
-body > div.page-wrapper {
+body>main,
+body>section,
+body>div.page-wrapper {
     width: 100%;
     flex-shrink: 0;
 }
@@ -151,7 +151,12 @@ ol {
 }
 
 /* ---------- Typography ---------- */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--text);
     line-height: 1.25;
     font-weight: 700;
@@ -398,12 +403,21 @@ section {
 
 /* ---------- Skeleton / loading polish ---------- */
 @keyframes dh-pulse {
-    0%, 100% { opacity: 0.45; }
-    50% { opacity: 1; }
+
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 @keyframes dh-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .home-loading__spinner,
@@ -471,6 +485,623 @@ textarea::placeholder {
     background: rgba(148, 163, 184, 0.4);
     background-clip: padding-box;
     border: 2px solid transparent;
+}
+
+/* ============================================================
+   SITE FOOTER
+   ============================================================
+   Pure-CSS replacement for the previous Tailwind-based footer.
+   Shares the same design tokens defined at the top of this file.
+   ============================================================ */
+
+.site-footer {
+    margin-top: auto;
+    padding: 48px 0 24px;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+}
+
+.site-footer__inner {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+}
+
+/* ---------- Grid ---------- */
+.site-footer__grid {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+    gap: 40px;
+    padding-bottom: 36px;
+}
+
+/* ---------- Brand ---------- */
+.site-footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 320px;
+}
+
+.site-footer__tagline {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.site-footer__socials {
+    display: flex;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.site-footer__social {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: transparent;
+    transition:
+        color var(--duration) var(--ease),
+        border-color var(--duration) var(--ease),
+        background-color var(--duration) var(--ease);
+}
+
+.site-footer__social:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--bg-hover);
+}
+
+.site-footer__social:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Link columns ---------- */
+.site-footer__column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.site-footer__heading {
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+    line-height: 1.3;
+}
+
+.site-footer__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.site-footer__link {
+    display: inline-block;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: color var(--duration) var(--ease);
+}
+
+.site-footer__link:hover {
+    color: var(--accent-soft);
+}
+
+.site-footer__link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+
+/* ---------- Bottom row ---------- */
+.site-footer__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.site-footer__copyright,
+.site-footer__made-with {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.site-footer__made-with {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.site-footer__heart {
+    color: var(--danger);
+    display: inline-block;
+    line-height: 1;
+}
+
+/* ---------- Footer responsive ---------- */
+@media (max-width: 960px) {
+    .site-footer__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 32px;
+    }
+
+    .site-footer__brand {
+        grid-column: 1 / -1;
+        max-width: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .site-footer {
+        padding: 36px 0 20px;
+    }
+
+    .site-footer__grid {
+        gap: 28px 20px;
+        padding-bottom: 28px;
+    }
+
+    .site-footer__bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: start;
+    }
+}
+
+@media (max-width: 420px) {
+    .site-footer__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- Footer reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+    .site-footer__social,
+    .site-footer__link {
+        transition: none;
+    }
+}
+
+
+/* ============================================================
+   BUTTON VARIANTS — EXTENSIONS
+   ============================================================
+   Additional variants that pair with the existing .btn-primary
+   and .btn-outline. All variants share the same base sizing,
+   focus ring, and disabled behavior.
+   ============================================================ */
+
+/* ---------- Ghost: subtle, chrome-less button ---------- */
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0.7rem 1.35rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1.5px solid transparent;
+    transition:
+        background-color var(--duration) var(--ease),
+        color var(--duration) var(--ease),
+        border-color var(--duration) var(--ease);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.btn-ghost:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---------- Danger: destructive actions ---------- */
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0.7rem 1.35rem;
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    user-select: none;
+    background: linear-gradient(135deg, var(--danger), #b91c1c);
+    color: #fff;
+    border: 1.5px solid transparent;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+    transition:
+        background var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease),
+        transform var(--duration) var(--ease);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+}
+
+.btn-danger:focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 2px;
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ---------- Size modifiers ---------- */
+.btn-sm,
+.btn-primary.btn-sm,
+.btn-outline.btn-sm,
+.btn-ghost.btn-sm,
+.btn-danger.btn-sm {
+    min-height: 34px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+}
+
+.btn-lg,
+.btn-primary.btn-lg,
+.btn-outline.btn-lg,
+.btn-ghost.btn-lg,
+.btn-danger.btn-lg {
+    min-height: 52px;
+    padding: 0.85rem 1.65rem;
+    font-size: 1rem;
+}
+
+/* ---------- Full-width modifier ---------- */
+.btn-block {
+    display: flex;
+    width: 100%;
+}
+
+/* Strip global link underline from all button variants */
+.btn-ghost::after,
+.btn-danger::after {
+    display: none !important;
+}
+
+
+/* ============================================================
+   BADGE / PILL
+   ============================================================
+   Small inline labels for status, categories, and counts.
+   ============================================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.6;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.badge--accent {
+    background: var(--accent-muted);
+    color: var(--accent-soft);
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+.badge--success {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge--warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.badge--danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge--neutral {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+}
+
+
+/* ============================================================
+   CARD
+   ============================================================
+   A neutral surface for grouping content across pages. Pairs
+   well with .card__head, .card__title, .card__body.
+   ============================================================ */
+
+.card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    transition: border-color var(--duration) var(--ease);
+}
+
+.card:hover {
+    border-color: var(--border-strong);
+}
+
+.card--elevated {
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow);
+}
+
+.card--interactive {
+    cursor: pointer;
+    transition:
+        border-color var(--duration) var(--ease),
+        transform var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease);
+}
+
+.card--interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.card__title {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.card__sub {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+
+/* ============================================================
+   SECTION HEAD
+   ============================================================
+   Shared header for grouped sections on any page.
+   ============================================================ */
+
+.section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.section-head__title {
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin: 0 0 4px;
+}
+
+.section-head__sub {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.section-head__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent-soft);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--duration) var(--ease);
+}
+
+.section-head__link:hover {
+    color: #93c5fd;
+}
+
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================
+   A consistent presentation for zero-result and empty-content
+   situations. Pairs with an icon, title, and optional action.
+   ============================================================ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 56px 24px;
+    text-align: center;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+}
+
+.empty-state__icon {
+    font-size: 2.4rem;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.empty-state__title {
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.empty-state__text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 420px;
+}
+
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+
+.divider {
+    height: 1px;
+    background: var(--border);
+    border: none;
+    margin: 24px 0;
+    width: 100%;
+}
+
+.divider--strong {
+    background: var(--border-strong);
+}
+
+.divider--vertical {
+    width: 1px;
+    height: auto;
+    align-self: stretch;
+    margin: 0 16px;
+}
+
+
+/* ============================================================
+   FOCUS RING — UNIFIED
+   ============================================================
+   Ensures every interactive element has a visible, consistent
+   focus indicator when navigating by keyboard.
+   ============================================================ */
+
+.btn-primary:focus-visible,
+.btn-outline:focus-visible,
+.btn:focus-visible,
+.card--interactive:focus-visible,
+.badge:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+
+/* ============================================================
+   UTILITY — SECTION SPACING
+   ============================================================
+   Consistent vertical rhythm for pages that stack sections.
+   ============================================================ */
+
+.page-section {
+    padding-block: 40px;
+}
+
+.page-section+.page-section {
+    border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+    .page-section {
+        padding-block: 28px;
+    }
+}
+
+
+/* ============================================================
+   REDUCED MOTION — EXTENSIONS
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .card,
+    .card--interactive,
+    .btn-ghost,
+    .btn-danger,
+    .section-head__link {
+        transition: none;
+    }
+
+    .card--interactive:hover {
+        transform: none;
+    }
+
+    .btn-danger:hover {
+        transform: none;
+    }
 }
 
 /**
