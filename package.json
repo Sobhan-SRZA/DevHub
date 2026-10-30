@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm i && npm run build && node .",
+    "start": "npm run build && node .",
     "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1",
     "promote": "tsx backend/src/scripts/promoteUser.ts"
