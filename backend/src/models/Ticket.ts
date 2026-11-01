@@ -32,6 +32,13 @@ export interface ITicketMessage {
 
 export interface ITicket {
     ticketNumber: string;
+    
+    trackingTokenHash?: string | null;
+    trackingExpiresAt?: Date | null;
+    trackingRevoked?: boolean;
+    lookupOtpHash?: string | null;
+    lookupOtpExpiresAt?: Date | null;
+    lookupOtpAttempts?: number;
 
     name: string;
     email: string;
@@ -81,6 +88,60 @@ const ticketSchema = new Schema<ITicket>(
             unique: true,
             index: true
         },
+
+        /* ---------- Tracking ---------- */
+
+        /**
+         * SHA-256 hash of the tracking token. The raw token is sent only in
+         * email and is never stored. Lookup is performed by hashing the
+         * incoming token and comparing to this value.
+         */
+        trackingTokenHash: {
+            type: String,
+            default: null,
+            index: true,
+            select: false
+        } as any,
+
+        /**
+         * Epoch timestamp after which the tracking token is rejected.
+         * Tokens remain valid for 30 days by default.
+         */
+        trackingExpiresAt: {
+            type: Date,
+            default: null
+        } as any,
+
+        /**
+         * When true, the tracking token has been explicitly revoked
+         * (for example, after the ticket is closed).
+         */
+        trackingRevoked: {
+            type: Boolean,
+            default: false
+        } as any,
+
+        /**
+         * Email-based lookup state. A short-lived OTP is stored hashed
+         * while the user verifies ownership of the ticket email.
+         */
+        lookupOtpHash: {
+            type: String,
+            default: null,
+            select: false
+        } as any,
+
+        lookupOtpExpiresAt: {
+            type: Date,
+            default: null,
+            select: false
+        } as any,
+
+        lookupOtpAttempts: {
+            type: Number,
+            default: 0,
+            select: false
+        } as any,
 
         name: { type: String, required: true, trim: true, maxlength: 80 },
         email: {
