@@ -10,6 +10,7 @@ import { validate } from "../utils/validate";
 import { AppError } from "../utils/AppError";
 import { ErrorCodes } from "../utils/errorCodes";
 import { Ticket } from "../models/Ticket";
+import { issueTrackingToken, sendTicketCreatedEmail } from "../services/ticketService";
 
 /**
  * Creates a new ticket from a contact-form submission.
@@ -73,6 +74,15 @@ export const createTicket = asyncHandler(async (req: any, res: Response) => {
         userAgent: req.get("user-agent") || null,
         priority
     });
+
+    /* ---------- Issue tracking token and send confirmation email ---------- */
+
+    const trackingToken = await issueTrackingToken(String(ticket._id));
+
+    // Fire-and-forget: email failure does not block ticket creation.
+    sendTicketCreatedEmail(ticket.toObject(), trackingToken).catch((err) =>
+        console.warn("[createTicket] Confirmation email failed:", err?.message)
+    );
 
     console.log(
         `[TICKET] ${ticket.ticketNumber} created by ${data.email} ` +
