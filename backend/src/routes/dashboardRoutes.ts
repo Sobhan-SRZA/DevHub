@@ -5,6 +5,8 @@ import {
     pageAdminGuard,
     pageDeveloperGuard,
 } from "../middleware/roles";
+import { requireAuth } from "../middleware/auth";
+import noCache from "../middleware/noCache";
 
 const router = Router();
 
@@ -55,6 +57,18 @@ router.get(
             req,
             pageTitle: "Ticket",
             ticketId: req.params.id
+        });
+    }
+);
+
+router.get(
+    "/my-tickets",
+    requireAuth,
+    noCache,
+    (req: any, res) => {
+        res.render("pages/dashboard/my-tickets", {
+            req,
+            pageTitle: "My Tickets"
         });
     }
 );
