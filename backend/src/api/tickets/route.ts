@@ -3,15 +3,17 @@ import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/roles";
 import * as ctrl from "../../controllers/ticketController";
 import noCache from "../../middleware/noCache";
+import ticketsRouter from "../../routes/tickets";
 
 const router = Router();
 
+router.use("/", ticketsRouter);
 router.use(requireAuth, requireAdmin, noCache);
 
-router.get("/", ctrl.listTickets);
-router.get("/:id", ctrl.getTicket);
-router.post("/:id/reply", ctrl.replyToTicket);
-router.patch("/:id", ctrl.updateTicket);
+/**
+ * Return the current user's tickets (matched by userId OR email).
+ */
+router.get("/my", requireAuth, ctrl.listMyTickets);
 
 export default router;
 
