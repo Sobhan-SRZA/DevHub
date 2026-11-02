@@ -142,6 +142,80 @@
       </section>
 
       <!-- ============================================================
+     USER ANALYTICS
+     Growth chart, profile completeness, activity feed, and
+     milestones for the current user.
+     ============================================================ -->
+      <section class="home-section analytics-section" id="analyticsSection" data-range="30d">
+        <div class="home-section__head">
+          <div>
+            <h2 class="home-section__title">
+              <span class="home-section__icon" style="--c:#6ebbff">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3v18h18"></path>
+                  <polyline points="7 14 12 9 17 14 22 9"></polyline>
+                </svg>
+              </span>
+              Your growth
+            </h2>
+            <p class="home-section__sub">Profile completeness, activity, and engagement trends.</p>
+          </div>
+
+          <div class="chart-range-switcher" role="group" aria-label="Chart range">
+            <button type="button" data-chart-range="7d" class="chart-range-btn">7D</button>
+            <button type="button" data-chart-range="30d" class="chart-range-btn active">30D</button>
+            <button type="button" data-chart-range="90d" class="chart-range-btn">90D</button>
+            <button type="button" data-chart-range="1y" class="chart-range-btn">1Y</button>
+          </div>
+        </div>
+
+        <!-- Top row: completeness + rank -->
+        <div class="analytics-top">
+          <div class="analytics-card analytics-card--completeness">
+            <div class="analytics-card__label">Profile completeness</div>
+            <div class="completeness-bar">
+              <div class="completeness-bar__fill" id="completenessBar" style="width:0%"></div>
+            </div>
+            <div class="completeness-label" id="completenessLabel">—</div>
+          </div>
+
+          <div class="analytics-card analytics-card--rank">
+            <div class="analytics-card__label">Community rank</div>
+            <div class="rank-badge" id="rankBadge">—</div>
+          </div>
+        </div>
+
+        <!-- Insight stat cards -->
+        <div class="insight-stats" id="insightStats"></div>
+
+        <!-- Growth chart -->
+        <div class="chart-card">
+          <div class="chart-card__head">
+            <span class="chart-card__title">Activity timeline</span>
+            <div class="chart-legend" id="chartLegend"></div>
+          </div>
+          <svg id="growthChart" class="growth-chart" role="img" aria-label="Line chart of your activity over time"></svg>
+        </div>
+
+        <!-- Two-column: activity + milestones -->
+        <div class="analytics-bottom">
+          <div class="analytics-card">
+            <div class="analytics-card__head">
+              <span class="analytics-card__title">Recent activity</span>
+            </div>
+            <div class="activity-feed" id="activityFeed"></div>
+          </div>
+
+          <div class="analytics-card">
+            <div class="analytics-card__head">
+              <span class="analytics-card__title">Milestones</span>
+            </div>
+            <div class="milestone-list" id="milestoneList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
            ADMIN QUICK PANEL
            Visible only to administrators and developers.
            ============================================================ -->
