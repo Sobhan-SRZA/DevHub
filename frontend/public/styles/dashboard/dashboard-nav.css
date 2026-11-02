@@ -27,7 +27,6 @@
     margin: 0 auto;
     min-height: 100vh;
     padding: var(--dash-top-offset) var(--page-gutter) 48px;
-    direction: rtl;
     align-items: start;
     transition: grid-template-columns 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
