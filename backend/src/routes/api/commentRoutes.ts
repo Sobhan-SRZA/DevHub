@@ -1,23 +1,98 @@
 import { Router } from "express";
-import {
-    optionalAuth,
-    requireAuth,
-} from "../../middleware/auth";
+import { optionalAuth, requireAuth } from "../../middleware/auth";
+import { apiGuard } from "../../middleware/apiGuard";
+import { apiRateLimit } from "../../middleware/apiRateLimit";
+import noCache from "../../middleware/noCache";
 import * as ctrl from "../../controllers/commentController";
 
 const router = Router({ mergeParams: true });
 
-// Allow public access to comments while providing authentication context
-// for features that depend on the current user's identity.
-router.get("/", optionalAuth, ctrl.listComments);
+/* ==========================================================================
+ * Public Routes
+ * ========================================================================== */
 
-// Require authentication to create and manage comments.
-router.post("/", requireAuth, ctrl.createComment);
+router.get(
+    "/",
+    optionalAuth,
+    noCache,
+    apiRateLimit("public"),
+    apiGuard({
+        path: "/api/v1/projects/:idOrSlug/comments",
+        method: "GET",
+        visibility: "public",
+        description: "List comments on a project.",
+        tags: ["comments"]
+    }),
+    ctrl.listComments
+);
 
-// These routes operate on comment IDs, not project IDs.
-router.put("/:id", requireAuth, ctrl.updateComment);
-router.delete("/:id", requireAuth, ctrl.deleteComment);
-router.post("/:id/like", requireAuth, ctrl.toggleLike);
+/* ==========================================================================
+ * Authenticated Routes
+ * ==========================================================================
+ * Every handler receives both `idOrSlug` (from the parent project route)
+ * and `id` (the comment). Controllers must verify that the comment
+ * belongs to the project resolved from `idOrSlug`.
+ * ========================================================================== */
+
+router.post(
+    "/",
+    requireAuth,
+    noCache,
+    apiRateLimit("authenticated", { windowMs: 60_000, max: 15 }),
+    apiGuard({
+        path: "/api/v1/projects/:idOrSlug/comments",
+        method: "POST",
+        visibility: "authenticated",
+        description: "Create a comment on a project.",
+        tags: ["comments"]
+    }),
+    ctrl.createComment
+);
+
+router.put(
+    "/:id",
+    requireAuth,
+    noCache,
+    apiRateLimit("authenticated", { windowMs: 60_000, max: 20 }),
+    apiGuard({
+        path: "/api/v1/projects/:idOrSlug/comments/:id",
+        method: "PUT",
+        visibility: "authenticated",
+        description: "Update a comment. Ownership is verified in the controller.",
+        tags: ["comments"]
+    }),
+    ctrl.updateComment
+);
+
+router.delete(
+    "/:id",
+    requireAuth,
+    noCache,
+    apiRateLimit("authenticated", { windowMs: 60_000, max: 20 }),
+    apiGuard({
+        path: "/api/v1/projects/:idOrSlug/comments/:id",
+        method: "DELETE",
+        visibility: "authenticated",
+        description: "Delete a comment. Ownership is verified in the controller.",
+        tags: ["comments"]
+    }),
+    ctrl.deleteComment
+);
+
+router.post(
+    "/:id/like",
+    requireAuth,
+    noCache,
+    apiRateLimit("authenticated", { windowMs: 60_000, max: 60 }),
+    apiGuard({
+        path: "/api/v1/projects/:idOrSlug/comments/:id/like",
+        method: "POST",
+        visibility: "authenticated",
+        description: "Toggle a like on a comment.",
+        tags: ["comments"]
+    }),
+    ctrl.toggleLike
+);
 
 export default router;
 
