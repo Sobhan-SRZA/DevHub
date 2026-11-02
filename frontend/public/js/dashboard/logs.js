@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     async function loadFiles() {
         try {
-            const response = await fetch("/api/system/logs?limit=1", {
+            const response = await fetch("/api/v1/system/logs?limit=1", {
                 credentials: "include"
             });
 
@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const response = await fetch(
-                `/api/system/logs?${params}`,
+                `/api/v1/system/logs?${params}`,
                 { credentials: "include" }
             );
 
@@ -366,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : state.file;
 
         window.location.href =
-            `/api/system/logs/download?file=${encodeURIComponent(file)}`;
+            `/api/v1/system/logs/download?file=${encodeURIComponent(file)}`;
     });
 
     // Clear in-memory logs after explicit user confirmation.
@@ -385,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch("/api/system/logs/clear", {
+            const response = await fetch("/api/v1/system/logs/clear", {
                 method: "POST",
                 credentials: "include"
             });
