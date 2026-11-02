@@ -302,7 +302,7 @@
         if (cancelBtn) cancelBtn.disabled = true;
 
         try {
-            await sendJSON('/api/profile/me', 'PATCH', { bio: newBio });
+            await sendJSON('/api/v1/profile/me', 'PATCH', { bio: newBio });
 
             // Update the local state so the display reflects the change.
             if (bioState.user) bioState.user.bio = newBio;
@@ -481,7 +481,7 @@
 
     /* Fetch the current user's profile and render it. */
     async function loadProfile() {
-        const payload = await getJSON('/api/profile/me');
+        const payload = await getJSON('/api/v1/profile/me');
 
         const user =
             unwrap(payload, 'user') ||
@@ -505,7 +505,7 @@
         }
 
         try {
-            const payload = await getJSON('/api/users/' + encodeURIComponent(username));
+            const payload = await getJSON('/api/v1/users/' + encodeURIComponent(username));
             const stats = extractStats(payload);
 
             if (!stats) {
