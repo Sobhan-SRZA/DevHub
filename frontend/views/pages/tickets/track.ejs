@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <%- include("../../components/seo-head", {
+    title: "Your Ticket — DevHub",
+    description: "View and reply to your support ticket.",
+    canonicalPath: null,
+    noindex: true,
+    extraStyles: ["/styles/tickets.css", "/styles/form-errors.css"]
+  }) %>
+</head>
+
+<body>
+  <%- include("../../components/header") %>
+  <%- include("../../components/dialogError") %>
+
+  <main class="ticket-page" data-token="<%= typeof token !== 'undefined' ? token : '' %>">
+    <div class="ticket-page__loading" id="ticketLoading">
+      <div class="spinner"></div>
+      <p>Loading your ticket…</p>
+    </div>
+
+    <div class="ticket-page__error" id="ticketError" hidden>
+      <h1>Ticket not found</h1>
+      <p>This link is invalid or has expired. Please check your email for a newer link.</p>
+      <a href="/tickets/lookup" class="btn-primary">Try email lookup</a>
+    </div>
+
+    <article class="ticket-page__content" id="ticketContent" hidden>
+      <header class="ticket-page__head">
+        <div class="ticket-page__badge" id="ticketNumber">—</div>
+        <h1 class="ticket-page__title" id="ticketSubject">—</h1>
+        <div class="ticket-page__meta">
+          <span id="ticketStatus" class="ticket-status">—</span>
+          <span>·</span>
+          <span id="ticketCategory">—</span>
+        </div>
+      </header>
+
+      <section class="ticket-thread" id="ticketThread"></section>
+
+      <form class="ticket-reply" id="replyForm">
+        <label for="replyBody" class="ticket-reply__label">Reply to this ticket</label>
+        <textarea id="replyBody" class="ticket-reply__textarea" rows="4" maxlength="5000" placeholder="Write your reply…"></textarea>
+        <div class="ticket-reply__actions">
+          <button type="submit" class="btn-primary" id="replySubmit">Send Reply</button>
+        </div>
+      </form>
+    </article>
+  </main>
+
+  <script src="/js/form-errors.js"></script>
+  <script src="/js/tickets/track.js" defer></script>
+  <%- include("../../components/footer") %>
+</body>
+
+</html>
