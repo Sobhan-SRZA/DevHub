@@ -6,6 +6,7 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 import { Project } from "../models/Project";
 import { Tag } from "../models/Tag";
+import { findProject } from "../controllers/projectController";
 
 /**
  * Ensures that the requested project belongs to the authenticated user.
@@ -89,47 +90,21 @@ export async function loadProject(
     _res: Response,
     next: NextFunction
 ) {
-    try {
-        const { idOrSlug } = req.params;
+    const project = await findProject(req.params.idOrSlug);
+    if (!project)
+        return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
 
-        if (!idOrSlug) {
-            return next(
-                new AppError(
-                    400,
-                    ErrorCodes.VALIDATION_ERROR,
-                    "A project identifier is required"
-                )
-            );
-        }
+    const isPublished = project.status === "published" && project.isPublic;
+    const isOwner = req.user && String(req.user._id) === String(project.owner);
+    const isAdmin = req.user && ["admin", "developer"].includes(req.user.role);
 
-        const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
-        const query = isObjectId
-            ? { _id: idOrSlug }
-            : { slug: idOrSlug };
-
-        const project = await Project.findOne(query);
-
-        if (!project) {
-            return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
-        }
-
-        // Restrict access to private or unpublished projects to their owner or an administrator.
-        const isOwner = req.user && String(project.owner) === String(req.user._id);
-        const isAdmin = req.user?.role === "admin";
-
-        if (
-            (!project.isPublic || project.status !== "published") &&
-            !isOwner &&
-            !isAdmin
-        ) {
-            return next(new AppError(403, ErrorCodes.PROJECT_NOT_OWNED));
-        }
-
-        req.project = project;
-        next();
-    } catch (err) {
-        next(err);
+    if (!isPublished && !isOwner && !isAdmin) {
+        // 404 rather than 403 to avoid revealing the project's existence.
+        return next(new AppError(404, ErrorCodes.PROJECT_NOT_FOUND));
     }
+
+    req.project = project;
+    next();
 }
 
 /**
