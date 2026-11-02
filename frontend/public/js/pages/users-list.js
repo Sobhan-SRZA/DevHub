@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (state.search) params.set('q', state.search);
 
-            const data = await api(`/api/users?${params}`);
+            const data = await api(`/api/v1/users?${params}`);
             const users = data.users || [];
 
             state.totalPages = data.pagination?.pages || 1;
