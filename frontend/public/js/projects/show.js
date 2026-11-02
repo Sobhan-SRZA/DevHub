@@ -351,11 +351,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         /* Comment form visibility */
         if (state.currentUser) {
+            const u = state.currentUser;
+            const name = u.name || u.username || 'User';
+            const initial = name.charAt(0).toUpperCase();
+
+            const hasAvatar = !!(u.avatar && u.avatar.url);
+            const avatarStyle = hasAvatar
+                ? `background-image:url('${escapeHtml(u.avatar.url)}');background-size:cover;background-position:center;`
+                : '';
+
+
             $('#commentForm').style.display = '';
             $('#commentLogin').style.display = 'none';
 
-            const name = state.currentUser.name || state.currentUser.username || '?';
-            $('#myAvatar').textContent = name.charAt(0).toUpperCase();
+            if (hasAvatar) {
+                $('#myAvatar').style = avatarStyle;
+                $('#myAvatar').innerHTML = '';
+            }
+
+            else {
+                $('#myAvatar').innerHTML = escapeHtml(initial);
+            }
         } else {
             $('#commentForm').style.display = 'none';
             $('#commentLogin').style.display = 'flex';
