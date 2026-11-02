@@ -205,7 +205,7 @@
      */
     async function fetchUser() {
         try {
-            const res = await fetch('/api/auth/me', { credentials: 'include' });
+            const res = await fetch('/api/v1/auth/me', { credentials: 'include' });
 
             if (res.ok) {
                 const data = await res.json();
@@ -317,7 +317,7 @@
      */
     async function doLogout() {
         try {
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
         } catch { /* Ignore network errors — clear state regardless. */ }
 
         state.user = null;

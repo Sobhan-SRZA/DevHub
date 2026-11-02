@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (state.search) params.set('search', state.search);
 
-            const data = await api(`/api/projects?${params}`);
+            const data = await api(`/api/v1/projects?${params}`);
             const projects = data.projects || [];
 
             state.totalPages = data.pagination?.pages || 1;

@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
        ============================================================ */
     async function loadTypes() {
         try {
-            const d = await api('/api/tag-types');
+            const d = await api('/api/v1/tag-types');
             state.types = d.types || [];
 
             // Filter dropdown.
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.search) params.set('search', state.search);
             if (state.type) params.set('type', state.type);
 
-            const d = await api(`/api/tags?${params}`);
+            const d = await api(`/api/v1/tags?${params}`);
 
             state.items = d.tags || [];
             state.totalPages = d.pagination?.pages || 1;
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const isEdit = !!state.editingId;
-            const url = isEdit ? `/api/tags/${state.editingId}` : '/api/tags';
+            const url = isEdit ? `/api/v1/tags/${state.editingId}` : '/api/v1/tags';
             const method = isEdit ? 'PUT' : 'POST';
 
             await api(url, { method, body: JSON.stringify(values) });
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ok) return;
 
         try {
-            await api(`/api/tags/${id}`, { method: 'DELETE' });
+            await api(`/api/v1/tags/${id}`, { method: 'DELETE' });
 
             toast('The tag has been deleted.', 'success');
 

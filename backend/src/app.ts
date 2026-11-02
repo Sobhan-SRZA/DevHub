@@ -24,8 +24,26 @@ import cookieParser from "cookie-parser";
 import loadRoutes from "./lib/loader";
 import express from "express";
 import path from "path";
+import { initializeEnvironment } from "./config/environment";
 
 const app = express();
+
+/* -------------------------------------------------------------------------- */
+/* Security Hardening                                                         */
+/* -------------------------------------------------------------------------- */
+
+/* ==========================================================================
+ * 1. Environment Initialization
+ * ==========================================================================
+ * Runs before any router is mounted. Resolves APP_ENV, loads feature
+ * flags, and validates production-critical configuration.
+ * ========================================================================== */ 
+
+initializeEnvironment();
+
+/* ==========================================================================
+ * 2. Core Middleware
+ * ========================================================================== */
 
 /* -------------------------------------------------------------------------- */
 /* Trust Proxy                                                                */
@@ -38,17 +56,14 @@ if (
     process.env.NODE_ENV === "production"
 ) {
     app.set("trust proxy", 1);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Security Hardening                                                         */
-/* -------------------------------------------------------------------------- */
+}    
 
 // Apply security middleware before processing incoming requests.
 app.disable("x-powered-by");
 app.use(rejectSuspiciousPaths);
 app.use(securityHeaders());
 app.use(compressionMiddleware());
+
 
 /* -------------------------------------------------------------------------- */
 /* Request Body Parsers                                                       */

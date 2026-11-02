@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.status) params.set('status', state.status);
             if (state.category) params.set('category', state.category);
 
-            const data = await api(`/api/tickets?${params}`);
+            const data = await api(`/api/v1/tickets?${params}`);
             console.log("🚀 ~ load ~ data:", data)
 
             if (!data.tickets.length) {

@@ -121,7 +121,7 @@ class TagPicker {
     /* Load all tag categories and render the initial UI. */
     async _load() {
         try {
-            const res = await fetch('/api/tag-types');
+            const res = await fetch('/api/v1/tag-types');
             const data = await res.json();
 
             this.types = data.types || [];
@@ -141,7 +141,7 @@ class TagPicker {
     async _loadTagsForType(typeId) {
         if (this.tagsByType[typeId]) return this.tagsByType[typeId];
 
-        const res = await fetch(`/api/tag-types/${typeId}`);
+        const res = await fetch(`/api/v1/tag-types/${typeId}`);
         const data = await res.json();
 
         this.tagsByType[typeId] = data.tags || [];
@@ -422,7 +422,7 @@ class TagPicker {
                 body.type = typeId;
             }
 
-            const res = await fetch('/api/tags/find-or-create', {
+            const res = await fetch('/api/v1/tags/find-or-create', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -494,7 +494,7 @@ class TagPicker {
         const color = prompt('Color (hex, e.g. #6ebbff):', '#6ebbff') || '#6ebbff';
 
         try {
-            const res = await fetch('/api/tag-types', {
+            const res = await fetch('/api/v1/tag-types', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

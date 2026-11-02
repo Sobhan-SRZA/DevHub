@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function load() {
         try {
-            const res = await fetch(`/api/tickets/track/${encodeURIComponent(token)}`, {
+            const res = await fetch(`/api/v1/tickets/track/${encodeURIComponent(token)}`, {
                 credentials: 'include'
             });
             const data = await res.json().catch(() => ({}));
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.textContent = 'Sending…';
 
         try {
-            const res = await fetch(`/api/tickets/track/${encodeURIComponent(token)}/reply`, {
+            const res = await fetch(`/api/v1/tickets/track/${encodeURIComponent(token)}/reply`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

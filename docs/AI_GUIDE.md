@@ -106,7 +106,7 @@ pages/
 adminController.ts        → مدیریت کاربران (list, changeRole, toggleBan)
 authController.ts         → register, login, verifyEmail, refresh, logout, sessions
 commentController.ts      → CRUD + like
-healthController.ts       → /api/health
+healthController.ts       → /api/v1/health
 profileController.ts      → updateProfile, avatar, email change, password change
 projectController.ts      → CRUD + media + explore + homeFeed
 reviewController.ts       → CRUD + helpful
@@ -345,7 +345,7 @@ styles/
 
 ### 🔌 API Endpoints
 
-#### `/api/auth`
+#### `/api/v1/auth`
 | Method | Path                          |  Auth  | کار                     |
 | ------ | ----------------------------- | :----: | ----------------------- |
 | POST   | `/register`                   |   —    | ثبت‌نام + OTP            |
@@ -377,7 +377,7 @@ styles/
 | POST   | `/password/request`   |
 | POST   | `/password/confirm`   |
 
-#### `/api/projects`
+#### `/api/v1/projects`
 | Method | Path                  |   Auth   | کار                       |
 | ------ | --------------------- | :------: | ------------------------- |
 | GET    | `/`                   | optional | لیست (mine, search, sort) |
@@ -398,7 +398,7 @@ styles/
 | DELETE | `/:id/file`           | ✅ owner  | حذف ZIP                   |
 | GET    | `/:idOrSlug/download` | optional | دانلود + شمارش            |
 
-#### `/api/projects/:idOrSlug/reviews`
+#### `/api/v1/projects/:idOrSlug/reviews`
 | Method | Path           |            Auth            |
 | ------ | -------------- | :------------------------: |
 | GET    | `/`            | optional (شامل `myReview`) |
@@ -408,7 +408,7 @@ styles/
 | DELETE | `/`            |             ✅              |
 | POST   | `/:id/helpful` |             ✅              |
 
-#### `/api/projects/:idOrSlug/comments`
+#### `/api/v1/projects/:idOrSlug/comments`
 | Method | Path        |           Auth           |
 | ------ | ----------- | :----------------------: |
 | GET    | `/`         | optional (با `parentId`) |
@@ -417,7 +417,7 @@ styles/
 | DELETE | `/:id`      |            ✅             |
 | POST   | `/:id/like` |            ✅             |
 
-#### `/api/tags`
+#### `/api/v1/tags`
 | Method | Path              |    Auth     |
 | ------ | ----------------- | :---------: |
 | GET    | `/`               |      —      |
@@ -430,7 +430,7 @@ styles/
 | DELETE | `/:id`            | owner/admin |
 | POST   | `/:id/approve`    |    admin    |
 
-#### `/api/tag-types`
+#### `/api/v1/tag-types`
 | Method | Path           |    Auth     |
 | ------ | -------------- | :---------: |
 | GET    | `/`            |      —      |
@@ -448,7 +448,7 @@ styles/
 | GET    | `/:idOrUsername/projects` |
 | GET    | `/:idOrUsername/reviews`  |
 
-#### `/api/admin` (admin+)
+#### `/api/v1/admin` (admin+)
 | Method | Path              |
 | ------ | ----------------- |
 | GET    | `/users`          |
@@ -466,7 +466,7 @@ styles/
 #### Public
 | Method | Path          |
 | ------ | ------------- |
-| GET    | `/api/health` |
+| GET    | `/api/v1/health` |
 
 ---
 
@@ -493,13 +493,13 @@ user → admin → developer
 
 ### جریان ثبت‌نام
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → user ساخته می‌شه (emailVerified: false)
   → OTP به ایمیل می‌ره
   → { requiresVerification: true, verifyToken, email }
   → NO session
 
-POST /api/auth/verify-email { verifyToken, code }
+POST /api/v1/auth/verify-email { verifyToken, code }
   → emailVerified = true
   → session صادر می‌شه ✅
 ```
@@ -574,7 +574,7 @@ throw NotFound(ErrorCodes.PROJECT_NOT_FOUND);    // 404
 
 ### Frontend Fetch
 ```javascript
-const data = await FormKit.postJSON('/api/projects', { title: 'X' });
+const data = await FormKit.postJSON('/api/v1/projects', { title: 'X' });
 ```
 
 ### Form Handling
@@ -731,7 +731,7 @@ XYZ_NOT_FOUND، XYZ_TAKEN، ...
 1. Dashboard → btnNewProject
 2. ensureEmailVerified() → اگه verified نبود redirect به verify
 3. modal → 5 مراحل (basic / content / media / tags / settings)
-4. submit → POST /api/projects → projectId
+4. submit → POST /api/v1/projects → projectId
 5. upload media (parallel) → images/video/file
 6. reorder images
 7. reload list
@@ -740,17 +740,17 @@ XYZ_NOT_FOUND، XYZ_TAKEN، ...
 ### ثبت‌نام کاربر
 ```
 1. /auth/register → fill form
-2. POST /api/auth/register → { requiresVerification, verifyToken, email }
+2. POST /api/v1/auth/register → { requiresVerification, verifyToken, email }
 3. sessionStorage.setItem('verify_email_state', ...)
 4. redirect → /auth/verify-email
 5. enter OTP
-6. POST /api/auth/verify-email { verifyToken, code }
+6. POST /api/v1/auth/verify-email { verifyToken, code }
 7. session issued → redirect /dashboard
 ```
 
 ### اکسپلور با Hot Score
 ```
-GET /api/projects/explore?sort=trending&window=7d
+GET /api/v1/projects/explore?sort=trending&window=7d
   → exploreService.exploreProjects()
   → Mongo aggregation با:
     points = 1*stars + 2.5*forks + 0.3*downloads
@@ -763,7 +763,7 @@ GET /api/projects/explore?sort=trending&window=7d
 
 ### ریویو → آمار پروژه
 ```
-POST /api/projects/:id/reviews
+POST /api/v1/projects/:id/reviews
   → Review.create()
   → ratingService.recalculateProjectStats(projectId)
     → aggregate avg(rating), avg(satisfaction), count

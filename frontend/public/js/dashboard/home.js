@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = $('#primaryStats');
         if (!container) return;
 
-        const myProjectsRes = await api('/api/projects?mine=true&limit=100');
+        const myProjectsRes = await api('/api/v1/projects?mine=true&limit=100');
         const myProjects = myProjectsRes?.projects || [];
         const myTotal = myProjectsRes?.pagination?.total || myProjects.length;
 
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Admin-only: total user count.
         if (isAdmin) {
-            const usersRes = await api('/api/admin/users?limit=1');
+            const usersRes = await api('/api/v1/admin/users?limit=1');
 
             if (usersRes) {
                 cards.push({
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Developer-only: server uptime is surfaced in the dev health panel.
         if (isDeveloper) {
-            const health = await api('/api/health/detailed');
+            const health = await api('/api/v1/health/detailed');
 
             if (health) {
                 cards.push({
@@ -237,10 +237,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isAdmin) return;
 
         const [usersRes, tagsRes, typesRes, pendingRes] = await Promise.all([
-            api('/api/admin/users?limit=1'),
-            api('/api/tags?limit=1'),
-            api('/api/tag-types'),
-            api('/api/tags/pending'),
+            api('/api/v1/admin/users?limit=1'),
+            api('/api/v1/tags?limit=1'),
+            api('/api/v1/tag-types'),
+            api('/api/v1/tags/pending'),
         ]);
 
         const usersCount = usersRes?.pagination?.total;
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadDevHealth() {
         if (!isDeveloper) return;
 
-        const data = await api('/api/health/detailed');
+        const data = await api('/api/v1/health/detailed');
 
         if (!data) {
             document.querySelectorAll('.dev-health-card__value--loading').forEach((el) => {
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = $('#recentProjects');
         if (!container) return;
 
-        const data = await api('/api/projects?mine=true&limit=6&sort=recent');
+        const data = await api('/api/v1/projects?mine=true&limit=6&sort=recent');
         const items = data?.projects || [];
 
         if (!items.length) {

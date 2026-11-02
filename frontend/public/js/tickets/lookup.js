@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'Sending…';
 
         try {
-            const res = await fetch('/api/tickets/lookup', {
+            const res = await fetch('/api/v1/tickets/lookup', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'Verifying…';
 
         try {
-            const res = await fetch('/api/tickets/lookup/verify', {
+            const res = await fetch('/api/v1/tickets/lookup/verify', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

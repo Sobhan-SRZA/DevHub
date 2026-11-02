@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
            handled by FormKit's standard error pipeline.
            ---------------- */
         submit(v) {
-            return FormKit.postJSON("/api/auth/register", {
+            return FormKit.postJSON("/api/v1/auth/register", {
                 name: v.name,
                 username: v.username,
                 email: v.email,

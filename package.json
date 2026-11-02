@@ -28,6 +28,7 @@
     "cookie-parser": "^1.4.7",
     "ejs": "^7.0.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.2",
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.1",

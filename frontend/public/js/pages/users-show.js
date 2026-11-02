@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             /* ---------- Current viewer (optional) ---------- */
             try {
-                const me = await api('/api/auth/me');
+                const me = await api('/api/v1/auth/me');
                 state.currentUser = me.user;
             } catch { /* Guest — no authenticated user. */ }
 

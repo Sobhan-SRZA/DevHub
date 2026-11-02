@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = "Verifying...";
 
         try {
-            const data = await api("/api/auth/verify-email", {
+            const data = await api("/api/v1/auth/verify-email", {
                 verifyToken: state.verifyToken,
                 code
             });
@@ -285,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resendBtn.textContent = "Sending...";
 
         try {
-            const data = await api("/api/auth/resend-verification", {
+            const data = await api("/api/v1/auth/resend-verification", {
                 verifyToken: state.verifyToken
             });
 
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!state) {
             // Attempt to recover the verification session from the server.
             try {
-                const response = await fetch("/api/auth/me", {
+                const response = await fetch("/api/v1/auth/me", {
                     credentials: "include"
                 });
 
@@ -385,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (data?.user && !data.user.emailVerified) {
                         // Request a verification session for the authenticated user.
                         const resendResponse = await fetch(
-                            "/api/auth/resend-verification",
+                            "/api/v1/auth/resend-verification",
                             {
                                 method: "POST",
                                 credentials: "include"

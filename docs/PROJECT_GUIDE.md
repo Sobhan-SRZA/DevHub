@@ -393,7 +393,7 @@ developer (دولوپر)
 
 ## 🔌 ۶. API Endpoints
 
-### Auth — `/api/auth`
+### Auth — `/api/v1/auth`
 | Method | Path                          |  Auth  | توضیح                      |
 | ------ | ----------------------------- | :----: | -------------------------- |
 | POST   | `/register`                   |   —    | ثبت‌نام + ارسال OTP ایمیل   |
@@ -425,7 +425,7 @@ developer (دولوپر)
 | POST   | `/password/request` | شروع تغییر رمز                                   |
 | POST   | `/password/confirm` | تایید OTP + رمز جدید                             |
 
-### Projects — `/api/projects`
+### Projects — `/api/v1/projects`
 | Method | Path                  |  Auth   | توضیح                             |
 | ------ | --------------------- | :-----: | --------------------------------- |
 | GET    | `/`                   | اختیاری | لیست (با mine, search, sort, ...) |
@@ -446,7 +446,7 @@ developer (دولوپر)
 | DELETE | `/:id/file`           |    ✅    | حذف ZIP                           |
 | GET    | `/:idOrSlug/download` | اختیاری | دانلود + شمارش                    |
 
-### Reviews — `/api/projects/:idOrSlug/reviews`
+### Reviews — `/api/v1/projects/:idOrSlug/reviews`
 | Method | Path           |          Auth           |
 | ------ | -------------- | :---------------------: |
 | GET    | `/`            | اختیاری (شامل myReview) |
@@ -456,7 +456,7 @@ developer (دولوپر)
 | DELETE | `/`            |            ✅            |
 | POST   | `/:id/helpful` |            ✅            |
 
-### Comments — `/api/projects/:idOrSlug/comments`
+### Comments — `/api/v1/projects/:idOrSlug/comments`
 | Method | Path        |                Auth                 |
 | ------ | ----------- | :---------------------------------: |
 | GET    | `/`         | اختیاری (با `parentId` برای پاسخ‌ها) |
@@ -465,7 +465,7 @@ developer (دولوپر)
 | DELETE | `/:id`      |                  ✅                  |
 | POST   | `/:id/like` |                  ✅                  |
 
-### Tags — `/api/tags`
+### Tags — `/api/v1/tags`
 | Method | Path              |     Auth     |
 | ------ | ----------------- | :----------: |
 | GET    | `/`               |      —       |
@@ -478,7 +478,7 @@ developer (دولوپر)
 | DELETE | `/:id`            | owner/admin  |
 | POST   | `/:id/approve`    |    admin     |
 
-### Tag Types — `/api/tag-types`
+### Tag Types — `/api/v1/tag-types`
 | Method | Path           |    Auth     |
 | ------ | -------------- | :---------: |
 | GET    | `/`            |      —      |
@@ -496,7 +496,7 @@ developer (دولوپر)
 | GET    | `/:idOrUsername/projects` | پروژه‌های عمومی                    |
 | GET    | `/:idOrUsername/reviews`  | **ریویوهای دریافتی** روی پروژه‌هاش |
 
-### Admin — `/api/admin` (admin+)
+### Admin — `/api/v1/admin` (admin+)
 | Method | Path              |
 | ------ | ----------------- |
 | GET    | `/users`          |
@@ -510,7 +510,7 @@ developer (دولوپر)
 | GET    | `/logs`                |
 | GET    | `/logs/download`       |
 | POST   | `/logs/clear`          |
-| GET    | `/api/health` (public) |
+| GET    | `/api/v1/health` (public) |
 
 ---
 
@@ -611,7 +611,7 @@ developer (دولوپر)
 
 ### جریان ثبت‌نام
 ```
-1. POST /api/auth/register
+1. POST /api/v1/auth/register
    → user ساخته می‌شه (emailVerified: false)
    → OTP ارسال می‌شه
    → { requiresVerification: true, verifyToken, email }
@@ -620,7 +620,7 @@ developer (دولوپر)
 2. User redirects to /auth/verify-email
    → وارد کردن کد
 
-3. POST /api/auth/verify-email { verifyToken, code }
+3. POST /api/v1/auth/verify-email { verifyToken, code }
    → verify OTP
    → emailVerified = true
    → session صادر می‌شه ✅
@@ -744,7 +744,7 @@ throw NotFound(ErrorCodes.PROJECT_NOT_FOUND);   // 404
 ### Frontend Fetch (کلاینت)
 ```javascript
 // استفاده از FormKit.postJSON
-const data = await FormKit.postJSON('/api/projects', { title: 'X' });
+const data = await FormKit.postJSON('/api/v1/projects', { title: 'X' });
 ```
 
 ### Form Handling (کلاینت)

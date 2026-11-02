@@ -7,7 +7,7 @@
 ## 🔴 اولویت بحرانی (Blockers — قبل از release)
 
 ### امنیت
-- [ ] **Rate limiting روی `/api/auth/*`**
+- [ ] **Rate limiting روی `/api/v1/auth/*`**
   - `POST /login` — 5 تلاش / ۱۵ دقیقه per IP
   - `POST /register` — 3 ثبت‌نام / ۲۴ ساعت per IP
   - `POST /forgot-password` — 3 بار / ساعت per email
@@ -162,7 +162,7 @@ npm install -D jest @types/jest ts-jest supertest @types/supertest
   - typecheck (`tsc --noEmit`)
   - test
   - build
-- [ ] **Health check endpoint** — `/api/health` ✅ (هست، ولی تست کن)
+- [ ] **Health check endpoint** — `/api/v1/health` ✅ (هست، ولی تست کن)
 
 ### مستندات
 - [ ] **`README.md`** نهایی — با screenshot
@@ -331,7 +331,7 @@ npm install -D jest @types/jest ts-jest supertest @types/supertest
 
 **وضعیت فعلی:**
 - Hero + stats + trending + featured + new + top-rated + top-downloaded
-- داده از `/api/projects/home-feed` (cache 5min)
+- داده از `/api/v1/projects/home-feed` (cache 5min)
 
 **ایده‌های بهبود:**
 

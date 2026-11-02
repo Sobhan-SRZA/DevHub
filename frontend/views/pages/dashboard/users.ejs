@@ -124,7 +124,7 @@
        * conditionally enable developer-level actions.
        */
       async function loadCurrentUser() {
-        const res = await fetch('/api/auth/me', {
+        const res = await fetch('/api/v1/auth/me', {
           credentials: 'include'
         });
 
@@ -146,7 +146,7 @@
         if (state.search) params.set('search', state.search);
         if (state.role) params.set('role', state.role);
 
-        const data = await api(`/api/admin/users?${params}`);
+        const data = await api(`/api/v1/admin/users?${params}`);
 
         $('#usersCount').textContent = `${data.pagination.total} users`;
 
@@ -230,7 +230,7 @@
             }
 
             try {
-              await api(`/api/admin/users/${userId}/role`, {
+              await api(`/api/v1/admin/users/${userId}/role`, {
                 method: 'POST',
                 body: JSON.stringify({
                   role: newRole,
@@ -253,7 +253,7 @@
             const userId = row.dataset.id;
 
             try {
-              const data = await api(`/api/admin/users/${userId}/ban`, {
+              const data = await api(`/api/v1/admin/users/${userId}/ban`, {
                 method: 'POST'
               });
 

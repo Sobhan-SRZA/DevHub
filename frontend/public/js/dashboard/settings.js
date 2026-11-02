@@ -1100,7 +1100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            await api("/api/auth/logout-all", {
+            await api("/api/v1/auth/logout-all", {
                 method: "POST"
             });
 

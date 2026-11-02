@@ -117,7 +117,7 @@ async function applyGithubSync(project: any, force = false) {
 }
 
 /**
- * GET /api/projects
+ * GET /api/v1/projects
  * Retrieve a paginated list of projects.
  *
  * Public requests return published projects marked as public.
@@ -200,7 +200,7 @@ export const listProjects = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * GET /api/projects/:idOrSlug
+ * GET /api/v1/projects/:idOrSlug
  * Retrieve a project by its MongoDB ID or URL slug.
  *
  * Private projects and unpublished projects are accessible only
@@ -269,7 +269,7 @@ export const getProject = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * POST /api/projects
+ * POST /api/v1/projects
  * Create a project for the authenticated user.
  *
  * Requires a verified email address and validates project descriptions,
@@ -425,7 +425,7 @@ export const createProject = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * PATCH /api/projects/:id
+ * PATCH /api/v1/projects/:id
  * Update an existing project.
  *
  * The project ownership and authorization checks are handled by middleware,
@@ -615,7 +615,7 @@ export const updateProject = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * POST /api/projects/:id/sync-github
+ * POST /api/v1/projects/:id/sync-github
  * Manually synchronize the project's GitHub metadata.
  */
 export const syncGithub = asyncHandler(async (req: any, res: Response) => {
@@ -650,7 +650,7 @@ export const syncGithub = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * PATCH /api/projects/:id/status
+ * PATCH /api/v1/projects/:id/status
  * Update the project's publication status.
  */
 export const toggleStatus = asyncHandler(async (req: any, res: Response) => {
@@ -679,7 +679,7 @@ export const toggleStatus = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * POST /api/projects/:id/images
+ * POST /api/v1/projects/:id/images
  * Upload multiple project images, up to the configured limit of ten.
  *
  * If the upload would exceed the limit, remove the newly uploaded files
@@ -730,7 +730,7 @@ export const uploadProjectImages = asyncHandler(
 );
 
 /**
- * DELETE /api/projects/:id/images/:imageId
+ * DELETE /api/v1/projects/:id/images/:imageId
  * Delete a project image and remove its metadata from the project.
  */
 export const deleteProjectImage = asyncHandler(
@@ -762,7 +762,7 @@ export const deleteProjectImage = asyncHandler(
 );
 
 /**
- * PATCH /api/projects/:id/images/order
+ * PATCH /api/v1/projects/:id/images/order
  * Update the display order of project images.
  */
 export const reorderImages = asyncHandler(async (req: any, res: Response) => {
@@ -794,7 +794,7 @@ export const reorderImages = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * POST /api/projects/:id/video
+ * POST /api/v1/projects/:id/video
  * Upload a project demonstration video, replacing any existing video.
  */
 export const uploadProjectVideo = asyncHandler(
@@ -829,7 +829,7 @@ export const uploadProjectVideo = asyncHandler(
 );
 
 /**
- * DELETE /api/projects/:id/video
+ * DELETE /api/v1/projects/:id/video
  * Delete the project's demonstration video.
  */
 export const deleteProjectVideo = asyncHandler(
@@ -858,7 +858,7 @@ export const deleteProjectVideo = asyncHandler(
 );
 
 /**
- * POST /api/projects/:id/download-file
+ * POST /api/v1/projects/:id/download-file
  * Upload a project ZIP archive, replacing any existing download file.
  */
 export const uploadProjectZip = asyncHandler(
@@ -896,7 +896,7 @@ export const uploadProjectZip = asyncHandler(
 );
 
 /**
- * DELETE /api/projects/:id/download-file
+ * DELETE /api/v1/projects/:id/download-file
  * Remove the project's downloadable archive.
  */
 export const deleteProjectZip = asyncHandler(
@@ -925,7 +925,7 @@ export const deleteProjectZip = asyncHandler(
 );
 
 /**
- * GET /api/projects/:id/download
+ * GET /api/v1/projects/:id/download
  * Increment project and file download counters, then redirect to the file.
  */
 export const downloadProject = asyncHandler(async (req: any, res: Response) => {
@@ -960,7 +960,7 @@ export const downloadProject = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * DELETE /api/projects/:id
+ * DELETE /api/v1/projects/:id
  * Delete a project and clean up its associated files, reviews, comments,
  * and tag usage counters.
  */
@@ -993,7 +993,7 @@ export const deleteProject = asyncHandler(async (req: any, res: Response) => {
 });
 
 /**
- * GET /api/projects/explore
+ * GET /api/v1/projects/explore
  * Retrieve a filtered, paginated list of projects for the Explore page.
  *
  * Cache the result for five minutes to reduce repeated database queries.
@@ -1032,7 +1032,7 @@ export const explore = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/projects/home
+ * GET /api/v1/projects/home
  * Retrieve the data required to populate the home page.
  *
  * Cache the response for five minutes to reduce repeated queries.

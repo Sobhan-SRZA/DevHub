@@ -522,7 +522,7 @@
     /* Fetch the current user's most recent projects and render them. */
     async function loadRecentProjects() {
         try {
-            const payload = await getJSON('/api/projects?mine=true&limit=6&sort=recent');
+            const payload = await getJSON('/api/v1/projects?mine=true&limit=6&sort=recent');
 
             const items =
                 unwrap(payload, 'projects') ||

@@ -153,8 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProject() {
         try {
             const [projectRes, userRes] = await Promise.allSettled([
-                api(`/api/projects/${idOrSlug}`),
-                api('/api/auth/me'),
+                api(`/api/v1/projects/${idOrSlug}`),
+                api('/api/v1/auth/me'),
             ]);
 
             if (projectRes.status === 'rejected') {
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `Version ${p.downloadFile.version}`
                 : 'Download project';
             $('#fileSize').textContent = humanSize(p.downloadFile.size);
-            $('#downloadBtn').href = `/api/projects/${p._id}/download`;
+            $('#downloadBtn').href = `/api/v1/projects/${p._id}/download`;
 
             const metaParts = [];
             if (p.downloadFile.filename) metaParts.push(`<span>📄 ${escapeHtml(p.downloadFile.filename)}</span>`);
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
        ============================================================ */
     async function loadReviews() {
         try {
-            const data = await api(`/api/projects/${state.projectId}/reviews?sort=${state.reviews.sort}&limit=50`);
+            const data = await api(`/api/v1/projects/${state.projectId}/reviews?sort=${state.reviews.sort}&limit=50`);
 
             state.reviews.distribution = data.distribution || {};
             state.myReview = data.myReview || null;
@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const data = await api(`/api/projects/${state.projectId}/reviews/${id}/helpful`, { method: 'POST' });
+            const data = await api(`/api/v1/projects/${state.projectId}/reviews/${id}/helpful`, { method: 'POST' });
             btn.innerHTML = btn.innerHTML.replace(/\(\d+\)/, `(${data.helpfulCount})`);
         } catch (err) {
             if (err.status === 401) {
@@ -791,7 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const isEdit = !!state.myReview;
 
-            await api(`/api/projects/${state.projectId}/reviews`, {
+            await api(`/api/v1/projects/${state.projectId}/reviews`, {
                 method: isEdit ? 'PUT' : 'POST',
                 body: JSON.stringify(payload),
             });
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadReviews();
 
             // Refresh the project to pick up the new aggregate rating.
-            const p = await api(`/api/projects/${state.projectId}`);
+            const p = await api(`/api/v1/projects/${state.projectId}`);
             state.project = p.project;
 
             updateReviewsSummary({
@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ok) return;
 
         try {
-            await api(`/api/projects/${state.projectId}/reviews`, { method: 'DELETE' });
+            await api(`/api/v1/projects/${state.projectId}/reviews`, { method: 'DELETE' });
 
             toast('Review deleted', 'success');
             state.myReview = null;
@@ -843,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
        ============================================================ */
     async function loadComments() {
         try {
-            const data = await api(`/api/projects/${state.projectId}/comments?sort=${state.comments.sort}&limit=100`);
+            const data = await api(`/api/v1/projects/${state.projectId}/comments?sort=${state.comments.sort}&limit=100`);
             renderComments(data.comments || []);
         } catch (err) {
             $('#commentsList').innerHTML = `<div class="panel-empty">Failed to load comments.</div>`;
@@ -1009,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const data = await api(`/api/projects/${state.projectId}/comments/${id}/like`, { method: 'POST' });
+            const data = await api(`/api/v1/projects/${state.projectId}/comments/${id}/like`, { method: 'POST' });
 
             btn.classList.toggle('liked', data.liked);
 
@@ -1056,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sendBtn.textContent = '…';
 
             try {
-                await api(`/api/projects/${state.projectId}/comments`, {
+                await api(`/api/v1/projects/${state.projectId}/comments`, {
                     method: 'POST',
                     body: JSON.stringify({ body, parent: id }),
                 });
@@ -1107,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveBtn.disabled = true;
 
             try {
-                await api(`/api/projects/${state.projectId}/comments/${id}`, {
+                await api(`/api/v1/projects/${state.projectId}/comments/${id}`, {
                     method: 'PUT',
                     body: JSON.stringify({ body }),
                 });
@@ -1132,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ok) return;
 
         try {
-            await api(`/api/projects/${state.projectId}/comments/${id}`, { method: 'DELETE' });
+            await api(`/api/v1/projects/${state.projectId}/comments/${id}`, { method: 'DELETE' });
 
             toast('Comment deleted', 'success');
             await loadComments();
@@ -1169,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         commentSubmit.textContent = 'Sending…';
 
         try {
-            await api(`/api/projects/${state.projectId}/comments`, {
+            await api(`/api/v1/projects/${state.projectId}/comments`, {
                 method: 'POST',
                 body: JSON.stringify({ body }),
             });
@@ -1196,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tagIds.length) return;
 
         try {
-            const data = await api(`/api/projects?tag=${tagIds[0]}&limit=5`);
+            const data = await api(`/api/v1/projects?tag=${tagIds[0]}&limit=5`);
             const items = (data.projects || []).filter((x) => x._id !== p._id).slice(0, 4);
 
             if (!items.length) return;

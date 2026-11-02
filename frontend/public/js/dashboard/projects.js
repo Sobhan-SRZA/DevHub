@@ -255,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (state.status)
                 params.set("status", state.status);
 
-            const data = await api(`/api/projects?${params}`);
+            const data = await api(`/api/v1/projects?${params}`);
 
             state.items = data.projects || [];
             state.totalPages = data.pagination?.pages || 1;
@@ -465,7 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const res = await fetch('/api/auth/me', { credentials: 'include' });
+            const res = await fetch('/api/v1/auth/me', { credentials: 'include' });
 
             if (!res.ok) {
                 location.href = '/login';
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Attempt to obtain a fresh verification token.
         try {
-            const res = await fetch('/api/auth/resend-verification', {
+            const res = await fetch('/api/v1/auth/resend-verification', {
                 method: 'POST',
                 credentials: 'include',
             });
@@ -546,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resetModal();
 
         try {
-            const data = await api(`/api/projects/${id}`);
+            const data = await api(`/api/v1/projects/${id}`);
             const p = data.project;
 
             state.editingId = p._id;
@@ -1257,7 +1257,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const isEdit = !!state.editingId;
-            const url = isEdit ? `/api/projects/${state.editingId}` : "/api/projects";
+            const url = isEdit ? `/api/v1/projects/${state.editingId}` : "/api/v1/projects";
             const method = isEdit ? "PUT" : "POST";
 
             /* ---------- 1) Persist the project core ---------- */
@@ -1301,7 +1301,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2) Images flagged for deletion (edit mode only)
         for (const imgId of state.imagesToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/images/${imgId}`, { method: "DELETE" }).catch(() => { })
+                api(`/api/v1/projects/${projectId}/images/${imgId}`, { method: "DELETE" }).catch(() => { })
             );
         }
 
@@ -1313,7 +1313,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tasks.push(uploadVideo(projectId));
         } else if (state.videoToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/video`, { method: "DELETE" }).catch(() => { })
+                api(`/api/v1/projects/${projectId}/video`, { method: "DELETE" }).catch(() => { })
             );
         }
 
@@ -1322,7 +1322,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tasks.push(uploadFile(projectId));
         } else if (state.fileToDelete) {
             tasks.push(
-                api(`/api/projects/${projectId}/file`, { method: "DELETE" }).catch(() => { })
+                api(`/api/v1/projects/${projectId}/file`, { method: "DELETE" }).catch(() => { })
             );
         }
 
@@ -1337,7 +1337,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fd.append("images", img.file);
         }
 
-        await api(`/api/projects/${projectId}/images`, {
+        await api(`/api/v1/projects/${projectId}/images`, {
             method: "POST",
             body: fd,
         });
@@ -1350,7 +1350,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (existingIds.length === 0)
             return;
 
-        await api(`/api/projects/${projectId}/images/order`, {
+        await api(`/api/v1/projects/${projectId}/images/order`, {
             method: "PATCH",
             body: JSON.stringify({ order: existingIds })
         }).catch(() => { });
@@ -1361,7 +1361,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const fd = new FormData();
         fd.append("video", state.newVideo.file);
 
-        await api(`/api/projects/${projectId}/video`, {
+        await api(`/api/v1/projects/${projectId}/video`, {
             method: "POST",
             body: fd
         });
@@ -1376,7 +1376,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (version)
             fd.append("version", version);
 
-        await api(`/api/projects/${projectId}/file`, {
+        await api(`/api/v1/projects/${projectId}/file`, {
             method: "POST",
             body: fd,
         });
@@ -1402,7 +1402,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
 
         try {
-            await api(`/api/projects/${id}`, { method: "DELETE" });
+            await api(`/api/v1/projects/${id}`, { method: "DELETE" });
 
             toast("The project has been deleted.", "success");
 
@@ -1420,7 +1420,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.innerHTML = "...";
 
         try {
-            await api(`/api/projects/${id}/sync-github`, { method: "POST" });
+            await api(`/api/v1/projects/${id}/sync-github`, { method: "POST" });
 
             toast("Project metadata has been synchronised with GitHub.", "success");
 

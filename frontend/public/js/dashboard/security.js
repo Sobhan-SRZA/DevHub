@@ -202,7 +202,7 @@
 
                 btn.disabled = true;
 
-                await reqJSON('/api/auth/sessions/' + encodeURIComponent(sessionId), { method: 'DELETE' });
+                await reqJSON('/api/v1/auth/sessions/' + encodeURIComponent(sessionId), { method: 'DELETE' });
 
                 if (window.toast) window.toast('Access revoked.', 'success');
 
@@ -221,7 +221,7 @@
 
                 btn.disabled = true;
 
-                await reqJSON('/api/auth/logout', { method: 'POST' });
+                await reqJSON('/api/v1/auth/logout', { method: 'POST' });
 
                 location.href = '/';
             }
@@ -245,7 +245,7 @@
         const wrap = document.getElementById('sessionsList');
 
         try {
-            const payload = await reqJSON('/api/auth/sessions');
+            const payload = await reqJSON('/api/v1/auth/sessions');
 
             const sessions =
                 unwrap(payload, 'sessions') ||
@@ -290,7 +290,7 @@
                 try {
                     logoutAllBtn.disabled = true;
 
-                    await reqJSON('/api/auth/logout-all', { method: 'POST' });
+                    await reqJSON('/api/v1/auth/logout-all', { method: 'POST' });
 
                     if (window.toast) window.toast('You have been signed out of all devices.', 'success');
 

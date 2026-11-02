@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = 'Sending…';
 
         try {
-            const res = await fetch('/api/contact', {
+            const res = await fetch('/api/v1/contact', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
        ---------------- */
     async function load() {
         try {
-            const data = await api('/api/projects/home-feed');
+            const data = await api('/api/v1/projects/home-feed');
 
             /* Hero statistics */
             const stats = data.stats || {};

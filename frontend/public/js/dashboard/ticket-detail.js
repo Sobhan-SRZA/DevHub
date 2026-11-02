@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function updateTicket(payload) {
             try {
-                const data = await api(`/api/tickets/${ticketId}`, {
+                const data = await api(`/api/v1/tickets/${ticketId}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload)
                 });
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             replyBtn.textContent = 'Sending…';
 
             try {
-                const data = await api(`/api/tickets/${ticketId}/reply`, {
+                const data = await api(`/api/v1/tickets/${ticketId}/reply`, {
                     method: 'POST',
                     body: JSON.stringify({ body })
                 });
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function load() {
         try {
-            const data = await api(`/api/tickets/${ticketId}`);
+            const data = await api(`/api/v1/tickets/${ticketId}`);
             ticket = data.ticket;
             render();
         } catch (err) {

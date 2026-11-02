@@ -203,23 +203,23 @@ logs/                → لاگ روزانه
 
 | گروه               | Base URL                     |   Auth    |
 | ------------------ | ---------------------------- | :-------: |
-| **Auth**           | `/api/auth`                  |     —     |
+| **Auth**           | `/api/v1/auth`                  |     —     |
 | **Profile**        | `/api/profile`               |     ✅     |
-| **Projects**       | `/api/projects`              |  اختیاری  |
-| **Reviews**        | `/api/projects/:id/reviews`  |  اختیاری  |
-| **Comments**       | `/api/projects/:id/comments` |  اختیاری  |
-| **Tags**           | `/api/tags`                  |     —     |
-| **Tag Types**      | `/api/tag-types`             |     —     |
+| **Projects**       | `/api/v1/projects`              |  اختیاری  |
+| **Reviews**        | `/api/v1/projects/:id/reviews`  |  اختیاری  |
+| **Comments**       | `/api/v1/projects/:id/comments` |  اختیاری  |
+| **Tags**           | `/api/v1/tags`                  |     —     |
+| **Tag Types**      | `/api/v1/tag-types`             |     —     |
 | **Users (Public)** | `/api/users`                 |     —     |
-| **Admin**          | `/api/admin`                 |  admin+   |
+| **Admin**          | `/api/v1/admin`                 |  admin+   |
 | **System**         | `/api/system`                | developer |
-| **Health**         | `/api/health`                |     —     |
+| **Health**         | `/api/v1/health`                |     —     |
 
 ### نمونه
 
 ```bash
 # ثبت‌نام
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:3000/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Ali",
@@ -231,10 +231,10 @@ curl -X POST http://localhost:3000/api/auth/register \
   }'
 
 # لیست پروژه‌ها
-curl http://localhost:3000/api/projects?sort=rating&limit=10
+curl http://localhost:3000/api/v1/projects?sort=rating&limit=10
 
 # پروژه با slug
-curl http://localhost:3000/api/projects/my-awesome-app
+curl http://localhost:3000/api/v1/projects/my-awesome-app
 ```
 
 ### شکل پاسخ (یکسان)

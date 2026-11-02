@@ -84,7 +84,7 @@
         }
 
         try {
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
         } catch { /* Ignore network errors — redirect regardless. */ }
 
         location.href = '/';

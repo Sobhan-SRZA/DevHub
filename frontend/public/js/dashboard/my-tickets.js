@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function load() {
         try {
-            const res = await fetch('/api/tickets/my', { credentials: 'include' });
+            const res = await fetch('/api/v1/tickets/my', { credentials: 'include' });
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) throw new Error(data.message || 'Failed to load tickets.');

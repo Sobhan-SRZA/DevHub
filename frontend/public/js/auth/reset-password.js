@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.textContent = 'Changing…';
 
         try {
-            const data = await api('/api/auth/reset-password', {
+            const data = await api('/api/v1/auth/reset-password', {
                 resetToken: state.resetToken,
                 code,
                 newPassword,
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resendBtn.textContent = 'Sending…';
 
         try {
-            const data = await api('/api/auth/resend-password-reset', {
+            const data = await api('/api/v1/auth/resend-password-reset', {
                 resetToken: state.resetToken,
             });
 

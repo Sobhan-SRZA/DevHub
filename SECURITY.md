@@ -42,7 +42,7 @@
    (مثلاً: XSS, SQL Injection, Auth Bypass, IDOR, ...)
 
 2. محل آسیب‌پذیری
-   - Endpoint: POST /api/auth/login
+   - Endpoint: POST /api/v1/auth/login
    - فایل: backend/src/controllers/authController.ts (line 42)
    - نسخه: commit hash یا tag
 
@@ -194,9 +194,9 @@ const cookieOpts = {
 | **OTP verification**    | ۵ تلاش                           | `services/verificationService.ts` |
 
 **پیشنهاد برای آینده**:
-- [ ] Rate limit روی `/api/auth/login` (per IP + per user)
-- [ ] Rate limit روی `/api/auth/register` (per IP)
-- [ ] Rate limit روی `/api/projects` (per user)
+- [ ] Rate limit روی `/api/v1/auth/login` (per IP + per user)
+- [ ] Rate limit روی `/api/v1/auth/register` (per IP)
+- [ ] Rate limit روی `/api/v1/projects` (per user)
 - [ ] CAPTCHA روی register (اگه spam شد)
 
 ### 🔒 Authorization

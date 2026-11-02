@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
        -------------------------------------------------------- */
     async function load() {
         try {
-            const res = await fetch('/api/system/stats', { credentials: 'include' });
+            const res = await fetch('/api/v1/system/stats', { credentials: 'include' });
             if (!res.ok) throw new Error('HTTP ' + res.status);
 
             const data = await res.json();

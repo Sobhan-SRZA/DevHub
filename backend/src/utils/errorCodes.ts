@@ -94,7 +94,10 @@ export const ErrorCodes = {
 
     // ---------- Content Moderation ----------
     SPAM_DETECTED: "SPAM_DETECTED",
-    CONTENT_TOO_LONG: "CONTENT_TOO_LONG"
+    CONTENT_TOO_LONG: "CONTENT_TOO_LONG",
+
+    // api guard
+    NOT_FOUND: "NOT_FOUND"
 } as const;
 
 /**
@@ -264,7 +267,11 @@ export const ErrorMessages: Record<ErrorCode, string> = {
     [ErrorCodes.SPAM_DETECTED]:
         "Your content has been flagged as potential spam.",
     [ErrorCodes.CONTENT_TOO_LONG]:
-        "The content exceeds the maximum allowed length."
+        "The content exceeds the maximum allowed length.",
+
+    // api guard
+    [ErrorCodes.NOT_FOUND]:
+        "Request not be founded."
 };
 
 /**

@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
         /* ---------------- Form Submission ---------------- */
 
         submit(values) {
-            return FormKit.postJSON("/api/auth/login", {
+            return FormKit.postJSON("/api/v1/auth/login", {
                 identifier: values.identifier,
                 password: values.password,
                 remember: Boolean(values.remember),

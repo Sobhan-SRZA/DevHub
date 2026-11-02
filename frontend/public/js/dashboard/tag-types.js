@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const [approved, pending] = await Promise.all([
-                api('/api/tag-types').catch(() => ({ types: [] })),
-                api('/api/tags/pending').catch(() => ({ types: [] })),
+                api('/api/v1/tag-types').catch(() => ({ types: [] })),
+                api('/api/v1/tags/pending').catch(() => ({ types: [] })),
             ]);
 
             state.types = approved.types || [];
@@ -479,8 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const isEdit = Boolean(state.editingId);
             const url = isEdit
-                ? `/api/tag-types/${state.editingId}`
-                : '/api/tag-types';
+                ? `/api/v1/tag-types/${state.editingId}`
+                : '/api/v1/tag-types';
             const method = isEdit ? 'PUT' : 'POST';
 
             await api(url, {
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirmed) return;
 
         try {
-            await api(`/api/tag-types/${id}`, { method: 'DELETE' });
+            await api(`/api/v1/tag-types/${id}`, { method: 'DELETE' });
 
             toast(
                 isPending ? 'Category rejected successfully.' : 'Category deleted successfully.',
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function approve(id) {
         try {
-            await api(`/api/tag-types/${id}/approve`, { method: 'POST' });
+            await api(`/api/v1/tag-types/${id}/approve`, { method: 'POST' });
 
             toast('Category approved successfully.', 'success');
             await loadAll();
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadDetailTags(id) {
         try {
-            const data = await api(`/api/tag-types/${id}`);
+            const data = await api(`/api/v1/tag-types/${id}`);
             const tags = data.tags || [];
 
             if (!tags.length) {

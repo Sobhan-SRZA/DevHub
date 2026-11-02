@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.textContent = 'Sending…';
 
         try {
-            const data = await api('/api/auth/forgot-password', { email });
+            const data = await api('/api/v1/auth/forgot-password', { email });
 
             // Persist the reset state so the reset-password page can
             // resume the flow without another round trip.

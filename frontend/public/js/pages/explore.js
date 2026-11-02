@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
        ---------------- */
     async function loadTypes() {
         try {
-            const data = await api('/api/tag-types');
+            const data = await api('/api/v1/tag-types');
             const types = data.types || [];
 
             typesEl.innerHTML = `
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.tag) params.set('tag', state.tag);
             if (state.tagType) params.set('tagType', state.tagType);
 
-            const data = await api(`/api/projects/explore?${params}`);
+            const data = await api(`/api/v1/projects/explore?${params}`);
 
             renderGrid(data.projects || []);
             renderPagination(data.pagination);
