@@ -13,6 +13,32 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Project } from "../models/Project";
 import { Comment } from "../models/Comment";
+import { findProject } from "./projectController";
+
+/**
+ * Verifies that the comment referenced by `req.params.id` belongs to
+ * the project resolved from `req.params.idOrSlug`. Without this check,
+ * an attacker could mutate comments from another project by crafting
+ * a URL with a mismatched project and comment id (IDOR).
+ */
+async function assertCommentBelongsToProject(req: any) {
+    const { idOrSlug, id } = req.params;
+
+    const project = await findProject(idOrSlug);
+
+    const comment = await Comment.findOne({
+        _id: id,
+        project: project._id
+    });
+
+    if (!comment) {
+        // Use a 404 so the caller cannot distinguish between "comment
+        // does not exist" and "comment belongs to a different project".
+        throw new AppError(404, ErrorCodes.COMMENT_NOT_FOUND);
+    }
+
+    return { project, comment };
+}
 
 /* ========================================================================== */
 /* Constants                                                                  */
@@ -23,32 +49,6 @@ import { Comment } from "../models/Comment";
  */
 const MAX_DEPTH = 5;
 
-/* ========================================================================== */
-/* Helpers                                                                    */
-/* ========================================================================== */
-
-/**
- * Retrieves a project by its MongoDB ObjectId or slug.
- *
- * @param idOrSlug - Project identifier or URL-friendly slug.
- * @returns The matching project document.
- * @throws AppError if the project does not exist.
- */
-async function findProject(idOrSlug: string) {
-    const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
-
-    const project = await Project.findOne(
-        isObjectId
-            ? { _id: idOrSlug }
-            : { slug: idOrSlug }
-    ).lean();
-
-    if (!project) {
-        throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
-    }
-
-    return project;
-}
 
 /* ========================================================================== */
 /* Comments — List                                                            */
@@ -263,14 +263,7 @@ export const updateComment = asyncHandler(
     async (req: any, res: Response) => {
         const data = validate(updateCommentSchema, req.body);
 
-        const comment = await Comment.findById(req.params.id);
-
-        if (!comment) {
-            throw new AppError(
-                404,
-                ErrorCodes.COMMENT_NOT_FOUND
-            );
-        }
+        const { comment } = await assertCommentBelongsToProject(req);
 
         // Restrict comment editing to its original author.
         if (String(comment.user) !== String(req.user._id)) {
@@ -311,14 +304,7 @@ export const updateComment = asyncHandler(
  */
 export const deleteComment = asyncHandler(
     async (req: any, res: Response) => {
-        const comment = await Comment.findById(req.params.id);
-
-        if (!comment) {
-            throw new AppError(
-                404,
-                ErrorCodes.COMMENT_NOT_FOUND
-            );
-        }
+        const { comment } = await assertCommentBelongsToProject(req);
 
         const isOwner =
             String(comment.user) === String(req.user._id);
@@ -377,14 +363,7 @@ export const deleteComment = asyncHandler(
  */
 export const toggleLike = asyncHandler(
     async (req: any, res: Response) => {
-        const comment = await Comment.findById(req.params.id);
-
-        if (!comment) {
-            throw new AppError(
-                404,
-                ErrorCodes.COMMENT_NOT_FOUND
-            );
-        }
+        const { comment } = await assertCommentBelongsToProject(req);
 
         const userId = req.user._id;
 
