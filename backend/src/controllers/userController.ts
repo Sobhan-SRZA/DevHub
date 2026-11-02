@@ -151,16 +151,24 @@ export const listUsers = asyncHandler(
    GET /api/users/:idOrUsername — Public profile and statistics
    ================================================================== */
 
-export const getPublicProfile = asyncHandler(async (req: Request, res: Response) => {
+export const getPublicProfile = asyncHandler(async (req: any, res: Response) => {
     const user = await User.findOne(
-        buildUserQuery((req.params as any).idOrUsername)
+        buildUserQuery(req.params.idOrUsername)
     )
         .select("name username usernameLower avatar bio role createdAt emailVerified")
         .lean();
 
     if (!user) {
-        throw new AppError(404, ErrorCodes.UNAUTHENTICATED, "User not found");
+        throw new AppError(404, ErrorCodes.NOT_FOUND, "User not found");
     }
+
+    // Banned users should not have a public profile.
+    const isAdmin = req.user && ["admin", "developer"].includes(req.user.role);
+
+    if (!user || (user.isBanned && !isAdmin)) {
+        throw new AppError(404, ErrorCodes.NOT_FOUND);
+    }
+
 
     /* ---------- Statistics ---------- */
 
