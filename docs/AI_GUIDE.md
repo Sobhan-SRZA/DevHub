@@ -1,916 +1,1377 @@
-# 📘 AI_GUIDE.md — راهنمای جامع برای هوش مصنوعی
+# AI Development Guide
 
-> این سند منبع حقیقت (Source of Truth) پروژه **DevHub** است. هر AI که وارد این پروژه می‌شود باید اول این را کامل بخواند.
-
----
-
-## 🎯 ۱. شمای کلی پروژه
-
-### نام و هدف
-- **نام:** DevHub (repo: `manage-projects`)
-- **شعار:** Discover. Review. Ship.
-- **هدف:** پلتفرم فارسی برای کشف، نقد و به اشتراک‌گذاری پروژه‌های متن‌باز با سیستم ریویو، کامنت تو در تو، تگ‌گذاری، اکسپلور هوشمند و داشبورد نقش‌محور.
-
-### Stack
-| لایه       | فناوری                                    |
-| ---------- | ----------------------------------------- |
-| Backend    | Node.js 20+, Express, TypeScript          |
-| Database   | MongoDB + Mongoose                        |
-| View       | EJS (SSR)                                 |
-| Auth       | JWT (access + refresh) + HttpOnly cookies |
-| Validation | Zod                                       |
-| Upload     | Multer                                    |
-| Email      | Nodemailer (SMTP / Log)                   |
-| Frontend   | Vanilla JS + Modular CSS + RTL            |
-
-### ساختار پوشه‌ها (Split: backend / frontend)
-
-```
-manage-projects/
-├── backend/src/          → همه‌ی کد بک‌اند
-├── frontend/public/      → JS + CSS + assets
-├── frontend/views/       → EJS templates
-├── docs/                 → مستندات پروژه
-└── docker-compose.yml    → MongoDB محلی
-```
-
-> ⚠️ **مهم:** این پروژه split شده — کد بک‌اند در `backend/`، فرانت (JS/CSS/EJS) در `frontend/`. هنگام ایمپورت‌ها به این ساختار دقت کن.
+> **Source of truth for the DevHub codebase.**
+> Every AI agent or contributor entering this project must read this document
+> in full before making changes. It describes the architecture, the routing
+> model, the conventions, and the traps that are not obvious from the source
+> code alone.
 
 ---
 
-## 🗺️ ۲. نقشه‌ی کامل فایل‌ها (Cheat Sheet)
+## Table of Contents
 
-### Backend — `backend/src/`
+- [1. Overview](#1-overview)
+- [2. Technology Stack](#2-technology-stack)
+- [3. Directory Structure](#3-directory-structure)
+- [4. Route Model and Loader](#4-route-model-and-loader)
+- [5. Complete Route Map](#5-complete-route-map)
+- [6. Data Models](#6-data-models)
+- [7. Middleware Chain](#7-middleware-chain)
+- [8. Authentication and Sessions](#8-authentication-and-sessions)
+- [9. API Registry and Guards](#9-api-registry-and-guards)
+- [10. Service Layer](#10-service-layer)
+- [11. Coding Conventions](#11-coding-conventions)
+- [12. Response and Error Format](#12-response-and-error-format)
+- [13. Adding a Feature](#13-adding-a-feature)
+- [14. Environment and Configuration](#14-environment-and-configuration)
+- [15. CLI Scripts](#15-cli-scripts)
+- [16. Common Tasks](#16-common-tasks)
+- [17. Known Gaps and Traps](#17-known-gaps-and-traps)
+- [18. Quick Reference](#18-quick-reference)
 
-#### Entry points
-| فایل            | نقش                                                    |
-| --------------- | ------------------------------------------------------ |
-| `index.ts`      | بوت سرور (connectDB → listen)                          |
-| `app.ts`        | ساخت Express app، mount کردن routeها، middlewareها     |
-| `lib/loader.ts` | لودر خودکار routeها (کشف و mount از `api/` و `pages/`) |
+---
 
-#### `api/` — روت‌های API (منبع اصلی endpointها)
-```
-api/
-├── 404/page.ts
-├── auth/router.ts
-├── admin/router.ts
-├── profile/router.ts
-├── projects/router.ts
-├── tags/router.ts
-├── tag-types/router.ts
-├── users/route.ts
-├── system/route.ts
-└── health/route.ts
-```
+## 1. Overview
 
-> 📌 **قاعده:** هر فولدر یک `router.ts` یا `route.ts` داره که با `loader.ts` به‌صورت خودکار به مسیر `/<folder-name>` mount می‌شه.
+**DevHub** is a curation platform for open-source projects. Users publish
+project pages, receive structured reviews, and discover work through a
+ranked explore feed. The application is a **server-rendered Express
+application** with a thin vanilla-JavaScript client, not a single-page
+application and not an API-only service.
 
-#### `routes/` — نسخه‌ی قدیمی/جداگانه route modules
-```
-routes/
-├── adminRoutes.ts
-├── authRoutes.ts
-├── commentRoutes.ts
-├── dashboardRoutes.ts
-├── profileRoutes.ts
-├── projectRoutes.ts
-├── reviewRoutes.ts
-├── systemRoutes.ts
-├── tagRoutes.ts
-├── tagTypeRoutes.ts
-└── userRoutes.ts
-```
+### What this means for implementation
 
-> ⚠️ **هشدار به AI:** هر دو `api/` و `routes/` وجود دارند. **قبل از افزودن endpoint جدید، `app.ts` را بخوان** تا بفهمی کدام فعال است. `api/` معمولاً via `loader.ts` خودکار mount می‌شود و `routes/` ممکن است legacy باشد.
+- Pages are rendered as EJS templates on the server. The browser receives
+  complete HTML.
+- Client-side JavaScript adds interactivity to specific pages. It does not
+  render the page.
+- The same Express process serves both HTML pages and the JSON API. They share
+  the same middleware stack and the same session cookies.
+- The API is consumed by the application's own client code and by third-party
+  integrations. API responses are JSON only.
 
-#### `pages/` — روت‌های HTML (SSR)
-```
-pages/
-├── page.ts                    → helperهای render
-├── auth/
-│   ├── login.ts
-│   ├── register.ts
-│   ├── forgot-password.ts
-│   └── reset-password.ts
-├── dashboard/route.ts         → همه‌ی /dashboard/*
-├── explore/page.ts
-├── projects/
-│   ├── projects.ts            → /projects (list)
-│   └── project.ts             → /projects/:idOrSlug
-└── users/page.ts              → /users/:idOrUsername
-```
+### Design principles
 
-#### `controllers/`
-```
-adminController.ts        → مدیریت کاربران (list, changeRole, toggleBan)
-authController.ts         → register, login, verifyEmail, refresh, logout, sessions
-commentController.ts      → CRUD + like
-healthController.ts       → /api/v1/health
-profileController.ts      → updateProfile, avatar, email change, password change
-projectController.ts      → CRUD + media + explore + homeFeed
-reviewController.ts       → CRUD + helpful
-systemController.ts       → stats, logs
-tagController.ts          → CRUD + findOrCreate + approve
-tagTypeController.ts      → CRUD + approve
-userController.ts         → public profile + projects + reviews
-```
+- **Quality over popularity.** Rankings favour verified engagement over
+  passive metrics.
+- **Reversibility.** Destructive operations require confirmation; deletions are
+  soft where hierarchy matters; role and email changes are audited.
+- **Security by default.** Email verification is mandatory; every request is
+  validated; every session is revocable.
+- **Explicit declarations.** Every API endpoint is registered through
+  `apiGuard()`, which enforces environment and feature-flag rules and records
+  the endpoint in the manifest.
 
-#### `models/`
-| فایل                  | Entity                                     |
-| --------------------- | ------------------------------------------ |
-| `User.ts`             | کاربر (نقش، آواتار، پروفایل، pendingEmail) |
-| `Project.ts`          | پروژه (media، GitHub، آمار، تگ‌ها)          |
-| `Review.ts`           | ریویو (rating + satisfaction)              |
-| `Comment.ts`          | کامنت (تو در تو + like)                    |
-| `Tag.ts`              | تگ                                         |
-| `TagType.ts`          | کتگوری تگ                                  |
-| `Session.ts`          | سشن (device + location + token)            |
-| `VerificationCode.ts` | کد OTP                                     |
+---
 
-#### `services/`
-```
-cache.ts                → in-memory cache (explore، home-feed)
-exploreService.ts       → الگوریتم Hot Score + home feeds
-fileService.ts          → toPublicUrl، deleteFile، deleteProjectFiles
-githubService.ts        → parseGitHubUrl، fetchRepoInfo، fetchRepoDownloads
-logger.ts               → hook روی console + ذخیره فایل روزانه
-ratingService.ts        → recalculateProjectStats (میانگین امتیاز)
-roleService.ts          → changeUserRole، hasRole، bootstrap
-sessionService.ts       → startSession، endSession، endAllSessions
-verificationService.ts  → createVerificationCode، verifyCode
-mail/                   → سیستم ایمیل کامل
-  ├── config.ts         → env-based config
-  ├── mailService.ts    → orchestrator + rate limit
-  ├── rateLimiter.ts
-  ├── types.ts
-  ├── utils.ts
-  ├── templates/otpTemplate.ts + sendOtpEmail.ts
-  └── transports/logTransport.ts + smtpTransport.ts
-```
+## 2. Technology Stack
 
-#### `middleware/`
+| Layer            | Technology                          | Version     |
+| ---------------- | ----------------------------------- | ----------- |
+| Runtime          | Node.js                             | 20 or later |
+| HTTP framework   | Express                             | 5.x         |
+| Language         | TypeScript                          | 5 or later  |
+| Database         | MongoDB                             | 7 or later  |
+| ODM              | Mongoose                            | 9.x         |
+| Templating       | EJS                                 | 7.x         |
+| Validation       | Zod                                 | 4.x         |
+| Authentication   | JSON Web Tokens (HS256)             | 9.x         |
+| Password hashing | bcrypt                              | 6.x         |
+| File uploads     | Multer                              | 2.x         |
+| Email            | Nodemailer                          | 10.x        |
+| Rate limiting    | express-rate-limit                  | 8.x         |
+| Frontend         | Vanilla JavaScript (ES5-compatible) | —           |
+| Styling          | Modular CSS with custom properties  | —           |
+
+---
+
+## 3. Directory Structure
+
+The project is split into two top-level trees.
+
 ```
-auth.ts          → requireAuth، optionalAuth
-pageAuth.ts      → guard صفحه‌های HTML (redirect به /auth/login)
-roles.ts         → requireAdmin، requireDeveloper، pageAdminGuard، pageDeveloperGuard
-ownership.ts     → requireProjectOwnership، requireTagOwnership، loadProject
-upload.ts        → mwUploadAvatar، mwUploadImages، mwUploadVideo، mwUploadZip
-errorHandler.ts  → تبدیل همه‌ی خطاها به JSON
-locals.ts        → attachUserLocals (res.locals.currentUser)
-noCache.ts       → هدرهای no-cache
+devhub/
+├── backend/
+│   └── src/
+│       ├── api/            → route entry points (auto-mounted)
+│       ├── config/         → environment, database, upload, registry
+│       ├── controllers/    → request handlers
+│       ├── lib/            → route loader
+│       ├── middleware/     → auth, roles, ownership, security, errors
+│       ├── models/         → Mongoose schemas
+│       ├── pages/          → HTML page entry points (auto-mounted)
+│       ├── routes/         → concrete router implementations
+│       ├── scripts/        → CLI utilities
+│       ├── services/       → business logic
+│       ├── types/          → shared TypeScript types
+│       ├── utils/          → helpers, error factories, tokens
+│       ├── validators/     → Zod schemas
+│       ├── app.ts          → Express assembly
+│       └── index.ts        → process entry point
+│
+├── frontend/
+│   ├── public/
+│   │   ├── assets/         → logo
+│   │   ├── js/             → client modules
+│   │   └── styles/         → modular CSS
+│   └── views/
+│       ├── components/     → EJS partials
+│       └── pages/          → full page templates
+│
+└── docs/                   → project documentation
 ```
 
-#### `utils/`
+### `api/` versus `routes/`
+
+Both directories exist and serve different purposes. This distinction is the
+most common source of confusion for new contributors.
+
+| Directory             | Purpose                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `backend/src/api/`    | Declarative entry points. Each file re-exports a router. The loader walks this tree and mounts every file it finds.         |
+| `backend/src/routes/` | Concrete router implementations. These files define the endpoints and are imported by the corresponding `api/` entry point. |
+
+The pattern is consistent throughout the project:
+
 ```
-AppError.ts       → کلاس خطای ساختاریافته + factoryها
-asyncHandler.ts   → wrapper برای همه‌ی controllerها
-errorCodes.ts     → همه‌ی کدها + پیام‌های فارسی
-geoip.ts          → lookup IP → country/city/isp
-parseUserAgent.ts → parse device info از User-Agent
-token.ts          → signAccessToken، signRefreshToken، signEmailVerifyToken، ...
-validate.ts       → validate(schema, data) → Zod
+backend/src/api/v1/auth/router.ts
+  → imports → backend/src/routes/api/authRoutes.ts
+               and re-exports it as default
+
+backend/src/api/v1/tag-types/router.ts
+  → imports → backend/src/routes/api/tagTypeRoutes.ts
+               and re-exports it as default
 ```
 
-#### `validators/`
-```
-authValidator.ts     → registerSchema، loginSchema، verifyEmailSchema، forgotPassword، resetPassword، ...
-profileValidator.ts  → updateProfile، email change، password change، username
-projectValidator.ts  → createProject، updateProject، listQuery، exploreQuery
-reviewValidator.ts   → createReview، updateReview، listQuery
-commentValidator.ts  → createComment، updateComment، listQuery
-tagValidator.ts      → createTag، createTagType، findOrCreate، suggest، requestTagType، ...
+**The loader mounts the `api/` file, not the `routes/` file.** When adding an
+endpoint, always modify the `routes/` implementation. When adding a new
+namespace, create both the `api/` entry point and the `routes/` implementation.
+
+### Exceptions
+
+Some `api/` files define routes directly rather than re-exporting a router:
+
+- `backend/src/api/v1/404/page.ts` — defines a single route inline
+- `backend/src/api/v1/contact/route.ts` — defines routes inline
+- `backend/src/api/v1/health/route.ts` — defines routes inline
+
+Both patterns are valid. The `routes/`-based pattern is preferred for anything
+that will grow; the inline pattern is acceptable for small, single-purpose
+namespaces.
+
+---
+
+## 4. Route Model and Loader
+
+### How mounting works
+
+`backend/src/app.ts` calls `loadRoutes()` twice:
+
+```typescript
+const routes = [
+  { dir: "pages", prefix: "" },
+  { dir: "api", prefix: "/api" }
+];
+
+await Promise.all(
+  routes.map(async (route) => {
+    await loadRoutes(app, path.join(__dirname, route.dir), route.prefix);
+  })
+);
 ```
 
-#### `scripts/` (CLI)
+`loadRoutes()` in `backend/src/lib/loader.ts` recursively walks the directory.
+
+- **Files** ending in `.ts` or `.js` are imported and their default export is
+  mounted as a router at the current prefix.
+- **Directories** are traversed recursively, with their name appended to the
+  prefix.
+
+### Path derivation
+
+The mount path is derived from the directory structure, not from the file name.
+
+| File                         | Mounted at          |
+| ---------------------------- | ------------------- |
+| `api/v1/auth/router.ts`      | `/api/v1/auth`      |
+| `api/v1/tag-types/router.ts` | `/api/v1/tag-types` |
+| `api/v1/health/route.ts`     | `/api/v1/health`    |
+| `api/_meta.ts`               | `/api/_meta`        |
+| `pages/explore/page.ts`      | `/explore`          |
+| `pages/auth/login.ts`        | `/auth/login`       |
+| `pages/dashboard/route.ts`   | `/dashboard`        |
+
+### What the loader does not do
+
+- It does not read any manifest or configuration file. The directory structure
+  is the source of truth.
+- It does not validate that a route is declared through `apiGuard()`. Strict
+  mode flags undeclared routes only through the diagnostic pass during boot,
+  not by refusing to mount them.
+- It does not apply middleware. Middleware must be declared inside the router
+  file itself.
+
+### Consequence for AI agents
+
+Adding a new file at `backend/src/api/v1/xyz/router.ts` is enough to make
+`/api/v1/xyz` reachable, **provided the file exports a router as its default
+export**. If the file exports nothing, or exports something other than a
+router, the loader logs a warning and skips it.
+
+---
+
+## 5. Complete Route Map
+
+The tables below describe every route mounted in the current application.
+They reflect the source files exactly.
+
+### 5.1 Pages (HTML)
+
+| Method | Path                     | Template                            | Authentication                    |
+| ------ | ------------------------ | ----------------------------------- | --------------------------------- |
+| `GET`  | `/`                      | `pages/index.ejs`                   | Public                            |
+| `GET`  | `/explore`               | `pages/explore.ejs`                 | Public                            |
+| `GET`  | `/projects`              | `pages/projects/list.ejs`           | Public                            |
+| `GET`  | `/projects/:idOrSlug`    | `pages/projects/show.ejs`           | Public (SEO enriched)             |
+| `GET`  | `/users`                 | `pages/users/list.ejs`              | Public                            |
+| `GET`  | `/users/:idOrUsername`   | `pages/users/show.ejs`              | Public (SEO enriched)             |
+| `GET`  | `/about`                 | `pages/about.ejs`                   | Public                            |
+| `GET`  | `/contact`               | `pages/contact.ejs`                 | Public                            |
+| `GET`  | `/legal/privacy`         | `pages/legal/privacy.ejs`           | Public                            |
+| `GET`  | `/legal/terms`           | `pages/legal/terms.ejs`             | Public                            |
+| `GET`  | `/tickets/track/:token`  | `pages/tickets/track.ejs`           | Public (token-scoped)             |
+| `GET`  | `/tickets/lookup`        | `pages/tickets/lookup.ejs`          | Public                            |
+| `GET`  | `/auth/login`            | `pages/auth/login.ejs`              | Guest only                        |
+| `GET`  | `/auth/register`         | `pages/auth/register.ejs`           | Guest only                        |
+| `GET`  | `/auth/forgot-password`  | `pages/auth/forgot-password.ejs`    | Guest only                        |
+| `GET`  | `/auth/reset-password`   | `pages/auth/reset-password.ejs`     | Guest only                        |
+| `GET`  | `/auth/verify-email`     | `pages/auth/verify-email.ejs`       | Public                            |
+| `GET`  | `/dashboard`             | `pages/dashboard/home.ejs`          | `pageAuth`                        |
+| `GET`  | `/dashboard/projects`    | `pages/dashboard/projects.ejs`      | `pageAuth`                        |
+| `GET`  | `/dashboard/profile`     | `pages/dashboard/profile.ejs`       | `pageAuth`                        |
+| `GET`  | `/dashboard/security`    | `pages/dashboard/security.ejs`      | `pageAuth`                        |
+| `GET`  | `/dashboard/settings`    | `pages/dashboard/settings.ejs`      | `pageAuth`                        |
+| `GET`  | `/dashboard/my-tickets`  | `pages/dashboard/my-tickets.ejs`    | `pageAuth`                        |
+| `GET`  | `/dashboard/users`       | `pages/dashboard/users.ejs`         | `pageAuth` + `pageAdminGuard`     |
+| `GET`  | `/dashboard/tags`        | `pages/dashboard/tags.ejs`          | `pageAuth` + `pageAdminGuard`     |
+| `GET`  | `/dashboard/tag-types`   | `pages/dashboard/tag-types.ejs`     | `pageAuth` + `pageAdminGuard`     |
+| `GET`  | `/dashboard/tickets`     | `pages/dashboard/tickets.ejs`       | `pageAuth` + `pageAdminGuard`     |
+| `GET`  | `/dashboard/tickets/:id` | `pages/dashboard/ticket-detail.ejs` | `pageAuth` + `pageAdminGuard`     |
+| `GET`  | `/dashboard/system`      | `pages/dashboard/system.ejs`        | `pageAuth` + `pageDeveloperGuard` |
+| `GET`  | `/dashboard/logs`        | `pages/dashboard/logs.ejs`          | `pageAuth` + `pageDeveloperGuard` |
+| `GET`  | `/sitemap`               | Generated dynamically               | Public                            |
+| `GET`  | `/sitemap.xml`           | 301 redirect to `/sitemap`          | Public                            |
+
+### 5.2 Authentication — `/api/v1/auth`
+
+| Method   | Path                     | Middleware                                   | Handler                              |
+| -------- | ------------------------ | -------------------------------------------- | ------------------------------------ |
+| `POST`   | `/register`              | `authLimiter`                                | `authController.register`            |
+| `POST`   | `/login`                 | `authLimiter`                                | `authController.login`               |
+| `POST`   | `/refresh`               | `authLimiter`                                | `authController.refresh`             |
+| `POST`   | `/logout`                | —                                            | `authController.logout`              |
+| `POST`   | `/forgot-password`       | `sensitiveLimiter`                           | `authController.forgotPassword`      |
+| `POST`   | `/reset-password`        | `sensitiveLimiter`                           | `authController.resetPassword`       |
+| `POST`   | `/resend-password-reset` | `sensitiveLimiter`                           | `authController.resendPasswordReset` |
+| `POST`   | `/verify-email`          | `noCache`, `sensitiveLimiter`                | `authController.verifyEmail`         |
+| `POST`   | `/resend-verification`   | `noCache`, `requireAuth`, `sensitiveLimiter` | `authController.resendVerification`  |
+| `GET`    | `/me`                    | `requireAuth`                                | `authController.me`                  |
+| `POST`   | `/logout-all`            | `requireAuth`                                | `authController.logoutAll`           |
+| `GET`    | `/sessions`              | `requireAuth`                                | `authController.listSessions`        |
+| `DELETE` | `/sessions/:id`          | `requireAuth`                                | `authController.revokeSession`       |
+
+**Note on `/resend-verification`:** this route requires authentication. The
+controller accepts either an authenticated session or a signed verification
+token in the request body. The frontend uses the authenticated path when
+restoring a verification state after a page reload.
+
+### 5.3 Profile — `/api/profile`
+
+All routes are protected by `router.use(requireAuth, noCache)`.
+
+| Method   | Path                | Handler                                     |
+| -------- | ------------------- | ------------------------------------------- |
+| `GET`    | `/me`               | `profileController.getMe`                   |
+| `PATCH`  | `/me`               | `profileController.updateProfile`           |
+| `PATCH`  | `/username`         | `profileController.changeUsername`          |
+| `POST`   | `/avatar`           | `profileController.uploadAvatar`            |
+| `DELETE` | `/avatar`           | `profileController.deleteAvatar`            |
+| `POST`   | `/email/request`    | `profileController.requestEmailChange`      |
+| `POST`   | `/email/verify`     | `profileController.verifyEmailChange`       |
+| `POST`   | `/email/verify-old` | `profileController.verifyOldEmailForChange` |
+| `DELETE` | `/email/pending`    | `profileController.cancelEmailChange`       |
+| `POST`   | `/password/request` | `profileController.requestPasswordChange`   |
+| `POST`   | `/password/confirm` | `profileController.confirmPasswordChange`   |
+
+### 5.4 Projects — `/api/v1/projects`
+
+| Method   | Path                   | Middleware                                                 | Handler               |
+| -------- | ---------------------- | ---------------------------------------------------------- | --------------------- |
+| `GET`    | `/`                    | `optionalAuth`, `apiRateLimit`                             | `listProjects`        |
+| `GET`    | `/explore`             | `apiRateLimit`                                             | `explore`             |
+| `GET`    | `/home-feed`           | `apiRateLimit`                                             | `homeFeeds`           |
+| `GET`    | `/:idOrSlug`           | `optionalAuth`, `apiRateLimit`                             | `getProject`          |
+| `POST`   | `/`                    | `requireAuth`, `apiRateLimit`                              | `createProject`       |
+| `PUT`    | `/:id`                 | `requireAuth`, `requireProjectOwnership`                   | `updateProject`       |
+| `DELETE` | `/:id`                 | `requireAuth`, `requireProjectOwnership`                   | `deleteProject`       |
+| `POST`   | `/:id/sync-github`     | `requireAuth`, `requireProjectOwnership`                   | `syncGithub`          |
+| `PATCH`  | `/:id/status`          | `requireAuth`, `requireProjectOwnership`                   | `toggleStatus`        |
+| `POST`   | `/:id/images`          | `requireAuth`, `requireProjectOwnership`, `mwUploadImages` | `uploadProjectImages` |
+| `DELETE` | `/:id/images/:imageId` | `requireAuth`, `requireProjectOwnership`                   | `deleteProjectImage`  |
+| `PATCH`  | `/:id/images/order`    | `requireAuth`, `requireProjectOwnership`                   | `reorderImages`       |
+| `POST`   | `/:id/video`           | `requireAuth`, `requireProjectOwnership`, `mwUploadVideo`  | `uploadProjectVideo`  |
+| `DELETE` | `/:id/video`           | `requireAuth`, `requireProjectOwnership`                   | `deleteProjectVideo`  |
+| `POST`   | `/:id/file`            | `requireAuth`, `requireProjectOwnership`, `mwUploadZip`    | `uploadProjectZip`    |
+| `DELETE` | `/:id/file`            | `requireAuth`, `requireProjectOwnership`                   | `deleteProjectZip`    |
+| `GET`    | `/:idOrSlug/download`  | `optionalAuth`, `loadProject`, `apiRateLimit`              | `downloadProject`     |
+
+Nested routers:
+
+```
+router.use("/:idOrSlug/reviews", reviewRoutes);
+router.use("/:idOrSlug/comments", commentRoutes);
+```
+
+### 5.5 Reviews — `/api/v1/projects/:idOrSlug/reviews`
+
+The router uses `{ mergeParams: true }` so that `idOrSlug` is available in
+controllers.
+
+| Method   | Path           | Middleware                     | Handler        |
+| -------- | -------------- | ------------------------------ | -------------- |
+| `GET`    | `/`            | `optionalAuth`, `apiRateLimit` | `listReviews`  |
+| `GET`    | `/me`          | `requireAuth`, `apiRateLimit`  | `getMyReview`  |
+| `POST`   | `/`            | `requireAuth`, `apiRateLimit`  | `createReview` |
+| `PUT`    | `/`            | `requireAuth`, `apiRateLimit`  | `updateReview` |
+| `DELETE` | `/`            | `requireAuth`, `apiRateLimit`  | `deleteReview` |
+| `POST`   | `/:id/helpful` | `requireAuth`, `apiRateLimit`  | `markHelpful`  |
+
+`/me` is registered before parameterized routes so it is not shadowed.
+
+### 5.6 Comments — `/api/v1/projects/:idOrSlug/comments`
+
+Also mounted with `{ mergeParams: true }`. Every handler receives both
+`idOrSlug` (project) and `id` (comment). Controllers must verify that the
+comment belongs to the project — `assertCommentBelongsToProject` performs
+this check to prevent IDOR.
+
+| Method   | Path        | Middleware                     | Handler         |
+| -------- | ----------- | ------------------------------ | --------------- |
+| `GET`    | `/`         | `optionalAuth`, `apiRateLimit` | `listComments`  |
+| `POST`   | `/`         | `requireAuth`, `apiRateLimit`  | `createComment` |
+| `PUT`    | `/:id`      | `requireAuth`, `apiRateLimit`  | `updateComment` |
+| `DELETE` | `/:id`      | `requireAuth`, `apiRateLimit`  | `deleteComment` |
+| `POST`   | `/:id/like` | `requireAuth`, `apiRateLimit`  | `toggleLike`    |
+
+### 5.7 Tags — `/api/v1/tags`
+
+| Method   | Path              | Middleware                           | Handler           |
+| -------- | ----------------- | ------------------------------------ | ----------------- |
+| `GET`    | `/`               | `optionalAuth`, `apiRateLimit`       | `listTags`        |
+| `GET`    | `/suggest`        | `optionalAuth`, `apiRateLimit`       | `suggestTags`     |
+| `GET`    | `/pending`        | `requireAuth`, `requireAdmin`        | `listPending`     |
+| `POST`   | `/find-or-create` | `requireAuth`, `apiRateLimit`        | `findOrCreateTag` |
+| `POST`   | `/`               | `requireAuth`, `apiRateLimit`        | `createTag`       |
+| `POST`   | `/:id/approve`    | `requireAuth`, `requireAdmin`        | `approveTag`      |
+| `PUT`    | `/:id`            | `requireAuth`, `requireTagOwnership` | `updateTag`       |
+| `DELETE` | `/:id`            | `requireAuth`, `requireTagOwnership` | `deleteTag`       |
+| `GET`    | `/:id`            | `optionalAuth`, `apiRateLimit`       | `getTag`          |
+
+Named routes (`/suggest`, `/pending`, `/find-or-create`) are registered
+before the parameterized `/:id` route.
+
+### 5.8 Categories — `/api/v1/tag-types`
+
+| Method   | Path           | Middleware                                    | Handler          |
+| -------- | -------------- | --------------------------------------------- | ---------------- |
+| `GET`    | `/`            | `optionalAuth`, `apiRateLimit`                | `listTagTypes`   |
+| `GET`    | `/:id`         | `optionalAuth`, `apiRateLimit`                | `getTagType`     |
+| `POST`   | `/`            | `requireAuth`, `requireAdmin`, `apiRateLimit` | `createTagType`  |
+| `PUT`    | `/:id`         | `requireAuth`, `requireAdmin`, `apiRateLimit` | `updateTagType`  |
+| `DELETE` | `/:id`         | `requireAuth`, `requireAdmin`, `apiRateLimit` | `deleteTagType`  |
+| `POST`   | `/:id/approve` | `requireAuth`, `requireAdmin`, `apiRateLimit` | `approveTagType` |
+
+**Note:** `tagController.requestTagType` and `tagController.createTagType`
+exist as functions but are **not routed**. The `/request` endpoint described
+in earlier documentation does not exist. If you need it, wire it in
+`tagTypeRoutes.ts`. This gap is listed in
+[Known Gaps and Traps](#17-known-gaps-and-traps).
+
+### 5.9 Users — `/api/v1/users`
+
+| Method | Path                      | Middleware                     | Handler            |
+| ------ | ------------------------- | ------------------------------ | ------------------ |
+| `GET`  | `/me/stats`               | `requireAuth`, `apiRateLimit`  | `getMyStats`       |
+| `GET`  | `/`                       | `optionalAuth`, `apiRateLimit` | `listUsers`        |
+| `GET`  | `/:idOrUsername/projects` | `optionalAuth`, `apiRateLimit` | `getUserProjects`  |
+| `GET`  | `/:idOrUsername/reviews`  | `optionalAuth`, `apiRateLimit` | `getUserReviews`   |
+| `GET`  | `/:idOrUsername`          | `optionalAuth`, `apiRateLimit` | `getPublicProfile` |
+
+`/me/stats` is registered first so it is not shadowed by `/:idOrUsername`.
+
+### 5.10 Admin — `/api/v1/admin`
+
+`router.use(requireAuth, requireAdmin)` applies to every route.
+
+| Method | Path              | Handler                      |
+| ------ | ----------------- | ---------------------------- |
+| `GET`  | `/users`          | `adminController.listUsers`  |
+| `POST` | `/users/:id/role` | `adminController.changeRole` |
+| `POST` | `/users/:id/ban`  | `adminController.toggleBan`  |
+
+**Note:** role changes and ban toggles are `POST`, not `PATCH`, despite what
+convention might suggest. Preserve this when adding new admin routes.
+
+### 5.11 System — `/api/v1/system`
+
+`router.use(requireAuth, requireDeveloper)` applies to every route.
+
+| Method | Path             | Handler                           |
+| ------ | ---------------- | --------------------------------- |
+| `GET`  | `/stats`         | `systemController.getSystemStats` |
+| `GET`  | `/logs`          | `systemController.getLogs`        |
+| `GET`  | `/logs/download` | `systemController.downloadLogs`   |
+| `POST` | `/logs/clear`    | `systemController.clearLogs`      |
+
+### 5.12 Health — `/api/v1/health`
+
+| Method | Path        | Middleware                        | Handler                        |
+| ------ | ----------- | --------------------------------- | ------------------------------ |
+| `GET`  | `/`         | —                                 | Inline                         |
+| `GET`  | `/detailed` | `requireAuth`, `requireDeveloper` | `healthController.healthCheck` |
+
+### 5.13 Contact — `/api/v1/contact`
+
+| Method | Path | Middleware                                    | Handler                          |
+| ------ | ---- | --------------------------------------------- | -------------------------------- |
+| `POST` | `/`  | `optionalAuth`, `sensitiveLimiter`, `noCache` | `contactController.createTicket` |
+
+### 5.14 Tickets — `/api/v1/tickets`
+
+| Method | Path                  | Middleware                    | Handler                |
+| ------ | --------------------- | ----------------------------- | ---------------------- |
+| `GET`  | `/track/:token`       | `apiRateLimit`                | `getTicketByToken`     |
+| `POST` | `/track/:token/reply` | `sensitiveLimiter`            | `replyToTicketByToken` |
+| `POST` | `/lookup`             | `sensitiveLimiter`            | `requestTicketLookup`  |
+| `POST` | `/lookup/verify`      | `sensitiveLimiter`            | `verifyTicketLookup`   |
+| `GET`  | `/my`                 | `requireAuth`, `apiRateLimit` | `listMyTickets`        |
+
+The following are protected by
+`router.use(requireAuth, requireAdmin, noCache)`:
+
+| Method  | Path         | Handler         |
+| ------- | ------------ | --------------- |
+| `GET`   | `/`          | `listTickets`   |
+| `GET`   | `/:id`       | `getTicket`     |
+| `POST`  | `/:id/reply` | `replyToTicket` |
+| `PATCH` | `/:id`       | `updateTicket`  |
+
+### 5.15 API Manifest — `/api/_meta`
+
+| Method | Path    | Middleware                                        | Handler                   |
+| ------ | ------- | ------------------------------------------------- | ------------------------- |
+| `GET`  | `/`     | `apiRateLimit`                                    | Inline (public summary)   |
+| `GET`  | `/full` | `requireAuth`, `requireDeveloper`, `apiRateLimit` | Inline (full manifest)    |
+| `GET`  | `/diff` | `requireAuth`, `requireDeveloper`, `apiRateLimit` | Inline (environment diff) |
+
+---
+
+## 6. Data Models
+
+Eight Mongoose models are defined in `backend/src/models/`.
+
+### `User`
+
+| Field                                                | Type        | Notes                                                |
+| ---------------------------------------------------- | ----------- | ---------------------------------------------------- |
+| `name`                                               | String      | 2–60 characters.                                     |
+| `username`                                           | String      | 3–20 characters; case-sensitive display value.       |
+| `usernameLower`                                      | String      | Lowercase; unique index; used for lookups.           |
+| `email`                                              | String      | Lowercase; unique index.                             |
+| `emailVerified`                                      | Boolean     | Registration is incomplete until verified.           |
+| `emailVerifiedAt`                                    | Date        | Null until verified.                                 |
+| `password`                                           | String      | bcrypt hash; `select: false`.                        |
+| `bio`                                                | String      | Markdown.                                            |
+| `avatar`                                             | Subdocument | `url`, `filename`, `mimeType`, `size`, `uploadedAt`. |
+| `pendingEmail`                                       | Subdocument | Tracks a two-step email change.                      |
+| `role`                                               | Enum        | `user`, `admin`, `developer`.                        |
+| `isBanned`                                           | Boolean     | Blocks login and every authenticated request.        |
+| `roleChangedBy`, `roleChangedAt`, `roleChangeReason` | Audit       | Populated on role changes.                           |
+
+**Hook:** `pre("validate")` synchronises `usernameLower` from `username`.
+**Hook:** `pre("save")` rehashes `password` when modified.
+**Method:** `comparePassword(candidate)` → `Promise<boolean>`.
+
+### `Project`
+
+Includes owner reference, title, slug (unique), GitHub metadata
+subdocument, description fields, media subdocuments (images array, video,
+file), aggregate statistics (`rating`, `satisfaction`, `reviewCount`,
+`downloads`, `views`), tags array, status enum, and public/featured flags.
+
+**Indexes:** owner + status + updatedAt; tags + status; rating + reviewCount;
+downloads + rating.
+
+### `Review`
+
+One document per user per project. Compound unique index on
+`{ project, user }`.
+
+Fields: `rating` (0–5), `satisfaction` (0–100), `title`, `body`,
+`isEdited`, `editedAt`, `helpfulCount`.
+
+### `Comment`
+
+Supports threading through `parent` and `depth`.
+
+Fields: `project`, `user`, `body`, `parent`, `depth` (0–5), `isEdited`,
+`isDeleted`, `replyCount`, `likes` (array of user IDs).
+
+**Index:** `{ project, parent, createdAt }` for efficient threaded queries.
+
+### `Tag`
+
+Belongs to a `TagType`. Compound unique index on `{ slug, type }`.
+
+Fields: `name`, `slug`, `type`, `color`, `description`, `isSystem`,
+`isApproved`, `createdBy`, `usageCount`.
+
+### `TagType` (Category)
+
+Fields: `name`, `slug` (unique), `description`, `color`, `icon`,
+`isSystem`, `isApproved`, `allowUserTags`, `maxTags`, `order`, `createdBy`.
+
+### `Session`
+
+Fields: `user`, `sessionId` (unique), `deviceHash`, `token`, `refreshToken`
+(`select: false`), `device` subdocument, `location` subdocument, `client`
+subdocument, `loginAt`, `lastActiveAt`, `expiresAt`.
+
+**Indexes:** unique `sessionId`, unique `token`, compound
+`{ user, deviceHash, expiresAt }`, TTL on `expiresAt`.
+
+**Method:** `isExpired()` → boolean.
+
+### `VerificationCode`
+
+Fields: `user`, `purpose` (enum), `codeHash`, `salt`, `targetEmail`,
+`attempts`, `maxAttempts`, `expiresAt`, `consumedAt`, `requestedAt`, `ip`,
+`userAgent`.
+
+**Index:** compound `{ user, purpose, consumedAt }`, TTL on `expiresAt`.
+
+**Statics:** `generateCode()` returns `{ code, codeHash, salt }`;
+`hashCode(code, salt)` returns a digest.
+
+### `Ticket`
+
+Fields: `ticketNumber` (unique), `name`, `email`, `subject`, `category`,
+`message`, `status`, `priority`, `userId`, `messages` array, `assignedTo`,
+tracking fields (`trackingTokenHash`, `trackingExpiresAt`, `trackingRevoked`),
+lookup fields (`lookupOtpHash`, `lookupOtpExpiresAt`, `lookupOtpAttempts`),
+`ip`, `userAgent`.
+
+**Hook:** `pre("validate")` generates `ticketNumber` and seeds the messages
+array with the initial submission.
+
+---
+
+## 7. Middleware Chain
+
+The order of middleware in `backend/src/app.ts` is deliberate and should not
+be rearranged without a specific reason.
+
+```
+1.  initializeEnvironment()          → validates env, resolves APP_ENV, loads flags
+2.  app.set("trust proxy", 1)        → conditional on TRUST_PROXY or NODE_ENV
+3.  app.disable("x-powered-by")
+4.  rejectSuspiciousPaths            → blocks path traversal and null bytes
+5.  securityHeaders()                → CSP, HSTS, X-Frame-Options, ...
+6.  compressionMiddleware()          → compression package or native zlib
+7.  express.json({ limit: "2mb" })
+8.  express.urlencoded({ limit: "2mb" })
+9.  cookieParser()
+10. apiLimiter on "/api"             → global rate limiter
+11. app.set("view engine", "ejs")
+12. app.set("views", frontend/views)
+13. express.static(frontend/public)  → with caching headers
+14. express.static("/uploads")       → with security headers, index disabled
+15. GET /sitemap.xml → 301 /sitemap
+16. loadRoutes (async)               → pages + api
+17. 404 handler (JSON for /api/*, HTML otherwise)
+18. errorHandler                     → last
+```
+
+### Notes on the ordering
+
+- **`initializeEnvironment()` runs first.** It validates production-critical
+  configuration and throws if `JWT_SECRET` or `APP_URL` are unsuitable.
+- **`rejectSuspiciousPaths` runs before routing.** Requests containing
+  `\0`, `%00`, or `../` are rejected before the router sees them.
+- **The API limiter is mounted on `/api` only.** It does not affect page
+  requests.
+- **The 404 and error handlers are registered inside the `Promise.then()`.**
+  They are only attached after every route has been loaded. If route loading
+  fails, the process exits.
+- **`attachUserLocals` is not global.** It is applied per-route through
+  `backend/src/middleware/locals.ts` where EJS templates need
+  `res.locals.currentUser`.
+
+### Adding new middleware
+
+New global middleware must be inserted **before** the route loader (step 16).
+New per-route middleware belongs in the router file, not in `app.ts`.
+
+---
+
+## 8. Authentication and Sessions
+
+### Session lifecycle
+
+A session document is created on registration, on email verification, and on
+login.
+
+```
+startSession(userId, req, opts)
+  → compute deviceHash from userAgent + fingerprint/deviceId
+  → reuse an unexpired session with the same deviceHash, OR create a new one
+  → sign access token (JWT, typ="access", sid=session.sessionId)
+  → sign refresh token (JWT, typ="refresh", sid=session.sessionId)
+  → store both tokens on the session document
+  → return { session, access, refresh, reused }
+```
+
+Cookies are set only by the controller (`setAuthCookies` in
+`authController.ts`). Neither `startSession` nor any other service touches the
+response object.
+
+### Request authentication
+
+`requireAuth` (in `middleware/auth.ts`) performs the following on every
+authenticated request:
+
+1. Read `req.cookies.access_token`.
+2. Fall back to `Authorization: Bearer ...` if the cookie is absent.
+3. Verify the JWT signature and expiration.
+4. Reject if `payload.typ !== "access"`.
+5. Look up the session by `sessionId: payload.sid` with `expiresAt > now`.
+6. Look up the user by `payload.sub`.
+7. Reject if the user is banned.
+8. Attach `req.user` and `req.session`.
+9. Update `session.lastActiveAt` asynchronously (non-blocking).
+
+**Session lookup is not optional.** A syntactically valid JWT is not
+sufficient. The session document must exist and must not have expired. This
+is what enables immediate revocation.
+
+### Refresh flow
+
+`POST /api/v1/auth/refresh`:
+
+1. Read `req.cookies.refresh_token`.
+2. Verify the JWT and confirm `typ === "refresh"`.
+3. Look up the session by `{ sessionId, refreshToken, expiresAt > now }`.
+4. Issue a new access token.
+5. Update `session.token` and `session.lastActiveAt`.
+6. Set a new `access_token` cookie.
+
+**The refresh token is not rotated.** It remains valid until the session
+expires. This is a deliberate trade-off; rotation would require the client to
+handle in-flight requests that use the old token.
+
+### Revocation paths
+
+| Trigger                                           | Sessions affected                      |
+| ------------------------------------------------- | -------------------------------------- |
+| `POST /logout`                                    | Current session only                   |
+| `POST /logout-all`                                | All sessions for the user              |
+| Password change (`/api/profile/password/confirm`) | All sessions except the current one    |
+| Password reset (`/api/auth/reset-password`)       | All sessions                           |
+| `DELETE /api/v1/auth/sessions/:id`                | The specified session                  |
+| Session expiry                                    | Enforced by query filter and TTL index |
+
+### Email verification flow
+
+1. `POST /register` creates the user, issues a verification code, and returns
+   `verifyToken` (a signed JWT of type `email_verify`). **No session is
+   issued.**
+2. The user receives a 6-digit code by email.
+3. `POST /verify-email` verifies the token and code, sets
+   `emailVerified = true`, and issues a session.
+4. If session creation fails, the email is still marked verified; the user
+   can log in manually.
+
+### Email change flow
+
+1. `POST /api/profile/email/request` — requires the current password.
+   Dispatches a code to the **current** email.
+2. `POST /api/profile/email/verify-old` — verifies that code. The user's email
+   is updated immediately, but `emailVerified` is set to `false`. A code is
+   dispatched to the **new** email.
+3. The user is redirected to `/auth/verify-email` and follows the standard
+   verification flow.
+4. `DELETE /api/profile/email/pending` cancels the change and reverts the email
+   to its previous value if step 2 has already completed.
+
+---
+
+## 9. API Registry and Guards
+
+### Purpose
+
+The registry in `backend/src/config/apiRegistry.ts` records every API endpoint
+declared through `apiGuard()`. It is consulted by:
+
+- The manifest endpoints (`/api/_meta`, `/api/_meta/full`, `/api/_meta/diff`).
+- Boot-time diagnostics that warn about declared-but-unmounted endpoints.
+
+### `apiGuard()` usage
+
+Every API endpoint should be wrapped:
+
+```typescript
+router.post(
+  "/",
+  requireAuth,
+  apiRateLimit("authenticated"),
+  apiGuard({
+    path: "/api/v1/projects",
+    method: "POST",
+    visibility: "authenticated",
+    description: "Create a new project.",
+    tags: ["projects"],
+  }),
+  ctrl.createProject
+);
+```
+
+The declaration has the following fields:
+
+| Field         | Required | Description                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| `path`        | ✅        | Full path from the application root.                         |
+| `method`      | ✅        | HTTP method.                                                 |
+| `visibility`  | ✅        | `public`, `authenticated`, `admin`, `developer`, `internal`. |
+| `environment` | —        | `dev-only`, `staging-only`, `prod-only`, `all` (default).    |
+| `featureFlag` | —        | A flag name from `FEATURE_FLAGS`.                            |
+| `rateLimit`   | —        | Per-endpoint rate limit override.                            |
+| `description` | —        | Human-readable, used in the manifest.                        |
+| `tags`        | —        | Grouping labels for the manifest.                            |
+
+### Behaviour
+
+- At construction time, the declaration is registered in the registry
+  regardless of whether the endpoint is enabled.
+- If the declaration is disabled (by environment or feature flag), the guard
+  returns a 404. This hides the existence of the endpoint from unauthenticated
+  scanners.
+- If the endpoint is enabled, the guard is a pass-through. Authorization is
+  enforced by the surrounding middleware (`requireAuth`, `requireAdmin`).
+
+### Strict mode
+
+`API_STRICT=true` (default in production) enables boot-time diagnostics. It
+does **not** refuse to mount undeclared routes — it warns about them. The
+production default for `API_STRICT` is `true`; setting it to `false` produces
+a warning at startup.
+
+### `apiRateLimit()`
+
+Tiered limiter applied per-endpoint. It keys on the authenticated user when
+available, falling back to the IP address.
+
+| Visibility      | Default window | Default limit |
+| --------------- | -------------- | ------------- |
+| `public`        | 60 s           | 60            |
+| `authenticated` | 60 s           | 120           |
+| `admin`         | 60 s           | 240           |
+| `developer`     | 60 s           | 240           |
+
+Individual endpoints pass an explicit override:
+
+```typescript
+apiRateLimit("authenticated", { windowMs: 60 * 60_000, max: 10 })
+```
+
+---
+
+## 10. Service Layer
+
+Services contain business logic and must not import `express`. They accept
+plain objects and return plain objects or promises. This makes them testable
+in isolation.
+
+| Service               | Responsibility                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| `roleService`         | Role hierarchy, `changeUserRole`, `ensureDeveloperExists`, `shouldBecomeDeveloper`. |
+| `sessionService`      | `startSession`, `endSession`, `endAllSessions`, `touchSession`.                     |
+| `verificationService` | `createVerificationCode`, `verifyCode`.                                             |
+| `mail/`               | Transport layer, rate limiting, template rendering, `sendOtpEmail`.                 |
+| `githubService`       | Repository metadata fetch with caching, rate-limit awareness, and ETags.            |
+| `exploreService`      | Hot Score aggregation and home feed assembly.                                       |
+| `ratingService`       | `recalculateProjectStats` after every review write.                                 |
+| `fileService`         | `toPublicUrl`, `toAbsolutePath`, `deleteFile`, `deleteProjectFiles`.                |
+| `spamDetection`       | Content scoring and `assertNotSpam`.                                                |
+| `userStatsService`    | Aggregated per-user analytics.                                                      |
+| `ticketService`       | Tracking tokens, lookup OTPs, email notifications, account linkage.                 |
+| `cache`               | In-memory key-value cache with TTL.                                                 |
+| `logger`              | Console interception and daily file persistence.                                    |
+
+### Rules for service code
+
+- No Express imports. No `req` or `res`.
+- Throw `AppError` for control-flow failures; do not return sentinel values.
+- Accept domain types or validated payloads, not raw request bodies.
+- Log significant state transitions (role changes, password changes) using
+  the standard marker format.
+
+---
+
+## 11. Coding Conventions
+
+### Controllers
+
+Every controller follows the same shape:
+
+```typescript
+import { asyncHandler } from "../utils/asyncHandler";
+import { validate } from "../utils/validate";
+import { Unauthorized, NotFound } from "../utils/AppError";
+import { ErrorCodes } from "../utils/errorCodes";
+import { someSchema } from "../validators/someValidator";
+import { SomeModel } from "../models/SomeModel";
+
+export const actionName = asyncHandler(async (req: any, res) => {
+  // 1. Authorization (if not already enforced by middleware)
+  if (!req.user) throw Unauthorized(ErrorCodes.UNAUTHENTICATED);
+
+  // 2. Validation
+  const data = validate(someSchema, req.body);
+
+  // 3. Business logic (delegate to services when non-trivial)
+  const result = await SomeModel.doSomething(data);
+
+  // 4. Response
+  res.json({ ok: true, result });
+});
+```
+
+**Do not** wrap controllers in additional try/catch. `asyncHandler` handles
+rejected promises and thrown exceptions. Express 5 also handles returned
+rejected promises, but `asyncHandler` remains the project's convention.
+
+### Error factories
+
+```typescript
+throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "Message", { field: "email" });
+throw Conflict(ErrorCodes.EMAIL_TAKEN);
+throw Unauthorized(ErrorCodes.INVALID_CREDENTIALS);
+throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);
+throw NotFound(ErrorCodes.PROJECT_NOT_FOUND);
+throw TooManyRequests(ErrorCodes.TOO_MANY_ATTEMPTS);
+```
+
+Never `throw new Error()`. Never let raw database errors reach the client.
+
+### Validators
+
+Zod schemas are the only permitted validation mechanism.
+
+```typescript
+export const createProjectSchema = z.object({
+  title: z.string().trim().min(2).max(120),
+  slug: z.string().trim().toLowerCase().regex(SLUG_RE).optional(),
+  tags: z.array(z.string().regex(OBJECT_ID_RE)).max(20).optional(),
+});
+
+export const updateProjectSchema = createProjectSchema.partial();
+```
+
+Query schemas use `z.coerce` for numeric fields:
+
+```typescript
+export const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+```
+
+### Frontend JavaScript
+
+- ES5-compatible. No `import`/`export` statements. No bundler.
+- Modules attach to `window` via IIFE.
+- All user-supplied strings pass through `escapeHtml()` before any `innerHTML`
+  interpolation.
+- All fetch calls include `credentials: 'include'`.
+- Errors are surfaced through `FormKit`, `openDialogError`, `confirmDialog`,
+  or `toast`.
+
+```javascript
+(function () {
+  'use strict';
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data.message || 'Error');
+      Object.assign(err, data, { status: res.status });
+      throw err;
+    }
+    return data;
+  }
+
+  // ... page logic
+})();
+```
+
+### CSS
+
+- Use design tokens from `styles/index.css` and `styles/themes.css`
+  (`--bg`, `--text`, `--accent`, `--border`, `--radius`, `--shadow`).
+- Page-specific CSS belongs in the matching subdirectory.
+- Respect `prefers-reduced-motion` and `prefers-color-scheme`.
+
+### EJS
+
+- Escape with `<%= %>`. Use `<%- %>` only for pre-sanitised content or for
+  `include()`.
+- Public pages must include `seo-head` with a title, description, and
+  canonical path.
+- Private pages must pass `noindex: true` to `seo-head`.
+- Reuse the standard partials: `header`, `footer`, `dialogError`,
+  `dashboard-nav`, `dash-breadcrumb`, `dashboard-nav-items`,
+  `theme-switcher`.
+
+---
+
+## 12. Response and Error Format
+
+### Success
+
+```json
+{ "ok": true, "message": "Optional.", "data": { } }
+```
+
+Many endpoints return top-level fields instead of a `data` envelope for
+historical reasons:
+
+```json
+{ "ok": true, "projects": [...], "pagination": {...} }
+{ "ok": true, "user": {...}, "session": {...} }
+```
+
+Clients must check `ok` first.
+
+### Error
+
+```json
+{
+  "ok": false,
+  "code": "USERNAME_TAKEN",
+  "message": "This username is already taken.",
+  "field": "username",
+  "details": {
+    "username": ["This username is already taken."]
+  }
+}
+```
+
+`field` and `details` are optional. `code` is stable and is the recommended
+way for clients to branch on errors.
+
+### Error codes
+
+All codes are defined in `backend/src/utils/errorCodes.ts` with English
+messages. New codes must be added to both the `ErrorCodes` object and the
+`ErrorMessages` record.
+
+---
+
+## 13. Adding a Feature
+
+Ten steps, in order. Skipping a step typically produces an inconsistent
+implementation.
+
+### 1. Model
+
+**Location:** `backend/src/models/Xyz.ts`
+
+Define the interface, schema, indexes, and any instance methods. Index design
+matters — identify the queries the feature will run and add compound indexes
+accordingly.
+
+### 2. Validator
+
+**Location:** `backend/src/validators/xyzValidator.ts`
+
+One schema per operation: `createXyzSchema`, `updateXyzSchema`,
+`xyzListQuerySchema`. `updateXyzSchema` is usually
+`createXyzSchema.partial()`.
+
+### 3. Error codes
+
+**Location:** `backend/src/utils/errorCodes.ts`
+
+Add codes with `SCREAMING_SNAKE_CASE` names and English messages.
+
+### 4. Service (if applicable)
+
+**Location:** `backend/src/services/xyzService.ts`
+
+Required if the logic is reused across controllers or complex enough to test
+independently. Must not import `express`.
+
+### 5. Controller
+
+**Location:** `backend/src/controllers/xyzController.ts`
+
+Follow the shape in [Coding Conventions](#coding-conventions).
+
+### 6. Route
+
+**Location:** `backend/src/routes/api/xyzRoutes.ts` (implementation)
+
+Declare every endpoint through `apiGuard()`. Apply `requireAuth`,
+`requireAdmin`, or `requireProjectOwnership` as needed. Apply `apiRateLimit()`
+with an override if the default is not appropriate.
+
+### 7. Entry point
+
+**Location:** `backend/src/api/v1/xyz/router.ts` (or `route.ts`)
+
+```typescript
+import xyzRoutes from "../../../routes/api/xyzRoutes";
+export default xyzRoutes;
+```
+
+The loader will mount this at `/api/v1/xyz`.
+
+### 8. Page route (if the feature has a page)
+
+**Location:** `backend/src/pages/xyz/page.ts`
+
+Apply `pageAuth` and, if required, `pageAdminGuard` or `pageDeveloperGuard`.
+Call `attachUserLocals` when the template requires `res.locals.currentUser`.
+
+### 9. EJS template
+
+**Location:** `frontend/views/pages/xyz/show.ejs`
+
+Include `seo-head`, `header`, `dialogError`, and `footer`.
+
+### 10. Client code and CSS
+
+**Location:** `frontend/public/js/xyz/show.js` and
+`frontend/public/styles/xyz/show.css`
+
+### Checklist
+
+- [ ] Model with appropriate indexes.
+- [ ] Zod schema for every payload and query.
+- [ ] Error codes with English messages.
+- [ ] Controller uses `asyncHandler` and `validate`.
+- [ ] Route declared through `apiGuard()`.
+- [ ] API reference in `README.md` updated.
+- [ ] Page guarded with the correct role middleware.
+- [ ] `noindex: true` on private pages.
+- [ ] Client escapes user-supplied strings.
+- [ ] `npx tsc --noEmit` passes.
+
+---
+
+## 14. Environment and Configuration
+
+### Required variables
+
+| Variable      |  Required  | Notes                                           |
+| ------------- | :--------: | ----------------------------------------------- |
+| `PORT`        |     ✅      | HTTP port.                                      |
+| `MONGODB_URI` |     ✅      | Full connection string.                         |
+| `JWT_SECRET`  |     ✅      | Minimum 64 characters in production (enforced). |
+| `APP_URL`     | Production | Public domain, without a trailing slash.        |
+
+### Environment resolution
+
+`APP_ENV` takes precedence over `NODE_ENV`. Valid values are `development`,
+`staging`, and `production`. `APP_ENV=production` requires `APP_URL` to be
+set and `JWT_SECRET` to be at least 64 characters; otherwise, the process
+exits at startup.
+
+### Feature flags
+
+`FEATURE_FLAGS` is a comma-separated list:
+
+```env
+FEATURE_FLAGS=beta-ui,new-search
+```
+
+Endpoints declared through `apiGuard()` with a `featureFlag` field are
+enabled only when the flag is present.
+
+### API strict mode
+
+`API_STRICT` controls boot-time diagnostics. Default is `true` in production.
+Setting it to `false` in production produces a startup warning.
+
+---
+
+## 15. CLI Scripts
+
+All scripts run through `tsx` and use the same configuration as the
+application.
+
+| Script                        | Purpose                                           |
+| ----------------------------- | ------------------------------------------------- |
+| `promoteUser.ts`              | Promote or demote a user by email.                |
+| `setupFirstAdmin.ts`          | Run `ensureDeveloperExists()`.                    |
+| `seedDefaultData.ts`          | Seed default categories and tags.                 |
+| `syncIndexes.ts`              | Synchronise MongoDB indexes across all models.    |
+| `cleanupVerificationCodes.ts` | Delete expired and consumed verification codes.   |
+| `testMail.ts`                 | Send a test OTP through the configured transport. |
+
+### Usage
+
 ```bash
-npx tsx backend/src/scripts/promoteUser.ts <email> <role> [reason]
+npx tsx backend/src/scripts/promoteUser.ts you@example.com developer "Main administrator"
 npx tsx backend/src/scripts/setupFirstAdmin.ts
 npx tsx backend/src/scripts/seedDefaultData.ts
 npx tsx backend/src/scripts/syncIndexes.ts
 npx tsx backend/src/scripts/cleanupVerificationCodes.ts
-npx tsx backend/src/scripts/testMail.ts <email>
+npx tsx backend/src/scripts/testMail.ts you@example.com
 ```
 
 ---
 
-### Frontend — `frontend/`
+## 16. Common Tasks
 
-#### `views/` — EJS templates
-```
-views/
-├── index.ejs                    → صفحه اصلی (home)
-├── explore.ejs                  → اکسپلور
-├── 404.ejs
-│
-├── auth/
-│   ├── login.ejs
-│   ├── register.ejs
-│   ├── forgot-password.ejs
-│   └── reset-password.ejs
-│
-├── projects/
-│   ├── list.ejs                 → /projects
-│   └── show.ejs                 → /projects/:idOrSlug
-│
-├── users/
-│   └── show.ejs                 → /users/:idOrUsername
-│
-├── dashboard/
-│   ├── home.ejs                 → /dashboard
-│   ├── projects.ejs             → /dashboard/projects
-│   ├── profile.ejs              → /dashboard/profile
-│   ├── settings.ejs             → /dashboard/profile/settings
-│   ├── tags.ejs                 → /dashboard/tags (admin+)
-│   ├── tag-types.ejs            → /dashboard/tag-types (admin+)
-│   ├── users.ejs                → /dashboard/users (admin+)
-│   ├── system.ejs               → /dashboard/system (developer)
-│   └── logs.ejs                 → /dashboard/logs (developer)
-│
-└── components/
-    ├── header.ejs               → هدر یکپارچه (nav + search + notif + profile + drawer)
-    ├── brand.ejs                → لوگوی SVG با پارامتر
-    ├── search-modal.ejs         → مودال Ctrl+K
-    ├── mobile-drawer.ejs        → Drawer موبایل + داشبورد section
-    ├── dashboard-nav.ejs        → سایدبار داشبورد (دسکتاپ)
-    ├── dashboard-nav-items.ejs  → آیتم‌های داشبورد (variant: sidebar|drawer|menu)
-    ├── dash-breadcrumb.ejs      → Breadcrumb تعاملی با dropdown
-    └── dialogError.ejs          → dialog + confirm + toast
-```
+### Change the theme colours
 
-#### `public/js/` — Client JS
-```
-js/
-├── index.js                     → helperهای عمومی صفحه اصلی
-├── header.js                    → منطق هدر (auth، drawer، search)
-├── dashboard-nav.js             → collapse + active + breadcrumb dropdown
-├── form-errors.js               → FormKit (global)
-├── dialog-error.js              → dialogError + confirmDialog + toast
-│
-├── components/
-│   ├── markdown-editor.js       → کلاس MarkdownEditor
-│   ├── tag-picker.js            → کلاس TagPicker
-│   └── user-chip.js             → helper window.userChip
-│
-├── auth/
-│   ├── login.js
-│   ├── register.js
-│   ├── verify-email.js
-│   ├── forgot-password.js
-│   └── reset-password.js
-│
-├── pages/
-│   ├── home.js                  → صفحه اصلی
-│   ├── explore.js               → صفحه اکسپلور
-│   └── users-show.js            → پروفایل عمومی
-│
-├── projects/
-│   └── show.js                  → جزئیات پروژه
-│
-└── dashboard/
-    ├── home.js                  → نمای کلی
-    ├── projects.js              → CRUD پروژه‌ها
-    ├── profile.js               → پروفایل کاربر
-    ├── settings.js              → تنظیمات
-    ├── tags.js                  → مدیریت تگ‌ها
-    ├── tag-types.js             → مدیریت کتگوری‌ها
-    ├── users.js                 → مدیریت کاربران
-    ├── system.js                → وضعیت سیستم
-    └── logs.js                  → لاگ‌ها
+Edit the `--accent` variables in `frontend/public/styles/themes.css`. Each
+accent palette is a distinct block selected by `html[data-accent="..."]`.
+
+### Change the brand name
+
+Edit `frontend/views/components/brand.ejs` and the `brandName` parameter
+passed by callers. Update `<title>` tags in each EJS page.
+
+### Add a new dashboard page
+
+1. Create `backend/src/routes/pages/xyz.ts` (or extend
+   `backend/src/routes/pages/dashboard.ts`).
+2. Guard it with `pageAuth` and, if required, `pageAdminGuard` or
+   `pageDeveloperGuard`.
+3. Create `frontend/views/pages/dashboard/xyz.ejs`.
+4. Add the navigation entry to
+   `frontend/views/components/dashboard-nav-items.ejs`.
+5. Create `frontend/public/js/dashboard/xyz.js`.
+6. Create `frontend/public/styles/dashboard/xyz.css`.
+
+### Add a new role
+
+1. Extend the `role` enum in `backend/src/models/User.ts`.
+2. Extend `ROLE_RANK` in `backend/src/services/roleService.ts`.
+3. Add error codes to `backend/src/utils/errorCodes.ts`.
+4. Add guards to `backend/src/middleware/roles.ts`.
+5. Update `dashboard-nav-items.ejs` to show or hide sections.
+6. Update role badges in
+   `frontend/views/components/dashboard-nav.ejs` and in
+   `frontend/public/styles/dashboard/dashboard-nav.css`.
+
+### Add a new feature flag
+
+1. Add the flag name to `FEATURE_FLAGS` in the environment.
+2. Pass `featureFlag: "flagName"` to `apiGuard()` on the affected endpoints.
+3. The manifest at `/api/_meta` will reflect the flag state.
+
+### Re-sync a project with GitHub
+
+```bash
+curl -X POST http://localhost:3000/api/v1/projects/<id>/sync-github \
+  -b cookies.txt
 ```
 
-#### `public/styles/` — CSS
-```
-styles/
-├── index.css                    → base + shared (user-chip، btn)
-├── header.css                   → هدر + drawer + search + profile menu
-├── dialog.css                   → dialog + toast + confirm
-├── form-errors.css              → خطاهای فرم (shake، inline)
-├── auth.css                     → فرم‌های auth
-├── markdown-editor.css          → ادیتور Markdown + preview
-├── explore.css                  → صفحه اکسپلور + کارت پروژه + hero
-│
-├── auth/
-│   └── password-reset.css       → forgot + reset pages
-│
-├── dashboard/
-│   ├── dashboard.css            → layout + card + breadcrumb
-│   ├── dashboard-nav.css        → سایدبار + collapse
-│   ├── home.css                 → صفحه home
-│   ├── projects.css             → پروژه‌ها
-│   ├── project-modal.css        → مودال multi-step
-│   ├── profile.css              → پروفایل کاربر
-│   ├── settings.css             → تنظیمات
-│   ├── tags.css                 → تگ‌ها
-│   ├── tag-types.css            → کتگوری‌ها
-│   ├── tag-picker.css           → کامپوننت TagPicker
-│   ├── users.css                → جدول کاربران
-│   ├── system.css               → وضعیت سیستم
-│   └── logs.css                 → لاگ‌ها
-│
-├── projects/
-│   └── show.css                 → صفحه پروژه
-│
-└── users/
-    └── show.css                 → پروفایل عمومی
-```
+The endpoint requires project ownership. The cached repository metadata has a
+15-minute TTL; forcing a sync bypasses the cache.
 
 ---
 
-## 🌐 ۳. روت‌های کامل (Endpoints + Pages)
+## 17. Known Gaps and Traps
 
-### 📄 صفحات (HTML / SSR)
+These are situations that are easy to get wrong. Each is a real gap or
+inconsistency in the current codebase.
 
-| Method | Path                          | Template                   |   Auth    |
-| ------ | ----------------------------- | -------------------------- | :-------: |
-| GET    | `/`                           | `index.ejs`                |     —     |
-| GET    | `/explore`                    | `explore.ejs`              |     —     |
-| GET    | `/projects`                   | `projects/list.ejs`        |     —     |
-| GET    | `/projects/:idOrSlug`         | `projects/show.ejs`        |     —     |
-| GET    | `/users/:idOrUsername`        | `users/show.ejs`           |     —     |
-| GET    | `/auth/login`                 | `auth/login.ejs`           |   guest   |
-| GET    | `/auth/register`              | `auth/register.ejs`        |   guest   |
-| GET    | `/auth/verify-email`          | (inline در auth یا صفحه)   |     —     |
-| GET    | `/auth/forgot-password`       | `auth/forgot-password.ejs` |   guest   |
-| GET    | `/auth/reset-password`        | `auth/reset-password.ejs`  |     —     |
-| GET    | `/dashboard`                  | `dashboard/home.ejs`       |     ✅     |
-| GET    | `/dashboard/projects`         | `dashboard/projects.ejs`   |     ✅     |
-| GET    | `/dashboard/profile`          | `dashboard/profile.ejs`    |     ✅     |
-| GET    | `/dashboard/profile/settings` | `dashboard/settings.ejs`   |     ✅     |
-| GET    | `/dashboard/tags`             | `dashboard/tags.ejs`       |  admin+   |
-| GET    | `/dashboard/tag-types`        | `dashboard/tag-types.ejs`  |  admin+   |
-| GET    | `/dashboard/users`            | `dashboard/users.ejs`      |  admin+   |
-| GET    | `/dashboard/system`           | `dashboard/system.ejs`     | developer |
-| GET    | `/dashboard/logs`             | `dashboard/logs.ejs`       | developer |
+### `tagController.requestTagType` and `createTagType` are not routed
 
-### 🔌 API Endpoints
+Two controllers are defined but have no route attached:
 
-#### `/api/v1/auth`
-| Method | Path                          |  Auth  | کار                     |
-| ------ | ----------------------------- | :----: | ----------------------- |
-| POST   | `/register`                   |   —    | ثبت‌نام + OTP            |
-| POST   | `/verify-email`               |   —    | تایید ایمیل + session   |
-| POST   | `/resend-verification`        |   —    | ارسال مجدد OTP          |
-| POST   | `/resend-verification-for-me` |   ✅    | برای کاربر لاگین        |
-| POST   | `/login`                      |   —    | ورود (ایمیل یا یوزرنیم) |
-| POST   | `/refresh`                    | cookie | چرخش access             |
-| POST   | `/logout`                     | cookie | خروج                    |
-| POST   | `/logout-all`                 |   ✅    | خروج از همه             |
-| POST   | `/forgot-password`            |   —    | OTP بازیابی             |
-| POST   | `/reset-password`             |   —    | بازیابی رمز             |
-| POST   | `/resend-password-reset`      |   —    | ارسال مجدد              |
-| GET    | `/me`                         |   ✅    | کاربر فعلی              |
-| GET    | `/sessions`                   |   ✅    | لیست سشن‌ها              |
-| DELETE | `/sessions/:id`               |   ✅    | revoke                  |
+- `tagController.requestTagType`
+- `tagController.createTagType`
 
-#### `/api/profile` (همه ✅)
-| Method | Path                  |
-| ------ | --------------------- |
-| GET    | `/me`                 |
-| PATCH  | `/me`                 |
-| PATCH  | `/username`           |
-| POST   | `/avatar` (multipart) |
-| DELETE | `/avatar`             |
-| POST   | `/email/request`      |
-| POST   | `/email/verify-old`   |
-| DELETE | `/email/pending`      |
-| POST   | `/password/request`   |
-| POST   | `/password/confirm`   |
+The `tagTypeRoutes.ts` file uses `tagController.listTagTypes`,
+`getTagType`, `createTagType`, `updateTagType`, `deleteTagType`, and
+`approveTagType` — but the `createTagType` in `tagController.ts` is a
+different function from the one in `tagTypeController.ts`. The routes use the
+`tagController` version. The `/request` endpoint does not exist.
 
-#### `/api/v1/projects`
-| Method | Path                  |   Auth   | کار                       |
-| ------ | --------------------- | :------: | ------------------------- |
-| GET    | `/`                   | optional | لیست (mine, search, sort) |
-| GET    | `/explore`            |    —     | اکسپلور                   |
-| GET    | `/home-feed`          |    —     | فید home (cache)          |
-| GET    | `/:idOrSlug`          | optional | یک پروژه                  |
-| POST   | `/`                   |    ✅     | ساخت                      |
-| PUT    | `/:id`                | ✅ owner  | ویرایش                    |
-| DELETE | `/:id`                | ✅ owner  | حذف                       |
-| POST   | `/:id/sync-github`    | ✅ owner  | سینک                      |
-| PATCH  | `/:id/status`         | ✅ owner  | تغییر وضعیت               |
-| POST   | `/:id/images`         | ✅ owner  | آپلود (multipart)         |
-| DELETE | `/:id/images/:imgId`  | ✅ owner  | حذف تصویر                 |
-| PATCH  | `/:id/images/order`   | ✅ owner  | ترتیب                     |
-| POST   | `/:id/video`          | ✅ owner  | ویدیو                     |
-| DELETE | `/:id/video`          | ✅ owner  | حذف ویدیو                 |
-| POST   | `/:id/file`           | ✅ owner  | ZIP                       |
-| DELETE | `/:id/file`           | ✅ owner  | حذف ZIP                   |
-| GET    | `/:idOrSlug/download` | optional | دانلود + شمارش            |
+**If you need `/request`, wire it explicitly in `tagTypeRoutes.ts`.**
 
-#### `/api/v1/projects/:idOrSlug/reviews`
-| Method | Path           |            Auth            |
-| ------ | -------------- | :------------------------: |
-| GET    | `/`            | optional (شامل `myReview`) |
-| GET    | `/me`          |             ✅              |
-| POST   | `/`            |             ✅              |
-| PUT    | `/`            |             ✅              |
-| DELETE | `/`            |             ✅              |
-| POST   | `/:id/helpful` |             ✅              |
+### `adminRoutes` uses `POST` for mutations
 
-#### `/api/v1/projects/:idOrSlug/comments`
-| Method | Path        |           Auth           |
-| ------ | ----------- | :----------------------: |
-| GET    | `/`         | optional (با `parentId`) |
-| POST   | `/`         |            ✅             |
-| PUT    | `/:id`      |            ✅             |
-| DELETE | `/:id`      |            ✅             |
-| POST   | `/:id/like` |            ✅             |
+Role changes and ban toggles are `POST`, not `PATCH`:
 
-#### `/api/v1/tags`
-| Method | Path              |    Auth     |
-| ------ | ----------------- | :---------: |
-| GET    | `/`               |      —      |
-| GET    | `/suggest`        |      —      |
-| GET    | `/pending`        |    admin    |
-| GET    | `/:id`            |      —      |
-| POST   | `/find-or-create` |      ✅      |
-| POST   | `/`               |      ✅      |
-| PUT    | `/:id`            | owner/admin |
-| DELETE | `/:id`            | owner/admin |
-| POST   | `/:id/approve`    |    admin    |
+- `POST /api/v1/admin/users/:id/role`
+- `POST /api/v1/admin/users/:id/ban`
 
-#### `/api/v1/tag-types`
-| Method | Path           |    Auth     |
-| ------ | -------------- | :---------: |
-| GET    | `/`            |      —      |
-| GET    | `/:id`         |      —      |
-| POST   | `/request`     | ✅ (pending) |
-| POST   | `/`            |    admin    |
-| PUT    | `/:id`         |    admin    |
-| DELETE | `/:id`         |    admin    |
-| POST   | `/:id/approve` |    admin    |
+Convention would suggest `PATCH`. Do not "fix" this without a coordinated
+change to every frontend caller.
 
-#### `/api/v1/users`
-| Method | Path                      |
-| ------ | ------------------------- |
-| GET    | `/:idOrUsername`          |
-| GET    | `/:idOrUsername/projects` |
-| GET    | `/:idOrUsername/reviews`  |
+### Session reuse, not one session per login
 
-#### `/api/v1/admin` (admin+)
-| Method | Path              |
-| ------ | ----------------- |
-| GET    | `/users`          |
-| POST   | `/users/:id/role` |
-| POST   | `/users/:id/ban`  |
+`startSession()` reuses an existing session with the same `deviceHash` if it
+has not expired. Logging in from the same device does not create a new
+session — it refreshes the existing one. Logging in from a different device
+creates a new session. This behaviour is intentional (it keeps the session
+list meaningful) but is easy to misread when writing tests.
 
-#### `/api/v1/system` (developer)
-| Method | Path             |
-| ------ | ---------------- |
-| GET    | `/stats`         |
-| GET    | `/logs`          |
-| GET    | `/logs/download` |
-| POST   | `/logs/clear`    |
+### The refresh token is not rotated
 
-#### Public
-| Method | Path          |
-| ------ | ------------- |
-| GET    | `/api/v1/health` |
+`POST /api/v1/auth/refresh` issues a new **access** token but does not issue a
+new refresh token. The session's `refreshToken` field remains unchanged until
+the session expires or is revoked. This is a deliberate trade-off; see
+[Authentication and Sessions](#authentication-and-sessions).
+
+### Password change preserves the current session
+
+`confirmPasswordChange` deletes every session **except** the current one. A
+user who changes their password stays logged in on the device where they
+performed the change. This is not the same as "all sessions closed."
+
+### `emailVerified` is not required for all actions
+
+Registration completes with `emailVerified: false`. Creating a project
+requires email verification (`createProject` throws `EMAIL_NOT_VERIFIED`), but
+posting comments, leaving reviews, or updating the profile does not. If you
+need to change this, check every action individually.
+
+### `attachUserLocals` is not global
+
+`res.locals.currentUser` is only populated where `attachUserLocals` is
+explicitly applied. Public pages that render the header (`frontend/views/` page
+templates) do not have it. If a template accesses `currentUser` on a page
+without the middleware, the value will be `undefined`.
+
+### Strict mode does not block undeclared routes
+
+`API_STRICT=true` produces boot-time warnings for endpoints not declared
+through `apiGuard()`. It does not prevent them from being mounted. If an
+endpoint needs to be blocked outside the expected environment, use
+`apiGuard()` with an `environment` field.
+
+### `MAIL_MODE=log` prints OTPs to the console
+
+This is intentional in development. It is a security risk in any environment
+where the console output is captured or forwarded. Verify that
+`MAIL_MODE=smtp` in production before any real users register.
+
+### `syncIndexes.ts` may drop indexes
+
+`syncIndexes.ts` calls Mongoose's `syncIndexes()` for every model. On models
+whose indexes have drifted, this can drop and recreate them. Run it only
+during a maintenance window on production, or after backing up the indexes.
+
+### Rate limiters are in-process
+
+Rate limiting state is held in memory. This is sufficient for a single-process
+deployment. Horizontal scaling requires either sticky sessions or a shared
+store; neither is currently configured.
+
+### `sitemap.xml` is a redirect
+
+`GET /sitemap.xml` returns a 301 to `/sitemap`. The actual sitemap is
+generated at `/sitemap`. This is correct behaviour but is easy to misread if
+you expect a static file.
 
 ---
 
-## 🔐 ۴. احراز هویت و امنیت
+## 18. Quick Reference
 
-### نقش‌ها (سلسله‌مراتبی)
+### Files you will touch most often
+
+| When you need to…                  | Look at                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------- |
+| Add or modify an API endpoint      | `backend/src/routes/api/<name>Routes.ts`                                    |
+| Register a new route namespace     | `backend/src/api/v1/<name>/router.ts`                                       |
+| Add or modify a page               | `backend/src/pages/` and `frontend/views/pages/`                            |
+| Add a database field               | `backend/src/models/<Model>.ts`                                             |
+| Validate a new payload             | `backend/src/validators/<name>Validator.ts`                                 |
+| Add an error code                  | `backend/src/utils/errorCodes.ts`                                           |
+| Change the global middleware chain | `backend/src/app.ts`                                                        |
+| Change the theme                   | `frontend/public/styles/themes.css`                                         |
+| Change dashboard navigation        | `frontend/views/components/dashboard-nav-items.ejs`                         |
+| Change role permissions            | `backend/src/middleware/roles.ts` and `backend/src/services/roleService.ts` |
+| Add a CLI script                   | `backend/src/scripts/`                                                      |
+
+### Environment variables you will set most often
+
+| Variable       | Common value                               |
+| -------------- | ------------------------------------------ |
+| `PORT`         | `3000`                                     |
+| `MONGODB_URI`  | `mongodb://localhost:27017/devhub`         |
+| `JWT_SECRET`   | Output of `openssl rand -hex 32`           |
+| `APP_URL`      | `https://devhub.example.com`               |
+| `MAIL_MODE`    | `log` (development) or `smtp` (production) |
+| `GITHUB_TOKEN` | Optional, but recommended for reliability  |
+
+### Verification commands
+
+```bash
+# Type check
+npx tsc --noEmit
+
+# Build
+npm run build
+
+# Start in development
+npm run dev
+
+# Health check
+curl http://localhost:3000/api/v1/health
+
+# Manifest
+curl http://localhost:3000/api/_meta
+
+# Full manifest (requires developer session)
+curl -b cookies.txt http://localhost:3000/api/_meta/full
 ```
-user → admin → developer
-```
 
-| عمل                     | user  | admin | developer |
-| ----------------------- | :---: | :---: | :-------: |
-| ساخت پروژه + تگ         |   ✅   |   ✅   |     ✅     |
-| درخواست کتگوری          |   ✅   |   ✅   |     ✅     |
-| تایید/ویرایش/حذف کتگوری |   ❌   |   ✅   |     ✅     |
-| تایید تگ دیگران         |   ❌   |   ✅   |     ✅     |
-| مدیریت کاربران          |   ❌   |   ✅   |     ✅     |
-| تغییر user ↔ admin      |   ❌   |   ✅   |     ✅     |
-| تغییر → developer       |   ❌   |   ❌   |     ✅     |
-| بن/آنبن                 |   ❌   |   ✅   |     ✅     |
-| صفحه system + logs      |   ❌   |   ❌   |     ✅     |
+### If you are unsure where to start
 
-**اولین کاربر ثبت‌نام‌شده** → خودکار `developer`.
+1. Read `backend/src/app.ts` to see what is mounted.
+2. Read `backend/src/lib/loader.ts` to understand how mounting works.
+3. Read the specific route file for the area you are touching.
+4. Read the controller and its validator together.
+5. Read the corresponding page template in `frontend/views/pages/`.
 
-### جریان ثبت‌نام
-```
-POST /api/v1/auth/register
-  → user ساخته می‌شه (emailVerified: false)
-  → OTP به ایمیل می‌ره
-  → { requiresVerification: true, verifyToken, email }
-  → NO session
-
-POST /api/v1/auth/verify-email { verifyToken, code }
-  → emailVerified = true
-  → session صادر می‌شه ✅
-```
-
-### جریان تغییر ایمیل (۲ مرحله)
-```
-1. POST /api/profile/email/request { newEmail, password }
-   → OTP به ایمیل **قبلی**
-   → pendingEmail.oldVerified = false
-
-2. POST /api/profile/email/verify-old { code }
-   → user.email = newEmail
-   → emailVerified = false
-   → OTP به ایمیل **جدید**
-   → pendingEmail.oldVerified = true
-
-3. redirect /auth/verify-email
-   → تایید → emailVerified = true
-```
-
-### لایه‌های امنیتی
-| مورد             | پیاده‌سازی                                 |
-| ---------------- | ----------------------------------------- |
-| Password         | bcrypt (12 rounds)                        |
-| JWT              | access 15min، refresh 30d، `typ` مشخص     |
-| Cookies          | HttpOnly + Secure (prod) + SameSite=lax   |
-| Refresh Rotation | هر refresh → access جدید                  |
-| Session Revoke   | بعد از تغییر رمز، همه sessionها بسته می‌شن |
-| OTP              | SHA-256 + salt · ۵ تلاش · cooldown 60s    |
-| Rate Limit       | per-recipient روی ایمیل                   |
-| Path Traversal   | `path.basename` + regex در دانلود         |
-| HTML Sanitize    | Markdown parser خودش strip می‌کنه          |
-| Anti-enumeration | پیام یکسان برای موجود/ناموجود             |
+The codebase is small enough that reading these five files will give you the
+context you need for almost any change.
 
 ---
 
-## 📦 ۵. الگوهای کدنویسی
-
-### Controller Pattern (همیشه)
-```typescript
-export const actionName = asyncHandler(async (req: any, res: Response) => {
-    const data = validate(someSchema, req.body);
-    if (!req.user) throw Unauthorized(ErrorCodes.UNAUTHENTICATED);
-    const result = await SomeModel.doThing(data);
-    res.json({ ok: true, ...result });
-});
-```
-
-### AppError Factory
-```typescript
-throw new AppError(400, ErrorCodes.VALIDATION_ERROR, 'پیام', { field: 'email' });
-throw Conflict(ErrorCodes.EMAIL_TAKEN);          // 409
-throw Unauthorized(ErrorCodes.INVALID_CREDENTIALS); // 401
-throw Forbidden(ErrorCodes.PROJECT_NOT_OWNED);   // 403
-throw NotFound(ErrorCodes.PROJECT_NOT_FOUND);    // 404
-```
-
-### Response Shape
-```json
-// موفق
-{ "ok": true, "message": "...", "data": { ... } }
-
-// خطا
-{
-  "ok": false,
-  "code": "ERROR_CODE",
-  "message": "پیام فارسی",
-  "field": "username",              // اختیاری
-  "details": { "field": ["msg"] }   // اختیاری
-}
-```
-
-### Frontend Fetch
-```javascript
-const data = await FormKit.postJSON('/api/v1/projects', { title: 'X' });
-```
-
-### Form Handling
-```javascript
-FormKit.attach('#myForm', {
-    validate(v) { return {}; },
-    submit(v) { return FormKit.postJSON(url, v); },
-    onSuccess(data) { location.href = '/'; },
-});
-```
-
-### Client Error Display
-- `FormKit.showFieldError(input, msg)` → shake + زیر فیلد
-- `FormKit.showFormBanner(form, msg)` → بالا
-- `openDialogError(title, msg)` → دیالوگ
-- `confirmDialog({...})` → `Promise<boolean>`
-- `toast(msg, 'success'|'error'|'info')` → گوشه
-
-### Middleware Order (در app.ts)
-```
-1. express.json + urlencoded + cookieParser
-2. attachUserLocals      → res.locals.currentUser
-3. express.static        → /public, /uploads
-4. EJS setup
-5. Routes (API first، pages second)
-6. 404 handler
-7. errorHandler          ← آخرین
-```
-
----
-
-## 🧭 ۶. دستورالعمل AI برای افزودن قابلیت جدید
-
-### مرحله ۱ — Model
-**محل:** `backend/src/models/Xyz.ts`
-```
-1. interface IXyz
-2. interface IXyzMethods (اگه متد داره)
-3. sub-schemas اگه لازم
-4. schema + indexes (TTL، unique، compound)
-5. pre-save hooks
-6. model + export
-```
-
-### مرحله ۲ — Validator
-**محل:** `backend/src/validators/xyzValidator.ts`
-```
-createXyzSchema، updateXyzSchema، listQuerySchema
-(همه با Zod)
-```
-
-### مرحله ۳ — Error Codes
-**محل:** `backend/src/utils/errorCodes.ts`
-```
-XYZ_NOT_FOUND، XYZ_TAKEN، ...
-+ پیام فارسی در ErrorMessages
-```
-
-### مرحله ۴ — Service (اگه منطق پیچیده)
-**محل:** `backend/src/services/xyzService.ts`
-```
-- منطق کسب‌وکار
-- قابل تست
-- بدون دسترسی به req/res
-```
-
-### مرحله ۵ — Controller
-**محل:** `backend/src/controllers/xyzController.ts`
-```
-- asyncHandler
-- validate
-- AppError
-- پاسخ با { ok, data }
-```
-
-### مرحله ۶ — Route
-**محل:** `backend/src/api/xyz/router.ts` (روش جدید — auto-load)
-**یا** `backend/src/routes/xyzRoutes.ts` (روش قدیمی)
-```
-1. Router()
-2. mount در app.ts یا loader.ts
-3. guards مناسب
-```
-
-### مرحله ۷ — Page Route (اگه صفحه داره)
-**محل:** `backend/src/pages/xyz/page.ts`
-```
-- اگر HTML page: با pageAuth یا pageAdminGuard
-- render EJS
-```
-
-### مرحله ۸ — EJS Page
-**محل:** `frontend/views/xyz/show.ejs`
-```
-1. <%- include("../components/header") %>
-2. <%- include("../components/dialogError") %>
-3. محتوا
-4. <script src="/js/xyz/show.js"></script>
-```
-
-### مرحله ۹ — CSS
-**محل:** `frontend/public/styles/xyz/show.css` یا زیر `dashboard/`
-
-### مرحله ۱۰ — Client JS
-**محل:** `frontend/public/js/xyz/show.js`
-```
-- fetch از API
-- رندر DOM
-- event handlers
-```
-
----
-
-## 🚫 ۷. قواعد طلایی (AI باید رعایت کند)
-
-### ✅ همیشه
-- `asyncHandler` در controller
-- `validate` با Zod روی `req.body`
-- `AppError` + `ErrorCodes` (نه `throw new Error`)
-- `ok: true/false` در response
-- `escapeHtml` قبل از `innerHTML`
-- `credentials: 'include'` در `fetch`
-- guard مناسب (`requireAuth` / `requireAdmin` / `requireDeveloper`)
-- Error handling کامل (نه فقط `console.log`)
-- Responsive + RTL + فارسی درست
-
-### ❌ هرگز
-- secret در کد کلاینت
-- raw HTML بدون sanitize
-- خطای DB رو مستقیم به کاربر نشون بده
-- `req.body` رو بدون validation استفاده کن
-- session رو دستی بساز (از `sessionService` استفاده کن)
-- مستقیم `Model.save()` رو برای تغییر رمز بدون pre-save bypass کن
-- بدون `pageAuth` صفحه‌ی private بساز
-- داده‌ی حساس رو لاگ کن (password, token, OTP)
-
-### 🎯 معیارهای کد قابل قبول
-- [ ] TypeScript بدون `any` بی‌دلیل
-- [ ] Validation سمت سرور (client فقط UX)
-- [ ] Authorization (نه فقط Authentication)
-- [ ] Error handling با کد و پیام واضح
-- [ ] Responsive (دسکتاپ + تبلت + موبایل)
-- [ ] RTL و فارسی درست
-- [ ] Component ماژولار (اگه تکرار می‌شه)
-- [ ] لاگ مناسب (بدون اطلاعات حساس)
-- [ ] بدون breaking change در API موجود
-
----
-
-## 🔄 ۸. جریان‌های مهم (Flow Diagrams)
-
-### ساخت پروژه
-```
-1. Dashboard → btnNewProject
-2. ensureEmailVerified() → اگه verified نبود redirect به verify
-3. modal → 5 مراحل (basic / content / media / tags / settings)
-4. submit → POST /api/v1/projects → projectId
-5. upload media (parallel) → images/video/file
-6. reorder images
-7. reload list
-```
-
-### ثبت‌نام کاربر
-```
-1. /auth/register → fill form
-2. POST /api/v1/auth/register → { requiresVerification, verifyToken, email }
-3. sessionStorage.setItem('verify_email_state', ...)
-4. redirect → /auth/verify-email
-5. enter OTP
-6. POST /api/v1/auth/verify-email { verifyToken, code }
-7. session issued → redirect /dashboard
-```
-
-### اکسپلور با Hot Score
-```
-GET /api/v1/projects/explore?sort=trending&window=7d
-  → exploreService.exploreProjects()
-  → Mongo aggregation با:
-    points = 1*stars + 2.5*forks + 0.3*downloads
-           + 0.01*views + 5*rating + 4*reviews
-           + 10 (images) + 10 (video) + 5 (file)
-    hotScore = points / (ageHours + 2)^gravity
-  → sort by hotScore desc
-  → cache 5 min
-```
-
-### ریویو → آمار پروژه
-```
-POST /api/v1/projects/:id/reviews
-  → Review.create()
-  → ratingService.recalculateProjectStats(projectId)
-    → aggregate avg(rating), avg(satisfaction), count
-    → Project.updateOne({ rating, satisfaction, reviewCount })
-```
-
----
-
-## 🧪 ۹. دیباگ و لاگ
-
-### علامت‌های لاگ
-```
-🔴 [UNHANDLED ERROR]      → خطای مدیریت‌نشده
-🟨 [FormKit]              → warning در FormKit
-🟦 [FormKit]              → debug FormKit
-📧 [VERIFICATION CODE]    → کد OTP در حالت log mode
-🔐 [ROLE CHANGE]          → تغییر نقش
-🔒 [PASSWORD CHANGED]     → تغییر رمز
-🔄 [EMAIL CHANGED]        → تغییر ایمیل
-✅ [EMAIL VERIFIED]       → تایید ایمیل
-```
-
-### Log Files
-```
-logs/app-YYYY-MM-DD.log
-```
-Auto-rotation روزانه + حذف بعد از N روز (در آینده).
-
-### Environment Flags
-```env
-MAIL_MODE=log              # ایمیل در کنسول (dev)
-MAIL_MODE=smtp             # ایمیل واقعی
-MAIL_DEBUG=true            # verbose SMTP
-MAIL_FAIL_FAST=true        # اگه SMTP fail → exit
-NODE_ENV=development       # خطاهای دقیق
-NODE_ENV=production        # خطاهای عمومی
-```
-
----
-
-## 📊 ۱۰. آمار پروژه
-
-| مورد            | تعداد                        |
-| --------------- | ---------------------------- |
-| فایل TypeScript | ~۵۵                          |
-| Controller      | 11                           |
-| Model           | 8                            |
-| Service         | 9 + mail/                    |
-| EJS Page        | ۲۰                           |
-| EJS Component   | 8                            |
-| CSS             | ~۱۸                          |
-| JS Client       | ~۲۵                          |
-| API Endpoint    | ~۷۰                          |
-| نقش‌ها           | 3 (user / admin / developer) |
-
----
-
-## 🔮 ۱۱. Roadmap (اولویت‌بندی)
-
-### v1.1
-- [ ] Follow/Unfollow
-- [ ] Notification system (bell + inbox)
-- [ ] Activity feed در پروفایل
-- [ ] Rate limiting روی `/auth/*`
-
-### v1.2
-- [ ] Search پیشرفته (Mongo Full-Text یا Elastic)
-- [ ] Comments live (SSE)
-- [ ] Admin panel UI
-- [ ] User preferences
-
-### v2.0
-- [ ] Public REST API + versioning
-- [ ] 2FA (TOTP)
-- [ ] GraphQL
-- [ ] Mobile app
-
----
-
-## 🎯 ۱۲. چک‌لیست شروع برای AI جدید
-
-قبل از هر تغییری:
-
-- [ ] این سند رو کامل خوندم
-- [ ] `backend/src/app.ts` رو خوندم تا بفهمم routeها چطور mount می‌شن
-- [ ] `backend/src/lib/loader.ts` رو خوندم
-- [ ] `.env` تنظیم شد و `npm run dev` اجرا شد
-- [ ] صفحات زیر رو دیدم:
-  - [ ] `/` (home)
-  - [ ] `/explore`
-  - [ ] `/projects/:idOrSlug`
-  - [ ] `/users/:username`
-  - [ ] `/dashboard`
-- [ ] flow ثبت‌نام → تایید → لاگین رو تست کردم
-- [ ] `errorCodes.ts` + `AppError.ts` + `authController.ts` رو خوندم
-- [ ] `dashboard-nav-items.ejs` رو فهمیدم (ماژولار با `variant`)
-- [ ] `attachUserLocals` middleware رو فهمیدم
-- [ ] آماده‌ام ✅
-
----
-
-## ⚡ ۱۳. نکات سریع
-
-### برای عوض کردن theme/رنگ
-- متغیرهای CSS در `frontend/public/styles/index.css` (base)
-- در `header.css` و `dashboard-nav.css` متغیرهای اختصاصی
-
-### برای عوض کردن نام برند
-- `frontend/views/components/brand.ejs` — پارامتر `brandName`
-- `<title>` در هر EJS
-
-### برای اضافه کردن endpoint جدید به dashboard
-1. `backend/src/api/<new-section>/router.ts`
-2. `backend/src/controllers/<x>Controller.ts`
-3. `backend/src/api/<new-section>/router.ts` — خروجی `router`
-4. `frontend/views/components/dashboard-nav-items.ejs` — اضافه کردن لینک در بخش مدیریت
-5. `frontend/views/dashboard/<new-section>.ejs`
-6. `frontend/public/js/dashboard/<new-section>.js`
-7. `frontend/public/styles/dashboard/<new-section>.css`
-
-### برای اضافه کردن نوع کاربر جدید
-1. `backend/src/models/User.ts` → `enum` نقش
-2. `backend/src/utils/errorCodes.ts`
-3. `backend/src/middleware/roles.ts`
-4. `backend/src/services/roleService.ts`
-5. `frontend/views/components/dashboard-nav-items.ejs` → conditional
-6. `frontend/views/dashboard/*.ejs` → guard
-
----
-
-## 📚 ۱۴. منابع خارجی
-
-- [Mongoose Docs](https://mongoosejs.com/)
-- [Express.js](https://expressjs.com/)
-- [Zod](https://zod.dev/)
-- [JWT Best Practices RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725)
-- [OWASP Auth Cheatsheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
-- [GitHub REST API](https://docs.github.com/en/rest)
-
----
-
-## ✅ ۱۵. خلاصه‌ی یک‌خطی برای AI
-
-> **DevHub** (`manage-projects`) — پلتفرم فارسی کشف و نقد پروژه‌های متن‌باز با Node.js/Express/TypeScript + MongoDB + EJS (split: `backend/` + `frontend/`). SSR، JWT در Cookie، OTP اجباری، ریویو با امتیاز، کامنت تو در تو، تگ با کتگوری، اکسپلور با Hot Score، و داشبورد role-based (user/admin/developer). همه‌ی endpointها زیر `/api/*`، صفحات در `pages/`، routing خودکار با `loader.ts` از `api/`.
-
----
-
-**آخرین به‌روزرسانی:** ۲۰۲۶
-**نگه‌دارنده:** [@Sobhan-SRZA](https://github.com/Sobhan-SRZA)
+**Last reviewed:** 2026
+**Maintainer:** [@Sobhan-SRZA](https://github.com/Sobhan-SRZA)
 **License:** BSD-3-Clause
