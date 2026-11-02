@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch { /* Guest — no authenticated user. */ }
 
             /* ---------- Profile owner ---------- */
-            const data = await api(`/api/users/${encodeURIComponent(idOrUsername)}`);
+            const data = await api(`/api/v1/users/${encodeURIComponent(idOrUsername)}`);
             state.user = data.user;
 
             state.isOwn = !!(
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 limit: 12,
             });
 
-            const data = await api(`/api/users/${encodeURIComponent(idOrUsername)}/projects?${params}`);
+            const data = await api(`/api/v1/users/${encodeURIComponent(idOrUsername)}/projects?${params}`);
 
             state.projects.loaded = true;
             state.projects.totalPages = data.pagination?.pages || 1;
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sort: 'recent'
             });
 
-            const data = await api(`/api/users/${encodeURIComponent(idOrUsername)}/reviews?${params}`);
+            const data = await api(`/api/v1/users/${encodeURIComponent(idOrUsername)}/reviews?${params}`);
 
             state.reviews.loaded = true;
             state.reviews.totalPages = data.pagination?.pages || 1;
