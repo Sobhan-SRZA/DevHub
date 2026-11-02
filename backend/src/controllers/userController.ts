@@ -11,6 +11,7 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { AppError } from "../utils/AppError";
 import { Review } from "../models/Review";
 import { User } from "../models/User";
+import { buildUserStats, StatsRange } from "../services/userStatsService";
 
 /* ==================================================================
    Helpers
@@ -392,6 +393,26 @@ export const getUserReviews = asyncHandler(async (req: Request, res: Response) =
             pages: Math.ceil(total / limit)
         }
     });
+});
+
+/**
+ * Returns aggregated analytics for the authenticated user.
+ *
+ * The `range` query parameter accepts one of: 7d, 30d, 90d, 1y.
+ * Any other value falls back to 30d.
+ */
+export const getMyStats = asyncHandler(async (req: any, res: Response) => {
+    if (!req.user) {
+        throw new AppError(401, ErrorCodes.UNAUTHENTICATED);
+    }
+
+    const allowedRanges: StatsRange[] = ["7d", "30d", "90d", "1y"];
+    const requested = String(req.query.range || "30d") as StatsRange;
+    const range = allowedRanges.includes(requested) ? requested : "30d";
+
+    const stats = await buildUserStats(req.user._id, range);
+
+    res.json({ ok: true, range, stats });
 });
 
 /**
