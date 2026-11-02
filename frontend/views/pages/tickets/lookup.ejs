@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <%- include("../../components/seo-head", {
+    title: "Find Your Tickets — DevHub",
+    description: "Look up your support tickets by email address.",
+    canonicalPath: "/tickets/lookup",
+    extraStyles: ["/styles/tickets.css", "/styles/form-errors.css"]
+  }) %>
+</head>
+
+<body>
+  <%- include("../../components/header") %>
+  <%- include("../../components/dialogError") %>
+
+  <main class="lookup-page">
+    <header class="lookup-page__head">
+      <h1>Find your tickets</h1>
+      <p>Enter the email address you used when contacting us.
+        We'll send a code to verify access.</p>
+    </header>
+
+    <!-- Step 1: email -->
+    <form class="lookup-form" id="emailForm">
+      <div class="field">
+        <label for="lookupEmail">Email address</label>
+        <input id="lookupEmail" type="email" required placeholder="you@example.com" autocomplete="email" dir="ltr">
+      </div>
+      <button type="submit" class="btn-primary" id="emailSubmit">Send access code</button>
+    </form>
+
+    <!-- Step 2: OTP -->
+    <form class="lookup-form" id="otpForm" hidden>
+      <p class="lookup-form__hint">
+        A 6-digit code has been sent to <strong id="otpEmail">—</strong>.
+      </p>
+
+      <div class="field">
+        <label for="lookupCode">Verification code</label>
+        <input id="lookupCode" type="text" inputmode="numeric" maxlength="6" pattern="\d{6}" placeholder="------" autocomplete="one-time-code" class="otp-input" dir="ltr">
+      </div>
+
+      <button type="submit" class="btn-primary" id="otpSubmit">Verify</button>
+      <button type="button" class="btn-ghost" id="backBtn">Use a different email</button>
+    </form>
+
+    <!-- Step 3: list -->
+    <section class="lookup-list" id="ticketsList" hidden>
+      <h2 class="lookup-list__title">Your tickets</h2>
+      <div id="ticketsContainer"></div>
+    </section>
+  </main>
+
+  <script src="/js/form-errors.js"></script>
+  <script src="/js/tickets/lookup.js" defer></script>
+  <%- include("../../components/footer") %>
+</body>
+
+</html>
