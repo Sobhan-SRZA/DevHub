@@ -1,949 +1,909 @@
-# 📋 TODO — نسخه‌ی فعلی (v1.0)
+# Development TODO
 
-> **هدف:** تکمیل نسخه‌ی قابل انتشار اول (v1.0) قبل از رفتن به v1.1
+> **Active work tracking for DevHub.**
+> This document lists what is planned, what is in progress, what is
+> deliberately deferred, and what is accepted as a known limitation. It is
+> the authoritative reference for "what should we build next?" and "why
+> have we not built X yet?"
 
----
-
-## 🔴 اولویت بحرانی (Blockers — قبل از release)
-
-### امنیت
-- [ ] **Rate limiting روی `/api/v1/auth/*`**
-  - `POST /login` — 5 تلاش / ۱۵ دقیقه per IP
-  - `POST /register` — 3 ثبت‌نام / ۲۴ ساعت per IP
-  - `POST /forgot-password` — 3 بار / ساعت per email
-  - `POST /refresh` — 10 بار / دقیقه per session
-  - کتابخانه: `express-rate-limit` + store (memory/Redis)
-
-- [ ] **Security headers با helmet**
-  ```bash
-  npm install helmet
-  ```
-  - `Content-Security-Policy` (whitelist منابع)
-  - `Strict-Transport-Security` (فقط prod)
-  - `X-Frame-Options: DENY`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Permissions-Policy` (camera، mic، geo off)
-  - `X-Content-Type-Options: nosniff` (همه‌جا، نه فقط uploads)
-
-- [ ] **CORS configuration دقیق**
-  - allowlist origin در prod
-  - `credentials: true` فقط برای origin معتبر
-
-- [ ] **Password change → revoke همه sessionها** (بررسی که پیاده شده) ✅ اگه هست، تست کن
-- [ ] **Add `express.json({ limit: '2mb' })`** — جلوگیری از DoS
-- [ ] **محدودیت body size** روی همه‌ی endpoints
-
-### داده و امنیت فایل
-- [ ] **Magic bytes check** برای uploadها
-  ```bash
-  npm install file-type
-  ```
-  - بعد از multer، MIME واقعی رو با magic bytes چک کن
-  - جلوگیری از upload فایل جعلی (مثلاً `.exe` با MIME `image/jpeg`)
-
-- [ ] **حذف فایل‌های ناقص روی خطا**
-  - اگه `User.save()` بعد از `uploadAvatar` خطا داد → فایل باید پاک شه
-  - مشابه در `projectController` برای images/video/file
-
-- [ ] **Unique index روی `VerificationCode`** برای `{ user, purpose, consumedAt }` (اگه نیست)
-
-### لاگ و مانیتورینگ
-- [ ] **`process.on('unhandledRejection')`** و **`uncaughtException`** با لاگ کامل
-- [ ] **`res.headersSent` check** در errorHandler (جلوگیری از کرش)
-- [ ] **`graceful shutdown`** روی `SIGTERM`:
-  - بستن MongoDB connection
-  - بستن SMTP
-  - flush لاگ‌ها
-
-### Environment
-- [ ] **`.env.example` کامل** با همه‌ی متغیرها + کامنت
-- [ ] **Validation env در startup** — اگه `JWT_SECRET` یا `MONGODB_URI` نبود → exit
-- [ ] **`.gitignore`** شامل: `.env`, `logs/`, `uploads/`, `node_modules/`, `dist/`
-
-### داده اولیه
-- [ ] **Seed کتگوری‌ها** — مطمئن شو `seedDefaultData.ts` کامل اجرا می‌شه
-- [ ] **`setupFirstAdmin.ts`** — تست شده؟
-- [ ] **`.gitkeep`** در `uploads/` برای اینکه folder توی git بمونه
+The document is maintained by the project maintainer. Community contributors
+are welcome to open issues referencing items here, or to propose additions.
 
 ---
 
-## 🟡 اولویت بالا (قبل از release، ولی نه blocker)
+## Table of Contents
 
-### UX و Frontend
-- [ ] **Header responsive نهایی** — تست روی:
-  - iPhone SE (375px)
-  - iPhone 14 (390px)
-  - iPad (768px)
-  - Laptop (1024px)
-  - Desktop (1440px+)
-
-- [ ] **Breadcrumb dropdown** — تست بسته شدن با:
-  - کلیک بیرون ✅
-  - `Escape` ✅
-  - کلیک روی لینک ✅
-  - resize ✅
-
-- [ ] **404 page** — بررسی که طراحی داره و لینک «بازگشت به خانه» داره
-- [ ] **Loading states** — بررسی همه‌ی صفحات که «در حال بارگذاری» یا spinner دارن
-- [ ] **Empty states** — بررسی همه‌ی لیست‌ها (پروژه، کاربر، تگ، ...) که پیام مناسب دارن
-
-### احراز هویت
-- [ ] **Verify email page** — بررسی که صفحه‌ی `/auth/verify-email` وجود داره یا inline redirect
-- [ ] **Resend OTP** — بررسی که روی صفحه‌ی verify قابل دسترسیه
-- [ ] **Error messages** — بررسی که همه‌ی کدهای `errorCodes.ts` پیام فارسی دارن
-
-### پروژه
-- [ ] **Edit project modal** — تست کامل ویرایش با media
-- [ ] **Sync GitHub** — تست با repo واقعی
-- [ ] **Download counting** — بررسی که شمارنده درسته
-- [ ] **Image reorder** — drag & drop کار می‌کنه؟
-
-### ریویو و کامنت
-- [ ] **یک ریویو per user per project** — تست که نمی‌شه دو تا ثبت کرد
-- [ ] **Soft delete comments** — تست که با حذف parent، replies حفظ می‌شن
-- [ ] **Deep reply depth** — بررسی که max 5 سطح رعایت می‌شه
-
-### تگ‌ها
-- [ ] **TagPicker component** — تست find-or-create
-- [ ] **Category fallback** — تگ بدون کتگوری → «عمومی»
-- [ ] **Admin approval** — درخواست کتگوری → تایید ادمین
-
-### اکسپلور
-- [ ] **Hot Score algorithm** — بررسی که با data واقعی درست کار می‌کنه
-- [ ] **Cache invalidation** — بعد از ساخت/حذف پروژه، cache پاک می‌شه؟
-- [ ] **Filter + sort ترکیبی** — تست همه‌ی حالت‌ها
-
-### پروفایل
-- [ ] **Public profile** — تست `/users/:username`
-- [ ] **Stats نمایش** — تعداد پروژه، ریویو، دانلود، امتیاز
-- [ ] **Owner actions** — دکمه‌های ویرایش برای خود کاربر
-
-### داشبورد
-- [ ] **همه‌ی ۹ صفحه** کار می‌کنن:
-  - [x] home ✅
-  - [x] projects ✅
-  - [x] profile ✅
-  - [x] settings ✅
-  - [x] tags (admin) ✅
-  - [x] tag-types (admin) ✅
-  - [x] users (admin) ✅
-  - [x] system (developer) ✅
-  - [x] logs (developer) ✅
-
-- [ ] **Sidebar collapse** — Ctrl+B کار می‌کنه و persist می‌شه ✅
-- [ ] **Role guards** — بررسی که user عادی نمی‌تونه به `/dashboard/users` بره
+- [How to Read This Document](#how-to-read-this-document)
+- [Release Status](#release-status)
+- [Release Blockers (v1.0 → v1.1)](#release-blockers-v10--v11)
+- [Functional Gaps](#functional-gaps)
+- [Documented Limitations](#documented-limitations)
+- [Feature Backlog](#feature-backlog)
+- [Page and Route Audit](#page-and-route-audit)
+- [Testing Plan](#testing-plan)
+- [Deployment Readiness](#deployment-readiness)
+- [Release Checklist](#release-checklist)
+- [Suggested Work Order](#suggested-work-order)
+- [Decision Log](#decision-log)
 
 ---
 
-## 🟢 اولویت متوسط (release رو بلاک نمی‌کنه، ولی خوبه)
+## How to Read This Document
 
-### Testing
-- [ ] **Unit tests** برای utils:
-  - `parseGitHubUrl`
-  - `escapeHtml`
-  - `parseMarkdown`
-  - `slugify`
-- [ ] **Integration tests** برای auth flow:
-  - register → verify → login → logout
-  - password reset flow
-  - email change flow
-- [ ] **E2E با Playwright** (اختیاری)
+Each item has:
 
-کتابخانه‌های پیشنهادی:
-```bash
-npm install -D jest @types/jest ts-jest supertest @types/supertest
-```
+- **Severity** — how urgently it should be addressed.
+- **Effort** — rough estimate in working days.
+- **Status** — current state.
+- **Notes** — context, constraints, and reasoning.
 
-### DevOps
-- [ ] **Dockerfile** برای build
-- [ ] **`docker-compose.yml`** کامل (app + mongo + nginx)
-- [ ] **GitHub Actions CI**:
-  - lint
-  - typecheck (`tsc --noEmit`)
-  - test
-  - build
-- [ ] **Health check endpoint** — `/api/v1/health` ✅ (هست، ولی تست کن)
+### Severity levels
 
-### مستندات
-- [ ] **`README.md`** نهایی — با screenshot
-- [ ] **`CONTRIBUTING.md`**
-- [ ] **`CODE_OF_CONDUCT.md`**
-- [ ] **`CHANGELOG.md`** — نسخه‌ی 1.0.0
-- [ ] **`docs/AI_GUIDE.md`** ✅ (انجام شده)
-- [ ] **`docs/goal.md`** ✅ (انجام شده)
-- [ ] **`SECURITY.md`** ✅ (انجام شده)
+| Level        | Meaning                                                                 |
+| ------------ | ----------------------------------------------------------------------- |
+| **Blocker**  | Must be resolved before the next release can be tagged.                 |
+| **High**     | Should be resolved in the next release. Omission is a visible gap.      |
+| **Medium**   | Should be resolved within two releases. Omission is a known limitation. |
+| **Low**      | Nice to have. May be deferred indefinitely without impact.              |
+| **Accepted** | Deliberately not fixed. Documented as a known limitation.               |
 
-### Email
-- [ ] **Email verification واقعی** — تست با Gmail SMTP
-- [ ] **قالب ایمیل** — بررسی که HTML درست در Gmail/Outlook نمایش داده می‌شه
-- [ ] **`MAIL_MODE` در `.env.example`** — log vs smtp توضیح داده
+### Effort levels
 
-### GitHub Integration
-- [ ] **`GITHUB_TOKEN` support** — برای rate limit بالاتر
-- [ ] **Error handling** — اگه repo پیدا نشد یا private بود، پیام مناسب
-- [ ] **Retry logic** — برای خطای شبکه
-- [ ] **Cache GitHub response** — جلوگیری از hit مکرر
+| Level  | Meaning                             |
+| ------ | ----------------------------------- |
+| **S**  | Under one day.                      |
+| **M**  | One to three days.                  |
+| **L**  | Three to seven days.                |
+| **XL** | Over one week. Requires scheduling. |
 
 ---
 
-## 🔵 Nice-to-have (اگه وقت بود)
+## Release Status
 
-### Performance
-- [ ] **Indexes review** — بررسی که همه‌ی queryهای پرکاربرد index دارن:
-  - `Project.owner + Project.status`
-  - `Project.tags + Project.status`
-  - `Review.project + Review.user`
-  - `Comment.project + Comment.parent`
-  - `Session.sessionId`
+| Version        | Status                                | Target                                                              |
+| -------------- | ------------------------------------- | ------------------------------------------------------------------- |
+| **v1.0** (MVP) | Feature-complete. No release tag yet. | Blocked by items in [Release Blockers](#release-blockers-v10--v11). |
+| **v1.1**       | Planning.                             | After v1.0.                                                         |
+| **v1.2**       | Not started.                          | After v1.1.                                                         |
+| **v2.0**       | Not started.                          | After v1.2.                                                         |
 
-- [ ] **MongoDB connection pool** — tuning
-- [ ] **Compression middleware** — `compression` package
-- [ ] **Static assets caching** — `maxAge` روی `/public`
-- [ ] **Image optimization** — `sharp` برای resize + WebP
-
-### UX
-- [ ] **Toast notifications** — بررسی همه‌ی actionها
-- [ ] **Skeleton loading** — به‌جای spinner ساده
-- [ ] **Keyboard shortcuts** — `Ctrl+K` (search)، `Ctrl+B` (collapse) ✅
-- [ ] **Dark/light theme toggle** — (اختیاری)
-- [ ] **Focus management** — کیبورد navigation
-- [ ] **ARIA labels** — بررسی همه‌ی دکمه‌ها و فرم‌ها
-
-### Features
-- [ ] **Markdown editor** — پشتیبانی HTML ✅ (تست کن)
-- [ ] **Image paste** — آپلود مستقیم در markdown editor (اختیاری)
-- [ ] **Draft autosave** — ذخیره‌ی خودکار پروژه‌ی نیمه‌کاره
-- [ ] **Preview before publish** — مشاهده‌ی پروژه قبل از انتشار
+The v1.0 codebase is deployed on a staging environment and is functional for
+internal use. It has not been tagged as a release because the items in the
+Release Blockers section have not been completed.
 
 ---
 
-## 🚫 خارج از scope نسخه‌ی فعلی (v1.1+)
+## Release Blockers (v1.0 → v1.1)
 
-این‌ها رو **آگاهانه** به v1.1 یا بعد موکول می‌کنیم:
+These items must be resolved before a v1.0 release tag is created. They are
+distinct from functional work — most are process and infrastructure items that
+ensure the release can be reproduced, verified, and supported.
 
-| Feature                    | نسخه  |
-| -------------------------- | :---: |
-| Notification system        | v1.1  |
-| Follow/Unfollow            | v1.1  |
-| Activity feed              | v1.1  |
-| Live comments (SSE)        | v1.2  |
-| Advanced search (Elastic)  | v1.2  |
-| 2FA (TOTP)                 | v2.0  |
-| Public REST API versioning | v2.0  |
-| GraphQL                    | v2.0  |
-| Mobile app                 | v2.0  |
-| Webhooks                   | v2.0  |
-| Redis session store        | v1.2  |
-| Multi-language (i18n)      | v2.0  |
-| OAuth (Google/GitHub)      | v2.0  |
+### B1. Create a Dockerfile for the application
 
----
+| Attribute | Value         |
+| --------- | ------------- |
+| Severity  | Blocker       |
+| Effort    | S (4–6 hours) |
+| Status    | Not started   |
 
-## 📅 پیشنهاد ترتیب کار (۲-۳ هفته)
+The `docker-compose.yml` in the repository provides MongoDB and Mongo Express
+only. The application itself must be run from the host with `npm start`.
+A production deployment cannot reasonably depend on manual host setup.
 
-### هفته ۱ — امنیت + زیرساخت
-```
-روز ۱-۲: Rate limiting + helmet + CORS
-روز ۳-۴: Magic bytes + file cleanup + unique indexes
-روز ۵:   Graceful shutdown + env validation
-روز ۶-۷: تست auth flow + رفع باگ
-```
+**Acceptance criteria:**
 
-### هفته ۲ — UX + Feature completion
-```
-روز ۱-۲: تست و رفع باگ همه‌ی صفحات داشبورد
-روز ۳-۴: تست header/breadcrumb/drawer روی همه‌ی breakpointها
-روز ۵:   تست پروژه (CRUD + media + GitHub sync)
-روز ۶-۷: تست ریویو + کامنت + تگ
-```
+- Multi-stage Dockerfile (build stage with `npm ci` and `tsc`, runtime stage
+  with only production dependencies).
+- Runs as a non-root user.
+- Exposes `PORT` from the environment.
+- Health check via `GET /api/v1/health`.
+- Image size under 300 MB.
 
-### هفته ۳ — Release prep
-```
-روز ۱:   Dockerfile + docker-compose کامل
-روز ۲:   GitHub Actions (CI)
-روز ۳:   README نهایی + screenshots + CHANGELOG
-روز ۴:   تست نهایی + smoke test
-روز ۵:   Tag v1.0.0 + Release notes
-```
+**Notes:** The current `docker-compose.yml` should be extended with an `app`
+service that builds from this Dockerfile, so that `docker compose up` starts
+the full stack.
 
----
+### B2. Add continuous integration
 
-## ✅ چک‌لیست Release v1.0
+| Attribute | Value         |
+| --------- | ------------- |
+| Severity  | Blocker       |
+| Effort    | S (3–5 hours) |
+| Status    | Not started   |
 
-قبل از `git tag v1.0.0`:
+There is no automated verification that a pull request compiles, type-checks,
+or builds. Every merge depends on manual verification by the maintainer.
 
-- [ ] همه‌ی blockerها رفع شده
-- [ ] `npm audit` بدون high/critical
-- [ ] `npx tsc --noEmit` بدون خطا
-- [ ] تست دستی همه‌ی flowها
-- [ ] README کامل با screenshots
-- [ ] CHANGELOG نوشته شده
-- [ ] License فایل هست
-- [ ] `.env.example` کامل
-- [ ] Docker build موفق
-- [ ] `seedDefaultData` روی دیتابیس خالی کار می‌کنه
-- [ ] Demo روی staging اجرا می‌شه
-- [ ] Backup strategy مستند شده
-- [ ] Rollback plan مشخص
+**Acceptance criteria:**
 
----
+- GitHub Actions workflow triggered on pull request and on push to `main`.
+- Steps: `npm ci`, `npx tsc --noEmit`, `npm run build`.
+- Fails on any step failure.
+- Adds a status badge to `README.md`.
 
-## 📊 آمار فعلی
+**Notes:** Test execution is not part of this step because no tests exist yet
+(see [Testing Plan](#testing-plan)). The workflow will be extended when tests
+are added.
 
-| مورد             | تعداد   | وضعیت |
-| ---------------- | ------- | :---: |
-| Blocker          | ~۱۵     |   🔴   |
-| High             | ~۲۰     |   🟡   |
-| Medium           | ~۱۵     |   🟢   |
-| Nice-to-have     | ~۱۲     |   🔵   |
-| **کل TODO v1.0** | **~۶۰** |   —   |
+### B3. Complete `.env.example`
 
----
+| Attribute | Value              |
+| --------- | ------------------ |
+| Severity  | Blocker            |
+| Effort    | S (2 hours)        |
+| Status    | Partially complete |
 
-## 🎯 معیار «آماده برای v1.0»
+The `example.env` file exists but does not cover every variable documented in
+`PROJECT_GUIDE.md` (Section 26). Missing variables include
+`GITHUB_SYNC_MAX_AGE_HOURS`, `MAIL_HELO_NAME`, `SMTP_SECURE`,
+`SMTP_TIMEOUT_MS`, and `SMTP_ALLOW_INSECURE`.
 
-پروژه رو می‌شه v1.0 نامید اگه:
+**Acceptance criteria:**
 
-- ✅ **هیچ bug شناخته‌شده‌ای** در flowهای اصلی نباشه
-- ✅ **`npm audit`** صفر vulnerability critical/high داشته باشه
-- ✅ **Rate limiting** روی auth فعال باشه
-- ✅ **Security headers** ست شده باشن
-- ✅ **README** با راهنمای نصب و اسکرین‌شات کامل باشه
-- ✅ **Docker** با یک command بالا بیاد
-- ✅ **حداقل یه محیط staging** تست شده باشه
+- Every variable in `PROJECT_GUIDE.md` Section 26.2 is present.
+- Each variable has a comment explaining its purpose.
+- Production-critical variables are marked as required.
+- A short comment at the top explains how to generate `JWT_SECRET`.
 
+### B4. Establish a staging deployment
 
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | Blocker      |
+| Effort    | M (2–3 days) |
+| Status    | Not started  |
 
----
+The application has been tested locally, but no deployment has been verified
+under production-like conditions.
 
+**Acceptance criteria:**
 
-# 📄 صفحات پروژه — وضعیت + ایده‌های بهبود
+- A staging server accessible at a public URL.
+- `MAIL_MODE=smtp` with a real SMTP provider.
+- `NODE_ENV=production`, `APP_ENV=production`.
+- `APP_URL` set to the public URL.
+- `JWT_SECRET` at least 64 characters.
+- `TRUST_PROXY=1` if behind a reverse proxy.
+- All flows from the Release Checklist verified manually.
 
-> بررسی همه‌ی صفحات موجود، ناقص، و پیشنهادی — همراه با ایده‌های بهتر شدن
+**Notes:** This is the most expensive blocker. If a staging deployment is not
+feasible for cost reasons, the alternative is to document the deployment
+procedure and note that it has been verified on a local production-mode
+instance. This is not equivalent but is defensible.
 
----
+### B5. Write a CHANGELOG and create the v1.0 tag
 
-## 🟢 ۱. صفحات موجود (کامل یا تقریباً کامل)
+| Attribute | Value       |
+| --------- | ----------- |
+| Severity  | Blocker     |
+| Effort    | S (1 day)   |
+| Status    | Not started |
 
-این‌ها هستن، ولی هر کدوم جای بهبود دارن:
+**Acceptance criteria:**
 
-### ۱.۱ — `/` — صفحه اصلی (`index.ejs`)
+- `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/).
+- v1.0.0 entry listing all features, known limitations, and configuration
+  requirements.
+- `git tag v1.0.0` on the commit that will be released.
+- GitHub Release created with the same content.
 
-**وضعیت فعلی:**
-- Hero + stats + trending + featured + new + top-rated + top-downloaded
-- داده از `/api/v1/projects/home-feed` (cache 5min)
+### B6. Write a CONTRIBUTING guide
 
-**ایده‌های بهبود:**
+| Attribute | Value      |
+| --------- | ---------- |
+| Severity  | Blocker    |
+| Effort    | —          |
+| Status    | ✅ Complete |
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Hero داینامیک** — اگه پروژه‌ی ویژه‌ای هست، اول نمایش داده بشه (featured hero) |
-| 🔴 | **«داغ‌های امروز» به‌جای ۷ روز** — کاربر جدید محتوای تازه ببینه |
-| 🟡 | **بخش «کاربران فعال»** — ۵ کاربر با بیشترین پروژه در ماه اخیر |
-| 🟡 | **بخش «تگ‌های داغ»** — تگ‌هایی که اخیراً زیاد استفاده شدن |
-| 🟡 | **شمارنده زنده** — «X پروژه در ۲۴ ساعت گذشته اضافه شد» |
-| 🟢 | **CTA پایین صفحه** — «پروژه‌ی خودت رو ثبت کن» |
-| 🟢 | **Background animation** — ذرات گرادیانت ملایم (perf-aware) |
-| 🟢 | **Personalized** — اگه لاگین، پروژه‌های مشابه با علاقه‌ش نشون بده |
+`CONTRIBUTING.md` exists and describes the workflow, coding standards, and
+pull request process.
 
----
+### B7. Write a security policy
 
-### ۱.۲ — `/explore` — اکسپلور (`explore.ejs`)
+| Attribute | Value      |
+| --------- | ---------- |
+| Severity  | Blocker    |
+| Effort    | —          |
+| Status    | ✅ Complete |
 
-**وضعیت فعلی:**
-- Search + sort tabs (trending/hot/top-rated/top-downloaded/new)
-- Chipهای کتگوری
-- Pagination
-- Hot Score algorithm
-
-**ایده‌های بهبود:**
-
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **فیلترهای پیشرفته** — زبان، مجوز، سال ساخت، بازه‌ی امتیاز |
-| 🔴 | **View toggle** — grid (کارت) / list (ردیف compact) / table (فشرده) |
-| 🟡 | **Save filter** — «فیلترهای من» در localStorage |
-| 🟡 | **URL sync کامل** — همه‌ی فیلترها در query string (`?sort=hot&tag=react&lang=typescript`) |
-| 🟡 | **Empty state هوشمند** — «فیلترهای X رو برداشتی، Y پروژه پیدا می‌شه» |
-| 🟡 | **Chip کتگوری multi-select** — انتخاب چند کتگوری همزمان |
-| 🟢 | **Infinite scroll** به‌جای pagination (اختیاری، toggle) |
-| 🟢 | **Kbd navigation** — `j/k` برای بالا/پایین، `Enter` برای باز کردن |
-| 🟢 | **Highlight search term** در عنوان/توضیحات |
+`SECURITY.md` exists and describes supported versions, reporting channels,
+scope, and disclosure timeline.
 
 ---
 
-### ۱.۳ — `/projects` — لیست پروژه‌ها (`projects/list.ejs`)
+## Functional Gaps
 
-**وضعیت فعلی:**
-- Grid ساده + search + sort
-- Pagination
+These are functional gaps in the current implementation. They are not release
+blockers in the strict sense, but they represent incomplete implementations
+that users will notice.
 
-**ایده‌های بهبود:**
+### F1. Wire the category request endpoint
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **تفاوت با `/explore`** — این صفحه ساده‌تره، ولی «لیست کامل با فیلتر» می‌تونه با `/explore` merge بشه یا تفکیک بمونه |
-| 🟡 | **Breadcrumb + title واضح** — «همه پروژه‌ها» |
-| 🟡 | **Filter sidebar** — مشابه اکسپلور |
-| 🟢 | **Card density toggle** |
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | High         |
+| Effort    | S (half day) |
+| Status    | Not started  |
 
-> 💡 **پیشنهاد:** شاید `/projects` رو با `/explore` **merge** کنیم و فقط `/explore` داشته باشیم. کاربر رو گیج نکنیم.
+`tagController.requestTagType` is defined but no route references it. The
+endpoint described in older documentation (`POST /api/v1/tag-types/request`)
+does not exist in `tagTypeRoutes.ts`.
 
----
+**Acceptance criteria:**
 
-### ۱.۴ — `/projects/:idOrSlug` — صفحه پروژه (`projects/show.ejs`)
+- `POST /api/v1/tag-types/request` is registered in `tagTypeRoutes.ts`.
+- Wrapped in `apiGuard()`, `requireAuth`, and appropriate rate limit.
+- Creates an unapproved `TagType` with `createdBy` set to the caller.
+- Returns the created category with a message about pending approval.
+- Frontend exposes the request flow from the tag picker.
 
-**وضعیت فعلی:**
-- Header + breadcrumb + owner + tags + stats
-- Gallery + video + download + description (Markdown)
-- Reviews + comments (nested)
-- Lightbox + share modal
+### F2. Clean up orphaned uploads
 
-**ایده‌های بهبود:**
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | High         |
+| Effort    | M (1–2 days) |
+| Status    | Not started  |
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **ToC (Table of Contents)** — برای `fullDescription` طولانی، سایدبار با headingهای H2/H3 |
-| 🔴 | **Scroll progress bar** — بالای صفحه |
-| 🔴 | **«درباره سازنده»** — کارت owner با لینک پروفایل + پروژه‌های دیگه‌ش |
-| 🟡 | **Similar projects** — در سایدبار (بر اساس تگ مشترک) |
-| 🟡 | **Version history** — آپلود نسخه‌های جدید ZIP + changelog |
-| 🟡 | **Copy code button** — روی code blockهای markdown |
-| 🟡 | **Anchor links** — `#review-123` یا `#comment-456` |
-| 🟡 | **Reviews sort/filter** — «جدیدترین», «بیشترین امتیاز», «فقط ۵ ستاره» |
-| 🟡 | **Sticky action bar** — موقع scroll، دکمه‌ی دانلود همیشه بالا |
-| 🟢 | **Reading time** — «زمان مطالعه: ۳ دقیقه» |
-| 🟢 | **Print-friendly** — CSS `@media print` |
-| 🟢 | **Report content** — گزارش محتوای نامناسب |
+If a database write fails after a file is written to disk (for example, a
+validation error on `Project.save()` after an image has been uploaded), the
+file remains on disk and is never referenced. Over time these orphans
+accumulate.
 
----
+**Acceptance criteria:**
 
-### ۱.۵ — `/users/:idOrUsername` — پروفایل عمومی (`users/show.ejs`)
+- A script (`scripts/cleanupOrphanedUploads.ts`) that compares files in
+  `backend/uploads/` against file references in the `Project` collection.
+- Reports orphans without deleting them by default.
+- Accepts a `--delete` flag to remove confirmed orphans.
+- Logs the operation.
 
-**وضعیت فعلی:**
-- Hero + bio (Markdown) + stats (projects, reviews, downloads, rating)
-- Tab: پروژه‌ها + ریویوهای دریافتی
-- Owner actions (edit/settings)
+### F3. Deduplicate helpfulness votes
 
-**ایده‌های بهبود:**
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | High         |
+| Effort    | M (1–2 days) |
+| Status    | Not started  |
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Follow/Unfollow button** — (نیاز به feature جدید) |
-| 🔴 | **Social links** — GitHub، Twitter، LinkedIn، سایت شخصی |
-| 🟡 | **Activity feed** — آخرین فعالیت‌ها (پروژه جدید، ریویو، کامنت) |
-| 🟡 | **Badges** — «۱۰۰ ریویو»، «۱۰ پروژه»، «عضو ۱ ساله» |
-| 🟡 | **گرید پروژه‌ها با فیلتر** — sort + status |
-| 🟡 | **Skeleton loading** — جای blank state |
-| 🟢 | **Avatar upload for self** — لینک به settings |
-| 🟢 | **Share profile** — کپی لینک پروفایل |
-| 🟢 | **Tab: کامنت‌ها** — نظراتی که کاربر داده |
+`POST /api/v1/projects/:idOrSlug/reviews/:id/helpful` increments
+`helpfulCount` without tracking who marked the review. The same user can
+increment the count multiple times.
 
----
+**Acceptance criteria:**
 
-## 🟡 ۲. صفحات ناقص (وجود دارن ولی ناکامل)
+- Add a `helpfulVotes: ObjectId[]` field to the `Review` model.
+- Add a unique compound index on `{ _id, helpfulVotes }` — or enforce
+  uniqueness in the controller.
+- Reject repeat votes from the same user (either silently or with a 409).
+- Migrate existing `helpfulCount` values to the new structure, or reset the
+  counter.
 
-### ۲.۱ — `/auth/verify-email` — تایید ایمیل
+**Notes:** This changes the shape of an existing endpoint response. Coordinate
+with the frontend.
 
-**وضعیت فعلی:**
-- فایل `verify-email.js` هست ولی **`verify-email.ejs` توی tree نیست**
-- احتمالاً inline render می‌شه یا از همون login.ejs استفاده می‌کنه
+### F4. Recover soft-deleted comments
 
-**ایده‌های بهبود:**
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | Medium       |
+| Effort    | S (half day) |
+| Status    | Not started  |
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **صفحه‌ی مستقل** — `views/auth/verify-email.ejs` با طراحی اختصاصی |
-| 🔴 | **6-digit OTP input با auto-advance** — ۶ باکس جدا که با تایپ خودکار می‌ره بعدی |
-| 🔴 | **Paste support** — paste کردن کد از کلیپ‌بورد → auto-fill همه |
-| 🟡 | **Countdown timer** — «ارسال مجدد در ۴۵ ثانیه» |
-| 🟡 | **Resend button** — با cooldown |
-| 🟡 | **«تغییر ایمیل»** — لینک به settings اگه اشتباه وارد کرد |
-| 🟡 | **WhatsApp/Telegram hint** — «ایمیل رو در اسپم چک کن» |
-| 🟢 | **Success animation** — ✓ بزرگ سبز بعد از تایید |
-| 🟢 | **Auto-redirect** — به داشبورد بعد از ۲ ثانیه |
+Soft-deleted comments (comments with replies that have been deleted) cannot be
+recovered through the API. An administrator must access the database directly.
 
----
+**Acceptance criteria:**
 
-### ۲.۲ — `/auth/login` و `/auth/register`
+- `POST /api/v1/admin/comments/:id/restore` endpoint (admin only).
+- Sets `isDeleted: false`, `deletedAt: null`, restores `body` from a new
+  `originalBody` field (add this field to the model).
+- Rate-limited like other admin endpoints.
 
-**وضعیت فعلی:**
-- فرم کامل + validation + FormKit
-- ورود با ایمیل یا یوزرنیم
-- تایید ایمیل بعد از ثبت‌نام
+**Notes:** This requires adding `originalBody` to the model, which is a schema
+change.
 
-**ایده‌های بهبود:**
+### F5. Prevent duplicate project titles
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **«ورود با Google»** — (نیاز به OAuth) |
-| 🟡 | **Password strength meter** — توی register (فعلاً هست ✅) |
-| 🟡 | **Username availability check** — debounced (اگه هست، تست کن) |
-| 🟡 | **Caps Lock warning** — «Caps Lock روشنه» |
-| 🟡 | **Remember me** — چک‌باکس ✅ (تست کن که کار می‌کنه) |
-| 🟢 | **«چه اتفاقی افتاد؟»** — لینک به FAQ |
-| 🟢 | **Social proof** — «۱۰,۰۰۰ توسعه‌دهنده عضو شدن» |
-| 🟢 | **Dark/light preview** — نمایش تم |
+| Attribute | Value        |
+| --------- | ------------ |
+| Severity  | Medium       |
+| Effort    | S (half day) |
+| Status    | Not started  |
 
----
+Two projects can have the same title as long as their slugs differ. This is
+not usually a problem, but it can create confusing search results.
 
-### ۲.۳ — `/dashboard/profile` — پروفایل خود
+**Acceptance criteria:**
 
-**وضعیت فعلی:**
-- Hero (name + username + email + avatar)
-- Info grid
-- Sessions list (revoke)
-- Logout / Logout-all
+- Warn (do not reject) when a new project's title matches an existing project
+  by the same owner. Different owners can have projects with the same title.
+- Warning surfaced in the frontend as a non-blocking notice.
 
-**ایده‌های بهبود:**
+**Notes:** A hard rejection would be wrong — a developer may have a legitimate
+reason to have two projects with similar titles. Warning is the right
+behavior.
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **«پروفایل عمومی من»** — لینک به `/users/:username` |
-| 🔴 | **پروژه‌های من** — گرید کوچیک پروژه‌ها |
-| 🟡 | **Activity feed** — فعالیت‌های اخیر |
-| 🟡 | **Stats expand** — تعداد ریویو داده‌شده + دریافتی |
-| 🟡 | **2FA section** — (نیاز به feature) |
-| 🟢 | **Export data** — دانلود همه‌ی اطلاعات (GDPR) |
+### F6. Fix the `me/stats` route shadowing risk
 
----
+| Attribute | Value                      |
+| --------- | -------------------------- |
+| Severity  | Low                        |
+| Effort    | S (2 hours)                |
+| Status    | Reviewed, no change needed |
 
-### ۲.۴ — `/dashboard/settings` — تنظیمات
+`/api/v1/users/me/stats` is registered before `/:idOrUsername`. This works
+correctly today. If future code reorders the routes, `/me/stats` would be
+shadowed by `/:idOrUsername` where `idOrUsername = "me"`.
 
-**وضعیت فعلی:**
-- Tab: عمومی / ایمیل / امنیت
-- Avatar، name، bio (Markdown)، email change (۲ مرحله‌ای)، password change (OTP)
+**Acceptance criteria:**
 
-**ایده‌های بهبود:**
+- Add a comment in `userRoutes.ts` explaining why the order matters.
+- Consider adding an integration test that would catch the regression.
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Tab جدید: «پروفایل عمومی»** — social links، visibility |
-| 🔴 | **Tab جدید: «اعلانات»** — انتخاب کانال (ایمیل، in-app) |
-| 🟡 | **Session management** — جدا از profile، همه‌ی sessionها اینجا با جزئیات |
-| 🟡 | **API tokens** — (برای v2) |
-| 🟡 | **Delete account** — با confirmation چند مرحله‌ای |
-| 🟡 | **Theme preference** — dark/light/system |
-| 🟢 | **Language** — فارسی/انگلیسی |
-| 🟢 | **Notifications email frequency** — فوری/روزانه/هفتگی |
+**Notes:** No code change is strictly required. This is preventive.
+
+### F7. Add `sitemap` health monitoring
+
+| Attribute | Value       |
+| --------- | ----------- |
+| Severity  | Low         |
+| Effort    | S (2 hours) |
+| Status    | Not started |
+
+`GET /sitemap` generates the sitemap on every request without caching
+persistence beyond `Cache-Control: public, max-age=3600`. If the generation
+fails, there is no monitoring signal.
+
+**Acceptance criteria:**
+
+- Return a 200 with an empty `<urlset>` on failure rather than a 500.
+- Log the failure at `error` level so it appears in the log viewer.
 
 ---
 
-### ۲.۵ — `/dashboard/home` — نمای کلی داشبورد
+## Documented Limitations
 
-**وضعیت فعلی:**
-- Welcome hero
-- Stats نقش‌محور
-- Admin panel shortcuts
-- Dev health
-- Recent projects
+These items are **accepted** limitations. They are not planned for v1.0 and
+should not be treated as bugs. Each is documented in `PROJECT_GUIDE.md`
+Section 28 or `SECURITY.md`.
 
-**ایده‌های بهبود:**
+### L1. `'unsafe-inline'` in CSP `script-src`
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Charts** — نمودار رشد پروژه‌ها/دانلودها در ۳۰ روز |
-| 🔴 | **Activity feed** — «۲ نظر جدید»، «۱ ریویو»، «کاربر جدید» |
-| 🟡 | **Quick actions** — «پروژه جدید»، «ویرایش پروژه‌ی آخر» |
-| 🟡 | **Pending alerts** — «۵ کتگوری در انتظار تایید» (برای admin) |
-| 🟡 | **Empty state برای کاربر جدید** — onboarding checklist |
-| 🟢 | **Weather-like widget** — «امروز ۳ پروژه‌ی جدید ثبت شد» |
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.1     |
+
+The CSP includes `'unsafe-inline'` in `script-src` and `style-src` because
+pages use inline `<script>` blocks (primarily in `seo-head.ejs` for theme
+initialisation and in some dashboard pages).
+
+**Why not fixed now:** Removing `'unsafe-inline'` requires extracting every
+inline script into a separate file and updating the CSP to use a nonce or
+hash. This is a multi-file refactor that would delay v1.0.
+
+**Planned approach for v1.1:**
+
+- Extract inline theme-initialisation script into a separate file loaded
+  synchronously in `<head>`.
+- Extract the remaining inline scripts in dashboard pages.
+- Switch CSP to `script-src 'self'` and `style-src 'self'` with hashes for
+  the few inline styles that remain.
+
+### L2. No magic-byte validation on uploads
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.1     |
+
+File uploads are validated by MIME type, which is provided by the client and
+can be spoofed. A file with the bytes of an executable and the MIME type of
+`image/jpeg` will pass validation.
+
+**Why not fixed now:** The MIME allowlist is already reasonably narrow
+(images, video, archives). An attacker who can upload a malicious file must
+also convince a user to download and execute it. The practical risk is low
+for the current audience.
+
+**Planned approach for v1.1:**
+
+- Add `file-type` package.
+- After Multer writes the file to disk, read the first bytes and verify the
+  detected type matches the declared MIME.
+- Reject and delete on mismatch.
+
+### L3. No antivirus scanning on uploads
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.2     |
+
+Uploaded files are not scanned for malware. A user who downloads an uploaded
+archive is trusting the uploader.
+
+**Why not fixed now:** Antivirus scanning requires a running ClamAV instance
+or an equivalent service. This is an infrastructure dependency that not every
+deployment can support.
+
+**Planned approach for v1.2:**
+
+- Integrate with ClamAV via `clamscan` package.
+- Scan on upload; reject and delete on detection.
+- Document the ClamAV requirement in deployment notes.
+- Make scanning opt-in via `CLAMAV_ENABLED=true`.
+
+### L4. Single-process rate limiting and caching
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.2     |
+
+Rate limiters and the in-memory cache are per-process. Multiple instances do
+not share state. Under a load balancer, an attacker can bypass rate limits by
+rotating requests across instances.
+
+**Why not fixed now:** The project is not deployed under a load balancer.
+Single-process operation is sufficient for the current scale.
+
+**Planned approach for v1.2:**
+
+- Add Redis as an optional dependency.
+- Configure `express-rate-limit` with a Redis store when `REDIS_URL` is set.
+- Move the cache module to a Redis-backed implementation behind a feature
+  flag.
+- Document the deployment model (single-process vs multi-process).
+
+### L5. No background job queue
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.2     |
+
+Long-running operations (email delivery, GitHub sync) block the request that
+triggers them. A slow SMTP server slows down registration.
+
+**Why not fixed now:** Adding a job queue requires a queue implementation
+(BullMQ, or a minimal in-process alternative), a worker process, and a
+migration of existing blocking calls. The current blocking behavior is
+acceptable at the current scale.
+
+**Planned approach for v1.2:**
+
+- Add BullMQ with Redis.
+- Move email delivery to a worker.
+- Move GitHub sync to a worker.
+- Provide an in-process fallback for deployments that do not have Redis.
+
+### L6. No session IP binding
+
+| Attribute   | Value       |
+| ----------- | ----------- |
+| Severity    | Accepted    |
+| Planned fix | Not planned |
+
+Sessions are not bound to the IP address from which they were created. A
+stolen session token can be used from any IP address until the session is
+revoked or expires.
+
+**Why not fixed:** IP binding breaks mobile users whose IP changes frequently
+(for example, switching between Wi-Fi and cellular) and users behind CGNAT
+where the entire network shares an IP. The device hash provides some
+correlation but is not enforced as a validation check.
+
+**Alternatives:**
+
+- Bind to a coarse region rather than exact IP. Planned for v2.0.
+- Bind to the device fingerprint with periodic verification. Planned for
+  v1.2.
+
+### L7. Refresh tokens are not rotated
+
+| Attribute   | Value       |
+| ----------- | ----------- |
+| Severity    | Accepted    |
+| Planned fix | Not planned |
+
+`POST /api/v1/auth/refresh` issues a new access token but does not issue a new
+refresh token. The existing refresh token remains valid until the session
+expires or is revoked.
+
+**Why not fixed:** Refresh token rotation introduces race conditions with
+concurrent requests (two requests both attempting to refresh with the same
+token will conflict). The security benefit is marginal when the session is
+stored server-side and can be revoked immediately.
+
+**Alternatives:**
+
+- Accept the current behavior and document it. This is the chosen approach.
+- Implement rotation with a grace period and single-use enforcement. This is
+  significantly more complex and is not planned.
+
+### L8. No two-factor authentication
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v2.0     |
+
+Accounts are protected by a single factor (password). A compromised password
+gives full account access.
+
+**Why not fixed now:** TOTP implementation requires additional UI, additional
+storage (encrypted secrets), and additional flows (setup, verification,
+recovery). It is not a v1.0 concern.
+
+**Planned approach for v2.0:**
+
+- Add `otplib` or `speakeasy`.
+- Store TOTP secrets encrypted with a per-user key.
+- Enforce at login when enabled.
+- Generate recovery codes.
+
+### L9. No audit log in the database
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.2     |
+
+Administrative actions (role changes, bans, ticket updates) are logged to the
+console and daily log file but not to a queryable database collection.
+
+**Why not fixed now:** A database-backed audit log requires a new model, new
+indexes, and a query interface. The current log files are sufficient for
+debugging, but not for compliance.
+
+**Planned approach for v1.2:**
+
+- Add an `AuditLog` model with `actor`, `action`, `target`, `before`,
+  `after`, `timestamp`, `ip`.
+- Write from every admin controller.
+- Provide a filterable UI in the admin panel.
+
+### L10. No notification system
+
+| Attribute   | Value    |
+| ----------- | -------- |
+| Severity    | Accepted |
+| Planned fix | v1.1     |
+
+Users are not notified when their projects receive reviews, when their
+comments receive replies, or when their tickets receive staff responses
+(except by email for tickets).
+
+**Why not fixed now:** A notification system is a v1.1 feature, planned as a
+unit with follow and activity feed.
 
 ---
 
-### ۲.۶ — `/dashboard/projects` — پروژه‌های من
+## Feature Backlog
 
-**وضعیت فعلی:**
-- Grid + filter + sort + search
-- Modal ۵ مرحله‌ای (basic/content/media/tags/settings)
-- Sync GitHub
+Items are grouped by target version. Items move to the top of the list as the
+version approaches.
 
-**ایده‌های بهبود:**
+### v1.1 — Community foundations
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Bulk actions** — انتخاب چند پروژه → حذف/آرشیو/انتشار |
-| 🔴 | **Drag to reorder** — (اگه featured) |
-| 🟡 | **Duplicate project** — کپی با تغییر slug |
-| 🟡 | **Draft autosave** — localStorage |
-| 🟡 | **Preview as user** — مشاهده‌ی پروژه از دید بازدیدکننده |
-| 🟡 | **Analytics per project** — کلیک روی کارت → صفحه‌ی آمار |
-| 🟡 | **Import from GitHub** — paste repo URL → auto-fill |
-| 🟢 | **Templates** — قالب‌های آماده |
+| ID     | Feature                                        | Effort | Status                 |
+| ------ | ---------------------------------------------- | ------ | ---------------------- |
+| F-1.1  | Follow and unfollow users                      | M      | Planned                |
+| F-1.2  | Notification system (in-app inbox)             | L      | Planned                |
+| F-1.3  | Email digest for notifications                 | M      | Planned                |
+| F-1.4  | Activity feed on user profiles                 | M      | Planned                |
+| F-1.5  | Login history in security page                 | S      | Planned                |
+| F-1.6  | CAPTCHA on registration (conditional)          | S      | Planned                |
+| F-1.7  | CSP reporting endpoint                         | S      | Planned                |
+| F-1.8  | Extract inline scripts, remove `unsafe-inline` | M      | Planned                |
+| F-1.9  | Magic-byte validation for uploads              | S      | Planned                |
+| F-1.10 | Wire `/tag-types/request` endpoint             | S      | Planned (see F1 above) |
+| F-1.11 | Helpfulness vote deduplication                 | M      | Planned (see F3 above) |
+| F-1.12 | Cleanup script for orphaned uploads            | M      | Planned (see F2 above) |
 
----
+### v1.2 — Depth and scale
 
-### ۲.۷ — `/dashboard/tags` و `/dashboard/tag-types` — مدیریت تگ‌ها
+| ID     | Feature                                              | Effort | Status                 |
+| ------ | ---------------------------------------------------- | ------ | ---------------------- |
+| F-2.1  | Full-text search (MongoDB text index)                | L      | Planned                |
+| F-2.2  | Live comment updates (SSE)                           | L      | Planned                |
+| F-2.3  | Complete admin panel UI                              | L      | Planned                |
+| F-2.4  | Audit log in the database                            | M      | Planned                |
+| F-2.5  | User preferences (locale, notifications)             | M      | Planned                |
+| F-2.6  | Redis-backed rate limiting and caching               | M      | Planned                |
+| F-2.7  | Background job queue for email and GitHub sync       | L      | Planned                |
+| F-2.8  | Antivirus scanning on uploads                        | M      | Planned                |
+| F-2.9  | Soft-deleted comment recovery                        | S      | Planned (see F4 above) |
+| F-2.10 | Device fingerprint verification on sensitive actions | M      | Planned                |
+| F-2.11 | Coarse region binding for sessions                   | S      | Planned                |
 
-**وضعیت فعلی:**
-- لیست تگ‌ها + CRUD
-- لیست کتگوری‌ها + approve/reject pending
+### v2.0 — Ecosystem
 
-**ایده‌های بهبود:**
+| ID    | Feature                                   | Effort | Status     |
+| ----- | ----------------------------------------- | ------ | ---------- |
+| F-3.1 | Public REST API with token authentication | XL     | Planned    |
+| F-3.2 | Two-factor authentication (TOTP)          | L      | Planned    |
+| F-3.3 | GraphQL endpoint                          | XL     | Planned    |
+| F-3.4 | Webhooks for project events               | M      | Planned    |
+| F-3.5 | GitHub Action integration                 | M      | Planned    |
+| F-3.6 | Mobile application                        | XL     | Not scoped |
+| F-3.7 | Plugin system for custom content formats  | XL     | Not scoped |
 
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Bulk approve** — انتخاب چند pending → تایید یکجا |
-| 🟡 | **Merge tags** — ادغام دو تگ مشابه |
-| 🟡 | **Usage stats** — نمودار استفاده در زمان |
-| 🟡 | **Reorder drag-drop** — برای کتگوری‌ها (order field) |
-| 🟡 | **Approve with note** — «تایید با یادداشت» (audit) |
-| 🟢 | **Import/Export JSON** — کتگوری‌ها و تگ‌ها |
-| 🟢 | **Suggest with AI** — «این تگ شبیه X هست» |
+### Deferred indefinitely
 
----
-
-### ۲.۸ — `/dashboard/users` — مدیریت کاربران
-
-**وضعیت فعلی:**
-- جدول کاربران + search + role filter
-- تغییر نقش + ban
-
-**ایده‌های بهبود:**
-
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Pagination واقعی** — (فعلاً شاید limit=20 ثابته) |
-| 🔴 | **آمار per user** — پروژه‌ها، ریویو، آخرین فعالیت |
-| 🟡 | **Bulk actions** — انتخاب چند کاربر → تغییر نقش |
-| 🟡 | **User detail modal** — کلیک روی کاربر → modal با همه‌چیز |
-| 🟡 | **Search by email** — دقیق |
-| 🟡 | **Sort by** — تاریخ عضویت، آخرین فعالیت، تعداد پروژه |
-| 🟢 | **Export CSV** |
-| 🟢 | **Audit log** — چه کسی چه تغییری داد |
-
----
-
-### ۲.۹ — `/dashboard/system` و `/dashboard/logs` — مانیتورینگ
-
-**وضعیت فعلی:**
-- Stats (CPU، memory، db، uptime)
-- Logs با filter + download
-
-**ایده‌های بهبود:**
-
-| اولویت | ایده |
-|:------:|------|
-| 🔴 | **Real-time chart** — نمودار CPU/memory live (Chart.js) |
-| 🔴 | **SSE (Server-Sent Events)** — لاگ‌های زنده بدون polling |
-| 🟡 | **Alert thresholds** — اگه memory > 80%، warning |
-| 🟡 | **DB slow queries** — top 10 کندترین query |
-| 🟡 | **Restart button** — graceful restart (اگه PM2) |
-| 🟢 | **Export logs** — فایل زیپ همه |
-| 🟢 | **Search در لاگ‌ها** ✅ (هست) |
-| 🟢 | **Filter by level** ✅ |
+| Feature                         | Reason                                                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| OAuth login (Google, GitHub)    | Adds dependencies and identity-provider trust; not aligned with the current email-verification-first model. |
+| Direct messaging                | Out of scope (see `GOALS.md` Section 9.2).                                                                  |
+| Paid listings                   | Out of scope (see `GOALS.md` Section 9.3).                                                                  |
+| Multi-tenancy                   | The current architecture assumes a single deployment per instance.                                          |
+| Real-time collaborative editing | Not applicable to the current feature set.                                                                  |
 
 ---
 
-## 🔴 ۳. صفحاتی که **وجود ندارن** ولی لازم‌ان
+## Page and Route Audit
 
-این‌ها توی nav یا footer لینک دارن، ولی صفحه‌شون نیست:
+A current inventory of pages and routes, with status.
 
-### ۳.۱ — `/users` — لیست کاربران (عمومی)
+### Pages that exist and function correctly
 
-**وضعیت:** لینک توی nav هدر هست ✅، ولی صفحه نداره ❌
+| Path                     | Template                            | Authentication |
+| ------------------------ | ----------------------------------- | -------------- |
+| `/`                      | `pages/index.ejs`                   | Public         |
+| `/explore`               | `pages/explore.ejs`                 | Public         |
+| `/projects`              | `pages/projects/list.ejs`           | Public         |
+| `/projects/:idOrSlug`    | `pages/projects/show.ejs`           | Public         |
+| `/users`                 | `pages/users/list.ejs`              | Public         |
+| `/users/:idOrUsername`   | `pages/users/show.ejs`              | Public         |
+| `/about`                 | `pages/about.ejs`                   | Public         |
+| `/contact`               | `pages/contact.ejs`                 | Public         |
+| `/legal/privacy`         | `pages/legal/privacy.ejs`           | Public         |
+| `/legal/terms`           | `pages/legal/terms.ejs`             | Public         |
+| `/tickets/track/:token`  | `pages/tickets/track.ejs`           | Public (token) |
+| `/tickets/lookup`        | `pages/tickets/lookup.ejs`          | Public         |
+| `/auth/login`            | `pages/auth/login.ejs`              | Guest          |
+| `/auth/register`         | `pages/auth/register.ejs`           | Guest          |
+| `/auth/forgot-password`  | `pages/auth/forgot-password.ejs`    | Guest          |
+| `/auth/reset-password`   | `pages/auth/reset-password.ejs`     | Guest          |
+| `/auth/verify-email`     | `pages/auth/verify-email.ejs`       | Public         |
+| `/dashboard`             | `pages/dashboard/home.ejs`          | Auth           |
+| `/dashboard/projects`    | `pages/dashboard/projects.ejs`      | Auth           |
+| `/dashboard/profile`     | `pages/dashboard/profile.ejs`       | Auth           |
+| `/dashboard/security`    | `pages/dashboard/security.ejs`      | Auth           |
+| `/dashboard/settings`    | `pages/dashboard/settings.ejs`      | Auth           |
+| `/dashboard/my-tickets`  | `pages/dashboard/my-tickets.ejs`    | Auth           |
+| `/dashboard/users`       | `pages/dashboard/users.ejs`         | Admin          |
+| `/dashboard/tags`        | `pages/dashboard/tags.ejs`          | Admin          |
+| `/dashboard/tag-types`   | `pages/dashboard/tag-types.ejs`     | Admin          |
+| `/dashboard/tickets`     | `pages/dashboard/tickets.ejs`       | Admin          |
+| `/dashboard/tickets/:id` | `pages/dashboard/ticket-detail.ejs` | Admin          |
+| `/dashboard/system`      | `pages/dashboard/system.ejs`        | Developer      |
+| `/dashboard/logs`        | `pages/dashboard/logs.ejs`          | Developer      |
+| `/404`                   | `pages/404.ejs`                     | Error          |
 
-**چی باید باشه:**
-- گرید کاربران با آواتار + نام + تعداد پروژه
-- Search + sort (جدیدترین، فعال‌ترین)
-- فیلتر بر اساس نقش
-- Pagination
+### Pages that do not exist (by design or as gaps)
 
-**ایده‌های اضافی:**
-- Leaderboard (برترین‌های ماه)
-- «کاربران پیشنهادی» بر اساس علاقه
+| Path          | Status  | Reasoning                                                                                                                        |
+| ------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `/tags`       | Missing | A public tag listing would be useful. Currently, tags are only reachable through the project filter. Backlog: v1.1.              |
+| `/tags/:slug` | Missing | A public tag page would duplicate `/projects?tag=<id>`. Consider whether to add a dedicated page or redirect. Backlog: v1.1.     |
+| `/faq`        | Missing | Not linked from any page. Would help onboarding. Backlog: v1.2.                                                                  |
+| `/changelog`  | Missing | Release notes are published as GitHub Releases. A dedicated page is redundant. Deferred indefinitely.                            |
+| `/roadmap`    | Missing | The roadmap is documented in `docs/GOALS.md` and this file. A public page would be a curated view. Backlog: v1.2.                |
+| `/blog`       | Missing | Out of scope (see `GOALS.md` Section 9.5).                                                                                       |
+| `/search`     | Missing | Global search is available via the header (Ctrl+K), which routes to `/explore?q=<term>`. A dedicated search page is not planned. |
 
----
+### Routes registered but not wired
 
-### ۳.۲ — `/about` — درباره ما
-
-**وضعیت:** لینک توی nav ✅، ولی صفحه نداره ❌
-
-**چی باید باشه:**
-- داستان پروژه (چرا ساخته شد)
-- تیم / maintainers
-- تکنولوژی‌ها
-- آمار (X پروژه، Y کاربر)
-- لینک به GitHub / CONTRIBUTING
-- Roadmap کوتاه
-
----
-
-### ۳.۳ — `/contact` — تماس با ما
-
-**وضعیت:** لینک توی nav ✅، ولی صفحه نداره ❌
-
-**چی باید باشه:**
-- فرم تماس (name, email, subject, message)
-- لینک ایمیل مستقیم
-- لینک به GitHub Issues
-- سوشال مدیا
-- FAQ کوتاه
-
-**ایده:** با `POST /api/contact` → ذخیره در DB + notification به admin
-
----
-
-### ۳.۴ — `/terms` — قوانین استفاده
-
-**وضعیت:** لینک از فرم register ✅، ولی صفحه نداره ❌
-
-**چی باید باشه:**
-- شرایط استفاده
-- رفتار مجاز / غیرمجاز
-- مالکیت محتوا
-- مسئولیت‌ها
-
----
-
-### ۳.۵ — `/privacy` — حریم خصوصی
-
-**وضعیت:** احتمالاً لینک هست، صفحه نیست ❌
-
-**چی باید باشه:**
-- چه داده‌ای جمع‌آوری می‌شه
-- چرا (purpose)
-- چه کسی دسترسی داره
-- حق حذف / export
-- Cookies
+| Route                            | Status                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| `POST /api/v1/tag-types/request` | Controller exists, route not wired. See [F1](#f1-wire-the-category-request-endpoint). |
 
 ---
 
-### ۳.۶ — `/tags` و `/tags/:slug` — لیست تگ‌های عمومی
+## Testing Plan
 
-**وضعیت:** وجود نداره ❌
+The project does not yet have an automated test suite. This is a deliberate
+choice for v1.0: building a comprehensive test suite before the feature set
+stabilises produces tests that must be rewritten. The v1.0 release will be
+verified by manual testing (see [Release Checklist](#release-checklist)), and
+automated testing begins in v1.1.
 
-**چی باید باشه:**
-- `/tags` → همه‌ی تگ‌ها با usage count، فیلتر بر اساس کتگوری
-- `/tags/:slug` → پروژه‌های یک تگ خاص (مثل `/projects?tag=react`)
+### Testing roadmap
 
----
+| Version | Scope                                                                                |
+| ------- | ------------------------------------------------------------------------------------ |
+| v1.0    | Manual verification only.                                                            |
+| v1.1    | Unit tests for pure utilities. Integration tests for the auth flow.                  |
+| v1.2    | Full integration coverage for all endpoints. E2E tests for critical user journeys.   |
+| v2.0    | Load testing, fuzz testing for input validation, security scanning integrated in CI. |
 
-### ۳.۷ — `/faq` — سوالات متداول
+### v1.1 test coverage targets
 
-**چی باید باشه:**
-- «چطور پروژه بسازم؟»
-- «چرا ایمیل تایید نمی‌شه؟»
-- «چطور تگ جدید بسازم؟»
-- «چرا ریویو ثبت نمی‌شه؟»
-- با آکاردئون (details/summary)
+| Module                                  | Test type   | Target                                  |
+| --------------------------------------- | ----------- | --------------------------------------- |
+| `utils/token.ts`                        | Unit        | 100% branch coverage                    |
+| `utils/validate.ts`                     | Unit        | 100% branch coverage                    |
+| `services/fileService.ts`               | Unit        | Path traversal cases covered            |
+| `services/githubService.parseGitHubUrl` | Unit        | All documented URL formats covered      |
+| `services/spamDetection.checkSpam`      | Unit        | Each rule triggers as documented        |
+| `controllers/authController`            | Integration | Register → verify → login → logout flow |
+| `controllers/authController`            | Integration | Password reset flow                     |
+| `controllers/profileController`         | Integration | Email change flow (both steps)          |
 
----
+### Test infrastructure requirements
 
-### ۳.۸ — `/changelog` — تغییرات
+- **Jest** with `ts-jest` for TypeScript support.
+- **Supertest** for HTTP integration tests.
+- **mongodb-memory-server** for a temporary in-memory database.
+- **Factory functions** for creating test data (users, projects, reviews).
 
-**چی باید باشه:**
-- لیست نسخه‌ها با تغییرات
-- لینک به GitHub Releases
+### Manual testing checklist
 
----
+Before any release, verify the following manually in a production-mode
+environment:
 
-### ۳.۹ — `/forgot-password` — فراموشی رمز
-
-**وضعیت:** فایل `forgot-password.ejs` هست ✅، ولی توی tree که فرستادی، **فقط `auth/forgot-password.js` بود**. بررسی کن که صفحه‌ش هست.
-
----
-
-## 🟣 ۴. صفحات پیشنهادی (فراتر از MVP)
-
-### ۴.۱ — `/dashboard/notifications` — اعلانات
-
-**چی باید باشه:**
-- لیست اعلانات (ریویو جدید، کامنت، follow، approve)
-- علامت «خوانده‌شده»
-- فیلتر (همه / unread)
-- Real-time با SSE یا WebSocket
-
----
-
-### ۴.۲ — `/dashboard/analytics` — آمار پیشرفته
-
-**چی باید باشه:**
-- نمودار بازدید/دانلود در زمان
-- Traffic source (referrer)
-- Top projects
-- Funnel: visit → download → review
-
----
-
-### ۴.۳ — `/dashboard/security` — امنیت (جدا از settings)
-
-**چی باید باشه:**
-- Session management کامل با جزئیات
-- 2FA setup (TOTP + QR)
-- Login history
-- API tokens (برای v2)
-
----
-
-### ۴.۴ — `/blog` و `/blog/:slug` — بلاگ / اخبار
-
-**چی باید باشه:**
-- مقاله‌های فنی (اختیاری)
-- اخبار پروژه
-- تغییرات roadmap
-- فقط admin publish
-
----
-
-### ۴.۵ — `/roadmap` — نقشه راه
-
-**چی باید باشه:**
-- نسخه‌های آینده
-- وضعیت هر feature (planned / in progress / done)
-- رأی کاربران (برای اولویت)
+- [ ] Register a new account; receive a verification code; verify; log in.
+- [ ] Register with a duplicate username; observe the error message.
+- [ ] Register with a duplicate email; observe the error message.
+- [ ] Log in with a wrong password; observe the generic error message.
+- [ ] Log in with a banned account; observe the `ACCOUNT_DISABLED` error.
+- [ ] Create a project without email verification; observe the rejection.
+- [ ] Create a project with verification; observe the project page.
+- [ ] Upload an image; observe it appears in the gallery.
+- [ ] Upload an oversized file; observe the rejection.
+- [ ] Link a GitHub repository; observe the metadata sync.
+- [ ] Submit a review; observe the aggregate rating updates.
+- [ ] Submit a second review; observe the rejection.
+- [ ] Review your own project; observe the rejection.
+- [ ] Post a comment; reply to it; observe the threading.
+- [ ] Delete a comment with replies; observe soft deletion.
+- [ ] Delete a comment without replies; observe hard deletion.
+- [ ] Create a tag; observe it in autocomplete.
+- [ ] Request a new category (once F1 is complete).
+- [ ] Approve a pending category as admin.
+- [ ] Change a user's role; observe the audit fields.
+- [ ] Ban a user; observe the user cannot log in.
+- [ ] Request an email change; complete both steps.
+- [ ] Cancel an email change; observe rollback.
+- [ ] Change your password; observe other sessions are revoked.
+- [ ] Submit a contact ticket; receive confirmation email.
+- [ ] Reply to a ticket as staff; receive notification.
+- [ ] Use ticket lookup; verify code; access tickets.
+- [ ] Access `/dashboard/system` as developer; observe metrics.
+- [ ] Access `/dashboard/system` as admin; observe rejection.
+- [ ] Verify the sitemap at `/sitemap`.
+- [ ] Verify the manifest at `/api/_meta`.
 
 ---
 
-### ۴.۶ — `/search` — جستجوی پیشرفته
+## Deployment Readiness
 
-**چی باید باشه:**
-- جستجوی همه‌چیز (پروژه، کاربر، تگ)
-- فیلترهای ترکیبی
-- Highlight نتایج
-- لینک به `/explore?q=` برای پروژه‌ها
+Items required before recommending the platform to users.
 
----
+### Infrastructure
 
-## 📊 ۵. خلاصه‌ی وضعیت
+- [ ] Staging deployment at a public URL (blocker B4).
+- [ ] HTTPS configured with a valid certificate.
+- [ ] `APP_URL` set to the public domain.
+- [ ] `JWT_SECRET` at least 64 characters, generated with `openssl rand -hex 32`.
+- [ ] MongoDB with authentication enabled.
+- [ ] SMTP provider configured and verified.
+- [ ] Daily database backups with verified restore procedure.
+- [ ] Log aggregation or external monitoring.
+- [ ] Error alerting (for 5xx responses or process crashes).
 
-### موجود (کار می‌کنن) ✅
-| صفحه | وضعیت | نیاز به بهبود |
-|------|:-----:|:-------------:|
-| `/` | ✅ | 🟡 متوسط |
-| `/explore` | ✅ | 🟡 متوسط |
-| `/projects` | ✅ | 🟢 کم (merge با explore?) |
-| `/projects/:idOrSlug` | ✅ | 🔴 زیاد |
-| `/users/:username` | ✅ | 🔴 زیاد |
-| `/auth/login` | ✅ | 🟢 کم |
-| `/auth/register` | ✅ | 🟢 کم |
-| `/auth/forgot-password` | ✅ | 🟢 کم |
-| `/auth/reset-password` | ✅ | 🟢 کم |
-| `/dashboard` | ✅ | 🟡 متوسط |
-| `/dashboard/projects` | ✅ | 🟡 متوسط |
-| `/dashboard/profile` | ✅ | 🔴 زیاد |
-| `/dashboard/settings` | ✅ | 🟡 متوسط |
-| `/dashboard/tags` | ✅ | 🟢 کم |
-| `/dashboard/tag-types` | ✅ | 🟢 کم |
-| `/dashboard/users` | ✅ | 🟡 متوسط |
-| `/dashboard/system` | ✅ | 🟡 متوسط |
-| `/dashboard/logs` | ✅ | 🟢 کم |
-| `/404` | ✅ | 🟢 کم |
+### Documentation
 
-### ناقص (صفحه‌ی مستقل نداره یا ناکامله) 🟡
-| صفحه | مشکل |
-|------|------|
-| `/auth/verify-email` | فایل `.ejs` نیست (inline render می‌شه؟) |
-| `/projects` (list) | تفاوتش با explore مشخص نیست |
+- [x] `README.md` with installation and API reference.
+- [x] `SECURITY.md` with disclosure policy.
+- [x] `CONTRIBUTING.md` with workflow and standards.
+- [x] `CODE_OF_CONDUCT.md`.
+- [x] `docs/PROJECT_GUIDE.md` with feature documentation.
+- [x] `docs/AI_GUIDE.md` with architecture reference.
+- [x] `docs/GOALS.md` with vision and metrics.
+- [x] `TODO.md` (this document).
+- [ ] `CHANGELOG.md` (blocker B5).
+- [ ] Deployment guide specific to the chosen infrastructure.
 
-### گم‌شده (لینک هست، صفحه نیست) 🔴
-| صفحه | توی nav |
-|------|:-------:|
-| `/users` | ✅ |
-| `/about` | ✅ |
-| `/contact` | ✅ |
-| `/terms` | ✅ (از register) |
-| `/privacy` | ✅ (احتمالاً) |
-| `/tags` | ❌ (نه، ولی خوبه) |
-| `/faq` | ❌ |
-| `/changelog` | ❌ |
-| `/roadmap` | ❌ |
+### Operational procedures
+
+- [ ] Incident response runbook.
+- [ ] Backup and restore procedure documented and tested.
+- [ ] Upgrade procedure documented.
+- [ ] Monitoring thresholds and alert routing configured.
+- [ ] Log retention policy documented.
 
 ---
 
-## 🎯 ۶. پیشنهاد ترتیب کار
+## Release Checklist
 
-### فاز ۱ — ضروری (سریع، ۱-۲ روز)
-```
-1. /auth/verify-email.ejs — اگه نیست، بساز
-2. /users — لیست کاربران (با search + sort)
-3. /about — صفحه‌ی ساده
-4. /contact — فرم + API
-5. /terms و /privacy — صفحات قانونی ساده
-```
+Before tagging v1.0.0:
 
-### فاز ۲ — بهبود صفحات اصلی (۳-۵ روز)
-```
-6. صفحه پروژه — ToC + similar + «درباره سازنده»
-7. پروفایل عمومی — Follow + Activity + Badges
-8. اکسپلور — فیلترهای پیشرفته + view toggle
-9. داشبورد home — Charts + Activity feed
-10. settings — 2 tab جدید
-```
-
-### فاز ۳ — ویژگی‌های جدید (۱-۲ هفته)
-```
-11. /dashboard/notifications — سیستم اعلانات
-12. /dashboard/analytics — آمار پیشرفته
-13. /tags و /tags/:slug — صفحه‌ی تگ
-14. /faq, /roadmap, /changelog — صفحات محتوایی
-15. /search — جستجوی سراسری
-```
+- [ ] All release blockers (B1–B5) completed.
+- [ ] All functional gaps (F1–F5) either completed or explicitly deferred.
+- [ ] Manual testing checklist (Section "Testing Plan") completed.
+- [ ] `npm audit` reports zero critical or high vulnerabilities.
+- [ ] `npx tsc --noEmit` passes.
+- [ ] `npm run build` succeeds.
+- [ ] Docker image builds successfully.
+- [ ] `.env.example` is complete and accurate.
+- [ ] `CHANGELOG.md` written.
+- [ ] `README.md` reviewed for accuracy.
+- [ ] `SECURITY.md` reviewed for accuracy.
+- [ ] `docs/PROJECT_GUIDE.md` reviewed for accuracy.
+- [ ] Staging deployment verified.
+- [ ] Database backup taken.
+- [ ] Rollback procedure documented.
+- [ ] `git tag v1.0.0` created on the release commit.
+- [ ] GitHub Release published with the CHANGELOG content.
 
 ---
 
-## 💡 ۷. ایده‌های کلی برای همه صفحات
+## Suggested Work Order
 
-### Micro-interactions
-- ✅ Hover روی کارت → lift + shadow
-- ✅ Skeleton loading قبل از داده
-- ✅ Smooth page transitions
-- ✅ Focus ring واضح برای کیبورد
+This is the recommended sequence to reach v1.0 release. Items can be
+reordered if constraints change, but the sequence minimises rework.
 
-### Accessibility
-- ⬜ `aria-label` روی همه‌ی دکمه‌های icon-only
-- ⬜ Skip-to-content link
-- ⬜ Focus trap در modalها
-- ⬜ Alt text روی همه‌ی تصاویر
-- ⬜ High contrast mode
+### Week 1 — Infrastructure
 
-### Performance
-- ⬜ Lazy load تصاویر (`loading="lazy"`)
-- ⬜ Prefetch لینک‌های مهم (`<link rel="prefetch">`)
-- ⬜ Image optimization (WebP + srcset)
-- ⬜ Font subsetting (فقط فارسی)
+- B1: Dockerfile
+- B2: CI pipeline
+- B3: Complete `.env.example`
+- Update `docker-compose.yml` to include the application
 
-### SEO
-- ⬜ `<title>` و `<meta description>` برای همه صفحات
-- ⬜ Open Graph tags (og:title, og:image)
-- ⬜ JSON-LD برای پروژه‌ها
-- ⬜ Sitemap.xml
-- ⬜ robots.txt
+### Week 2 — Deployment and verification
 
-### i18n (آینده)
-- ⬜ سیستم ترجمه (fa/en)
-- ⬜ RTL/LTR switch
+- B4: Staging deployment
+- Run the manual testing checklist against staging
+- Fix any issues discovered
 
-### Empty states
-- ⬜ همه‌ی لیست‌ها → تصویر + پیام + CTA
-- ⬜ «اولین نفری باش که X می‌سازه»
+### Week 3 — Functional gaps
 
-### Error states
-- ⬜ 404 اختصاصی (نه generic)
-- ⬜ 500 با «دوباره امتحان کن»
-- ⬜ Offline detection
+- F1: Wire the category request endpoint
+- F2: Orphaned uploads cleanup script
+- F3: Helpfulness vote deduplication
+- F4: Soft-deleted comment recovery
+
+### Week 4 — Documentation and release
+
+- B5: CHANGELOG and v1.0.0 tag
+- Final review of all documentation
+- Final smoke test
+- Publish the release
 
 ---
 
-## 📈 ۸. اولویت‌بندی نهایی
+## Decision Log
 
-### 🔴 باید حتماً باشه (قبل از v1.0)
-- [ ] `/users` (لیست کاربران) — لینک هست، صفحه نیست
-- [ ] `/about`, `/contact`, `/terms`, `/privacy`
-- [ ] `/auth/verify-email.ejs` (چک که هست)
-- [ ] بهبود صفحه‌ی پروژه (ToC، similar)
-- [ ] بهبود پروفایل (Follow، Activity)
-- [ ] داشبورد home (Charts، Activity)
+A record of decisions that shaped the project, with reasoning. Useful for
+future contributors who ask "why is it this way?"
 
-### 🟡 خوبه که باشه (v1.1)
-- [ ] `/dashboard/notifications`
-- [ ] `/tags` و `/tags/:slug`
-- [ ] `/faq`, `/roadmap`, `/changelog`
-- [ ] `/dashboard/analytics`
-- [ ] `/search`
+| Decision                                                               | Date | Reasoning                                                                                                                                                              |
+| ---------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server-rendered (EJS) instead of SPA                                   | 2025 | SEO reliability, fast first paint, no build step for the frontend. Trade-off: less client-side interactivity.                                                          |
+| JWT in HttpOnly cookies instead of localStorage                        | 2025 | Protects against XSS token theft. Trade-off: requires CSRF protection via `SameSite`.                                                                                  |
+| Session lookup on every request                                        | 2025 | Enables immediate revocation. Trade-off: an extra database query per authenticated request.                                                                            |
+| Refresh tokens are not rotated                                         | 2025 | Rotation introduces race conditions with concurrent requests. The security benefit is marginal when sessions are revocable.                                            |
+| Password change preserves the current session                          | 2025 | A user who changes their password on a laptop should not be logged out of that laptop.                                                                                 |
+| One review per user per project                                        | 2025 | Prevents review bombing and duplicate reviews. Trade-off: a user who changes their mind must edit their review rather than submitting a new one.                       |
+| Owner cannot review own project                                        | 2025 | Prevents self-promotion through fake reviews.                                                                                                                          |
+| User tags are auto-approved                                            | 2025 | Follows the GitHub model; avoids a moderation bottleneck. Trade-off: occasionally a bad tag is created; the low usage count naturally demotes it.                      |
+| Categories require admin approval                                      | 2025 | Categories are structural; a bad category disrupts the taxonomy.                                                                                                       |
+| Comments with replies are soft-deleted                                 | 2025 | Preserves the reply hierarchy. Trade-off: the database accumulates placeholder documents.                                                                              |
+| Comments without replies are hard-deleted                              | 2025 | Prevents placeholder accumulation.                                                                                                                                     |
+| In-memory caching for explore and home feed                            | 2025 | Simple and sufficient for single-process deployment. Trade-off: cache is per-process and lost on restart.                                                              |
+| No formal test suite in v1.0                                           | 2025 | The feature set is still stabilising; tests written now would need rewriting. Testing begins in v1.1.                                                                  |
+| `syncIndexes.ts` is manual, not automatic                              | 2025 | Automatic index sync on startup can drop indexes and cause downtime. Manual execution gives the operator control.                                                      |
+| Sessions are not bound to IP                                           | 2025 | IP binding breaks mobile users and CGNAT environments. The device hash is stored for correlation but not enforced as validation.                                       |
+| Refresh tokens are stored on the session, not in a separate collection | 2025 | Simpler schema. The session is the natural unit of revocation.                                                                                                         |
+| `MAIL_MODE=log` in development is intentional                          | 2025 | Logging OTPs to the console removes a dependency on a mail server for development. `MAIL_MODE=smtp` must be set in production; this is documented in deployment notes. |
 
-### 🟢 عالیه (v1.2+)
-- [ ] `/blog`
-- [ ] `/dashboard/security` (2FA)
-- [ ] `/dashboard/api-tokens`
-- [ ] Multi-language
+---
+
+**Last updated:** 2026
+**Maintainer:** [@Sobhan-SRZA](https://github.com/Sobhan-SRZA)
+**License:** BSD-3-Clause
