@@ -1061,6 +1061,34 @@ export const homeFeeds = asyncHandler(
     }
 );
 
+/* ========================================================================== */
+/* Helpers                                                                    */
+/* ========================================================================== */
+
+/**
+ * Retrieves a project by its MongoDB ObjectId or slug.
+ *
+ * @param idOrSlug - Project identifier or URL-friendly slug.
+ * @returns The matching project document.
+ * @throws AppError if the project does not exist.
+ */
+export async function findProject(idOrSlug: string) {
+    const isObjectId = /^[a-f\d]{24}$/i.test(idOrSlug);
+
+    const project = await Project.findOne(
+        isObjectId
+            ? { _id: idOrSlug }
+            : { slug: idOrSlug }
+    ).lean();
+
+    if (!project) {
+        throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
+    }
+
+    return project;
+}
+
+
 /**
  * Copyright (c) 2026 Sobhan Rasoulzadeh Asl (Sobhan-SRZA / Mr. Sinre)
  *
