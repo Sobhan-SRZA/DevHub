@@ -43,6 +43,7 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Session } from "../models/Session";
 import { User } from "../models/User";
+import { linkTicketsToUser } from "../services/ticketService";
 
 /* ========================================================================== */
 /* Authentication Helpers                                                     */
@@ -505,6 +506,21 @@ export const register = asyncHandler(
             sessionResult.refresh,
             true
         );
+
+
+        // ticket
+        try {
+            await linkTicketsToUser(user._id, user.email);
+        } catch (err) {
+            console.warn("[register] Ticket link failed:", err);
+        }
+
+        // در login، بلافاصله بعد از احراز صحت پسورد:
+        try {
+            await linkTicketsToUser(user._id, user.email);
+        } catch (err) {
+            console.warn("[login] Ticket link failed:", err);
+        }
 
         res.status(201).json({
             ok: true,
