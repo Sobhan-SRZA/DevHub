@@ -149,7 +149,7 @@ export const listUsers = asyncHandler(
 
 
 /* ==================================================================
-   GET /api/users/:idOrUsername — Public profile and statistics
+   GET /api/v1/users/:idOrUsername — Public profile and statistics
    ================================================================== */
 
 export const getPublicProfile = asyncHandler(async (req: any, res: Response) => {
@@ -254,7 +254,7 @@ export const getPublicProfile = asyncHandler(async (req: any, res: Response) => 
 });
 
 /* ==================================================================
-   GET /api/users/:idOrUsername/projects
+   GET /api/v1/users/:idOrUsername/projects
    ================================================================== */
 
 export const getUserProjects = asyncHandler(async (req: Request, res: Response) => {
@@ -310,7 +310,7 @@ export const getUserProjects = asyncHandler(async (req: Request, res: Response) 
 });
 
 /* ==================================================================
-   GET /api/users/:idOrUsername/reviews
+   GET /api/v1/users/:idOrUsername/reviews
    ================================================================== */
 
 export const getUserReviews = asyncHandler(async (req: Request, res: Response) => {
