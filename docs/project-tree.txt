@@ -1,4 +1,4 @@
-manage-projects/
+devhub/
 ├── backend/
 │   └── src/
 │       ├── api/
