@@ -2,6 +2,8 @@ import { Router } from "express";
 import { optionalAuth } from "../../middleware/auth";
 import noCache from "../../middleware/noCache";
 import * as ctrl from "../../controllers/userController";
+import { apiRateLimit } from "../../middleware/apiRateLimit";
+import { apiGuard } from "../../middleware/apiGuard";
 
 const router = Router();
 
@@ -29,7 +31,20 @@ router.get("/", optionalAuth, noCache, ctrl.listUsers);
  *
  * Accepts either a user id or a username in `:idOrUsername`.
  */
-router.get("/:idOrUsername", optionalAuth, noCache, ctrl.getPublicProfile);
+router.get(
+    "/:idOrUsername",
+    optionalAuth,
+    noCache,
+    apiRateLimit("public"),
+    apiGuard({
+        path: "/api/v1/users/:idOrUsername",
+        method: "GET",
+        visibility: "public",
+        description: "Retrieve a public user profile.",
+        tags: ["users"]
+    }),
+    ctrl.getPublicProfile
+);
 
 /*
  * Retrieve a paginated list of projects created by a specific user.
