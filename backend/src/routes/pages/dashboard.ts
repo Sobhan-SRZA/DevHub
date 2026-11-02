@@ -28,22 +28,22 @@ router.get("/settings", (req, res) => res.render("pages/dashboard/settings"));
 /*                              Admin-Only Pages                              */
 /* -------------------------------------------------------------------------- */
 
-// Restrict administrative pages to users with the required admin privileges.
 router.get("/tag-types", pageAdminGuard, (req, res) =>
-    res.render("pages/dashboard/tag-types"),
+    res.render("pages/dashboard/tag-types")
 );
 
 router.get("/tags", pageAdminGuard, (req, res) =>
-    res.render("pages/dashboard/tags"),
+    res.render("pages/dashboard/tags")
 );
 
 router.get("/users", pageAdminGuard, (req, res) =>
-    res.render("pages/dashboard/users"),
+    res.render("pages/dashboard/users")
 );
 
 router.get(
     "/tickets",
     pageAdminGuard,
+    noCache,
     (req: any, res) => {
         res.render("pages/dashboard/tickets", { req, pageTitle: "Tickets" });
     }
@@ -52,6 +52,7 @@ router.get(
 router.get(
     "/tickets/:id",
     pageAdminGuard,
+    noCache,
     (req: any, res) => {
         res.render("pages/dashboard/ticket-detail", {
             req,
@@ -61,9 +62,18 @@ router.get(
     }
 );
 
+/* -------------------------------------------------------------------------- */
+/*                          My Tickets (User)                                 */
+/* -------------------------------------------------------------------------- */
+/*
+ * Placed after admin tickets but before any generic parameterised
+ * routes so that it is not shadowed. The `pageAuth` middleware
+ * applied above already enforces authentication; `requireAuth` here
+ * would be redundant and was removed.
+ */
+
 router.get(
     "/my-tickets",
-    requireAuth,
     noCache,
     (req: any, res) => {
         res.render("pages/dashboard/my-tickets", {
