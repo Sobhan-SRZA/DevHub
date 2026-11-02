@@ -1,36 +1,84 @@
 import { Router } from "express";
-import { optionalAuth } from "../../middleware/auth";
+import { optionalAuth, requireAuth } from "../../middleware/auth";
+import { apiGuard } from "../../middleware/apiGuard";
+import { apiRateLimit } from "../../middleware/apiRateLimit";
 import noCache from "../../middleware/noCache";
 import * as ctrl from "../../controllers/userController";
-import { apiRateLimit } from "../../middleware/apiRateLimit";
-import { apiGuard } from "../../middleware/apiGuard";
 
 const router = Router();
 
 /* ==========================================================================
- * Public User Routes
+ * Authenticated — My Stats
  * ==========================================================================
- * All routes are public. `optionalAuth` populates `req.user` when a valid
- * session is present, allowing controllers to personalize responses
- * (for example, to hide private-profile data from non-owners).
+ * Placed FIRST so it is not shadowed by `/:idOrUsername`. Restricted
+ * to the authenticated user; no parameterised access is provided to
+ * avoid users probing each other's analytics.
  * ========================================================================== */
 
-/*
- * List users with search, sort, and pagination.
- *
- * Query parameters:
- *   - q:      free-text search across name and username
- *   - sort:   recent | name | projects
- *   - page:   1-based page index (default 1)
- *   - limit:  page size, capped by the controller (default 24)
- */
-router.get("/", optionalAuth, noCache, ctrl.listUsers);
+router.get(
+    "/me/stats",
+    requireAuth,
+    noCache,
+    apiRateLimit("authenticated", { windowMs: 60_000, max: 20 }),
+    apiGuard({
+        path: "/api/v1/users/me/stats",
+        method: "GET",
+        visibility: "authenticated",
+        description: "Aggregated analytics for the current user.",
+        tags: ["users", "stats"]
+    }),
+    ctrl.getMyStats
+);
 
-/*
- * Retrieve a single user's public profile.
- *
- * Accepts either a user id or a username in `:idOrUsername`.
- */
+/* ==========================================================================
+ * Public Routes
+ * ========================================================================== */
+
+router.get(
+    "/",
+    optionalAuth,
+    noCache,
+    apiRateLimit("public"),
+    apiGuard({
+        path: "/api/v1/users",
+        method: "GET",
+        visibility: "public",
+        description: "List users with search and pagination.",
+        tags: ["users"]
+    }),
+    ctrl.listUsers
+);
+
+router.get(
+    "/:idOrUsername/projects",
+    optionalAuth,
+    noCache,
+    apiRateLimit("public"),
+    apiGuard({
+        path: "/api/v1/users/:idOrUsername/projects",
+        method: "GET",
+        visibility: "public",
+        description: "List projects created by a user.",
+        tags: ["users", "projects"]
+    }),
+    ctrl.getUserProjects
+);
+
+router.get(
+    "/:idOrUsername/reviews",
+    optionalAuth,
+    noCache,
+    apiRateLimit("public"),
+    apiGuard({
+        path: "/api/v1/users/:idOrUsername/reviews",
+        method: "GET",
+        visibility: "public",
+        description: "List reviews submitted by a user.",
+        tags: ["users", "reviews"]
+    }),
+    ctrl.getUserReviews
+);
+
 router.get(
     "/:idOrUsername",
     optionalAuth,
@@ -44,28 +92,6 @@ router.get(
         tags: ["users"]
     }),
     ctrl.getPublicProfile
-);
-
-/*
- * Retrieve a paginated list of projects created by a specific user.
- * Respects privacy: draft and non-public projects are only returned
- * to the owner or to administrators.
- */
-router.get(
-    "/:idOrUsername/projects",
-    optionalAuth,
-    noCache,
-    ctrl.getUserProjects
-);
-
-/*
- * Retrieve reviews submitted by a specific user.
- */
-router.get(
-    "/:idOrUsername/reviews",
-    optionalAuth,
-    noCache,
-    ctrl.getUserReviews
 );
 
 export default router;
