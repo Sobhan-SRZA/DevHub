@@ -2,34 +2,42 @@ manage-projects/
 ├── backend/
 │   └── src/
 │       ├── api/
-│       │   ├── 404/
-│       │   │   └── page.ts
-│       │   ├── admin/
-│       │   │   └── router.ts
-│       │   ├── auth/
-│       │   │   └── router.ts
-│       │   ├── health/
-│       │   │   └── route.ts
-│       │   ├── profile/
-│       │   │   └── router.ts
-│       │   ├── projects/
-│       │   │   └── router.ts
-│       │   ├── system/
-│       │   │   └── route.ts
-│       │   ├── tag-types/
-│       │   │   └── router.ts
-│       │   ├── tags/
-│       │   │   └── router.ts
-│       │   └── users/
-│       │       └── route.ts
+│       │   └── v1/
+│       │       ├── 404/
+│       │       │   └── page.ts
+│       │       ├── admin/
+│       │       │   └── router.ts
+│       │       ├── auth/
+│       │       │   └── router.ts
+│       │       ├── contact/
+│       │       │   └── route.ts
+│       │       ├── health/
+│       │       │   └── route.ts
+│       │       ├── profile/
+│       │       │   └── router.ts
+│       │       ├── projects/
+│       │       │   └── router.ts
+│       │       ├── system/
+│       │       │   └── route.ts
+│       │       ├── tag-types/
+│       │       │   └── router.ts
+│       │       ├── tags/
+│       │       │   └── router.ts
+│       │       ├── tickets/
+│       │       │   └── route.ts
+│       │       └── users/
+│       │           └── route.ts
 │       ├── config/
+│       │   ├── apiRegistry.ts
 │       │   ├── db.ts
 │       │   ├── env.ts
+│       │   ├── environment.ts
 │       │   └── upload.ts
 │       ├── controllers/
 │       │   ├── adminController.ts
 │       │   ├── authController.ts
 │       │   ├── commentController.ts
+│       │   ├── contactController.ts
 │       │   ├── healthController.ts
 │       │   ├── profileController.ts
 │       │   ├── projectController.ts
@@ -37,10 +45,13 @@ manage-projects/
 │       │   ├── systemController.ts
 │       │   ├── tagController.ts
 │       │   ├── tagTypeController.ts
+│       │   ├── ticketController.ts
 │       │   └── userController.ts
 │       ├── lib/
 │       │   └── loader.ts
 │       ├── middleware/
+│       │   ├── apiGuard.ts
+│       │   ├── apiRateLimit.ts
 │       │   ├── auth.ts
 │       │   ├── errorHandler.ts
 │       │   ├── locals.ts
@@ -48,6 +59,7 @@ manage-projects/
 │       │   ├── ownership.ts
 │       │   ├── pageAuth.ts
 │       │   ├── roles.ts
+│       │   ├── security.ts
 │       │   └── upload.ts
 │       ├── models/
 │       │   ├── Comment.ts
@@ -56,36 +68,52 @@ manage-projects/
 │       │   ├── Session.ts
 │       │   ├── Tag.ts
 │       │   ├── TagType.ts
+│       │   ├── Ticket.ts
 │       │   ├── User.ts
 │       │   └── VerificationCode.ts
 │       ├── pages/
+│       │   ├── about/
+│       │   │   └── page.ts
 │       │   ├── auth/
 │       │   │   ├── forgot-password.ts
 │       │   │   ├── login.ts
 │       │   │   ├── register.ts
-│       │   │   └── reset-password.ts
+│       │   │   ├── reset-password.ts
+│       │   │   └── verify-email.ts
+│       │   ├── contact/
+│       │   │   └── page.ts
 │       │   ├── dashboard/
 │       │   │   └── route.ts
 │       │   ├── explore/
 │       │   │   └── page.ts
+│       │   ├── legal/
+│       │   │   └── page.ts
 │       │   ├── projects/
-│       │   │   ├── project.ts
 │       │   │   └── projects.ts
+│       │   ├── sitemap/
+│       │   │   └── page.ts
+│       │   ├── tickets/
+│       │   │   └── page.ts
 │       │   ├── users/
 │       │   │   └── page.ts
 │       │   └── page.ts
 │       ├── routes/
-│       │   ├── adminRoutes.ts
-│       │   ├── authRoutes.ts
-│       │   ├── commentRoutes.ts
-│       │   ├── dashboardRoutes.ts
-│       │   ├── profileRoutes.ts
-│       │   ├── projectRoutes.ts
-│       │   ├── reviewRoutes.ts
-│       │   ├── systemRoutes.ts
-│       │   ├── tagRoutes.ts
-│       │   ├── tagTypeRoutes.ts
-│       │   └── userRoutes.ts
+│       │   ├── api/
+│       │   │   ├── _meta.ts
+│       │   │   ├── adminRoutes.ts
+│       │   │   ├── authRoutes.ts
+│       │   │   ├── commentRoutes.ts
+│       │   │   ├── profileRoutes.ts
+│       │   │   ├── projectRoutes.ts
+│       │   │   ├── reviewRoutes.ts
+│       │   │   ├── systemRoutes.ts
+│       │   │   ├── tagRoutes.ts
+│       │   │   ├── tagTypeRoutes.ts
+│       │   │   ├── ticketsRoutes.ts
+│       │   │   └── userRoutes.ts
+│       │   └── pages/
+│       │       ├── dashboard.ts
+│       │       └── tickets.ts
 │       ├── scripts/
 │       │   ├── cleanupVerificationCodes.ts
 │       │   ├── promoteUser.ts
@@ -97,7 +125,8 @@ manage-projects/
 │       │   ├── mail/
 │       │   │   ├── templates/
 │       │   │   │   ├── otpTemplate.ts
-│       │   │   │   └── sendOtpEmail.ts
+│       │   │   │   ├── sendOtpEmail.ts
+│       │   │   │   └── ticketEmails.ts
 │       │   │   ├── transports/
 │       │   │   │   ├── logTransport.ts
 │       │   │   │   └── smtpTransport.ts
@@ -115,7 +144,12 @@ manage-projects/
 │       │   ├── ratingService.ts
 │       │   ├── roleService.ts
 │       │   ├── sessionService.ts
+│       │   ├── spamDetection.ts
+│       │   ├── ticketService.ts
+│       │   ├── userStatsService.ts
 │       │   └── verificationService.ts
+│       ├── types/
+│       │   └── api.ts
 │       ├── utils/
 │       │   ├── AppError.ts
 │       │   ├── asyncHandler.ts
@@ -127,6 +161,7 @@ manage-projects/
 │       ├── validators/
 │       │   ├── authValidator.ts
 │       │   ├── commentValidator.ts
+│       │   ├── contactValidator.ts
 │       │   ├── profileValidator.ts
 │       │   ├── projectValidator.ts
 │       │   ├── reviewValidator.ts
@@ -135,10 +170,15 @@ manage-projects/
 │       └── index.ts
 ├── docs/
 │   ├── AI_GUIDE.md
-│   ├── goal.md
-│   └── PROJECT_GUIDE.md
+│   ├── GOALS.md
+│   ├── project-tree.txt
+│   ├── PROJECT_GUIDE.md
+│   ├── project_tree.py
+│   └── TODO.md
 ├── frontend/
 │   ├── public/
+│   │   ├── assets/
+│   │   │   └── logo.svg
 │   │   ├── js/
 │   │   │   ├── auth/
 │   │   │   │   ├── forgot-password.js
@@ -147,29 +187,41 @@ manage-projects/
 │   │   │   │   ├── reset-password.js
 │   │   │   │   └── verify-email.js
 │   │   │   ├── components/
+│   │   │   │   ├── char-counter.js
 │   │   │   │   ├── markdown-editor.js
 │   │   │   │   ├── tag-picker.js
 │   │   │   │   └── user-chip.js
 │   │   │   ├── dashboard/
 │   │   │   │   ├── home.js
 │   │   │   │   ├── logs.js
+│   │   │   │   ├── my-tickets.js
 │   │   │   │   ├── profile.js
 │   │   │   │   ├── projects.js
+│   │   │   │   ├── security.js
 │   │   │   │   ├── settings.js
 │   │   │   │   ├── system.js
 │   │   │   │   ├── tag-types.js
-│   │   │   │   └── tags.js
+│   │   │   │   ├── tags.js
+│   │   │   │   ├── ticket-detail.js
+│   │   │   │   └── tickets.js
 │   │   │   ├── pages/
+│   │   │   │   ├── contact.js
 │   │   │   │   ├── explore.js
 │   │   │   │   ├── home.js
+│   │   │   │   ├── users-list.js
 │   │   │   │   └── users-show.js
 │   │   │   ├── projects/
+│   │   │   │   ├── list.js
 │   │   │   │   └── show.js
+│   │   │   ├── tickets/
+│   │   │   │   ├── lookup.js
+│   │   │   │   └── track.js
 │   │   │   ├── dashboard-nav.js
 │   │   │   ├── dialog-error.js
 │   │   │   ├── form-errors.js
 │   │   │   ├── header.js
-│   │   │   └── index.js
+│   │   │   ├── index.js
+│   │   │   └── theme.js
 │   │   ├── styles/
 │   │   │   ├── auth/
 │   │   │   │   └── password-reset.css
@@ -180,63 +232,94 @@ manage-projects/
 │   │   │   │   ├── logs.css
 │   │   │   │   ├── profile.css
 │   │   │   │   ├── project-modal.css
+│   │   │   │   ├── security.css
 │   │   │   │   ├── settings.css
 │   │   │   │   ├── system.css
 │   │   │   │   ├── tag-picker.css
 │   │   │   │   ├── tag-types.css
+│   │   │   │   ├── tickets.css
 │   │   │   │   └── users.css
 │   │   │   ├── projects/
+│   │   │   │   ├── list.css
 │   │   │   │   └── show.css
 │   │   │   ├── users/
 │   │   │   │   └── show.css
+│   │   │   ├── about.css
 │   │   │   ├── auth.css
+│   │   │   ├── contact.css
 │   │   │   ├── dialog.css
 │   │   │   ├── explore.css
 │   │   │   ├── form-errors.css
 │   │   │   ├── header.css
 │   │   │   ├── index.css
-│   │   │   └── markdown-editor.css
-│   │   └── logo.svg
+│   │   │   ├── legal.css
+│   │   │   ├── markdown-editor.css
+│   │   │   ├── themes.css
+│   │   │   ├── tickets.css
+│   │   │   └── users.css
+│   │   └── robots.txt
 │   └── views/
-│       ├── auth/
-│       │   ├── forgot-password.ejs
-│       │   ├── login.ejs
-│       │   ├── register.ejs
-│       │   └── reset-password.ejs
 │       ├── components/
 │       │   ├── brand.ejs
 │       │   ├── dash-breadcrumb.ejs
 │       │   ├── dashboard-nav-items.ejs
 │       │   ├── dashboard-nav.ejs
+│       │   ├── dashboard-shell-close.ejs
+│       │   ├── dashboard-shell.ejs
 │       │   ├── dialogError.ejs
+│       │   ├── footer.ejs
 │       │   ├── header.ejs
 │       │   ├── mobile-drawer.ejs
-│       │   └── search-modal.ejs
-│       ├── dashboard/
-│       │   ├── home.ejs
-│       │   ├── logs.ejs
-│       │   ├── profile.ejs
-│       │   ├── projects.ejs
-│       │   ├── settings.ejs
-│       │   ├── system.ejs
-│       │   ├── tag-types.ejs
-│       │   ├── tags.ejs
-│       │   └── users.ejs
-│       ├── projects/
-│       │   ├── list.ejs
-│       │   └── show.ejs
-│       ├── users/
-│       │   └── show.ejs
-│       ├── 404.ejs
-│       ├── explore.ejs
-│       └── index.ejs
+│       │   ├── search-modal.ejs
+│       │   ├── seo-head.ejs
+│       │   └── theme-switcher.ejs
+│       └── pages/
+│           ├── auth/
+│           │   ├── forgot-password.ejs
+│           │   ├── login.ejs
+│           │   ├── register.ejs
+│           │   ├── reset-password.ejs
+│           │   └── verify-email.ejs
+│           ├── dashboard/
+│           │   ├── home.ejs
+│           │   ├── logs.ejs
+│           │   ├── my-tickets.ejs
+│           │   ├── profile.ejs
+│           │   ├── projects.ejs
+│           │   ├── security.ejs
+│           │   ├── settings.ejs
+│           │   ├── system.ejs
+│           │   ├── tag-types.ejs
+│           │   ├── tags.ejs
+│           │   ├── ticket-detail.ejs
+│           │   ├── tickets.ejs
+│           │   └── users.ejs
+│           ├── legal/
+│           │   ├── privacy.ejs
+│           │   └── terms.ejs
+│           ├── projects/
+│           │   ├── list.ejs
+│           │   └── show.ejs
+│           ├── tickets/
+│           │   ├── lookup.ejs
+│           │   └── track.ejs
+│           ├── users/
+│           │   ├── list.ejs
+│           │   └── show.ejs
+│           ├── 404.ejs
+│           ├── about.ejs
+│           ├── contact.ejs
+│           ├── explore.ejs
+│           └── index.ejs
 ├── .gitattributes
 ├── .gitignore
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
 ├── docker-compose.yml
 ├── example.env
 ├── LICENSE
 ├── nodemon.json
 ├── package.json
-├── project_tree.py
-├── readme.md
+├── README.md
+├── SECURITY.md
 └── tsconfig.json
