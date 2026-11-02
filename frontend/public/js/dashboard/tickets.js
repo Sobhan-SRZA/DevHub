@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.category) params.set('category', state.category);
 
             const data = await api(`/api/tickets?${params}`);
+            console.log("🚀 ~ load ~ data:", data)
 
             if (!data.tickets.length) {
                 list.innerHTML = `<div class="dash-empty">
