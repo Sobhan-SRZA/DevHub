@@ -3,20 +3,26 @@
  * already passed an admin/developer gate.
  */
 
-import type { Response } from "express";
-import { Ticket } from "../models/Ticket";
-import { User } from "../models/User";
-import { asyncHandler } from "../utils/asyncHandler";
-import { validate } from "../utils/validate";
-import { AppError } from "../utils/AppError";
-import { ErrorCodes } from "../utils/errorCodes";
+import {
+    findTicketByTrackingToken,
+    issueLookupOtp,
+    issueTrackingToken,
+    sendTicketReplyEmail,
+    verifyLookupOtp
+} from "../services/ticketService";
 import {
     ticketReplySchema,
     ticketUpdateSchema
 } from "../validators/contactValidator";
-import { findTicketByTrackingToken, issueLookupOtp, issueTrackingToken, verifyLookupOtp } from "../services/ticketService";
 import { ticketLookupOtpTemplate } from "../services/mail/templates/ticketEmails";
+import type { Response } from "express";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ErrorCodes } from "../utils/errorCodes";
+import { AppError } from "../utils/AppError";
+import { validate } from "../utils/validate";
 import { mailer } from "../services/mail";
+import { Ticket } from "../models/Ticket";
+import { User } from "../models/User";
 
 /* -------------------- Helpers -------------------- */
 
