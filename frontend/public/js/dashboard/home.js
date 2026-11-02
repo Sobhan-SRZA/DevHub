@@ -18,8 +18,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailVerified = window.__EMAIL_VERIFIED__ === true;
 
     /* ============================================================
-       Greeting
-       ============================================================
+        API Helper with Cache
+        ============================================================
+        Prevents hammering the server for stats that don't change 
+        every second. Uses sessionStorage with a 5-minute TTL.
+        ============================================================ */
+    const CACHE_PREFIX = 'dh_stat_cache_';
+
+    async function apiWithCache(path, ttlMinutes = 5) {
+        const cacheKey = CACHE_PREFIX + path;
+        const cached = sessionStorage.getItem(cacheKey);
+
+        if (cached) {
+            try {
+                const { expiresAt, data } = JSON.parse(cached);
+                if (Date.now() < expiresAt) {
+                    return data; // Return cached data
+                }
+                sessionStorage.removeItem(cacheKey);
+            } catch (e) {
+                // Ignore JSON parse errors and fetch fresh
+            }
+        }
+
+        try {
+            const res = await fetch(path, { credentials: 'include' });
+            if (!res.ok) return null;
+            const data = await res.json();
+
+            // Save to cache
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+                expiresAt: Date.now() + (ttlMinutes * 60 * 1000),
+                data: data
+            }));
+
+            return data;
+        } catch {
+            return null;
+        }
+    }
+
+    /* ============================================================
+       Greeting & Formatters
+       ============================================================ 
        Renders a time-of-day greeting tailored to the current
        user's role.
        ============================================================ */
@@ -143,66 +184,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = $('#primaryStats');
         if (!container) return;
 
-        const myProjectsRes = await api('/api/v1/projects?mine=true&limit=100');
-        const myProjects = myProjectsRes?.projects || [];
-        const myTotal = myProjectsRes?.pagination?.total || myProjects.length;
+        // Fetch from the stats API with a 5-minute cache
+        const data = await apiWithCache('/api/v1/users/me/stats?range=30d', 5);
+        if (!data?.ok || !data.stats) return;
 
-        let totalDownloads = 0, totalStars = 0, totalReviews = 0;
-
-        for (const p of myProjects) {
-            totalDownloads += p.downloads || 0;
-            totalStars += p.githubData?.stars || 0;
-            totalReviews += p.reviewCount || 0;
-        }
-
-        const publishedCount = myProjects.filter((p) => p.status === 'published').length;
+        const summary = data.stats.summary;
 
         const cards = [
             {
                 label: 'Projects',
-                value: myTotal,
+                value: summary.projects.total,
                 icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
                 color: '#6ebbff',
-                meta: `${publishedCount} published`,
+                meta: `${summary.projects.published} published`,
             },
             {
                 label: 'Downloads',
-                value: formatNumber(totalDownloads),
+                value: formatNumber(summary.downloads.total),
                 icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
                 color: '#34d399',
             },
             {
                 label: 'Stars',
-                value: formatNumber(totalStars),
+                value: formatNumber(summary.stars.total),
                 icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
                 color: '#fbbf24',
             },
             {
                 label: 'Reviews',
-                value: formatNumber(totalReviews),
+                value: formatNumber(summary.reviews.received),
                 icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
                 color: '#ec4899',
             },
         ];
 
-        // Admin-only: total user count.
+        // Admin-only card
         if (isAdmin) {
-            const usersRes = await api('/api/v1/admin/users?limit=1');
-
-            if (usersRes) {
+            const usersData = await apiWithCache('/api/v1/admin/users?limit=1', 5);
+            if (usersData?.pagination?.total !== undefined) {
                 cards.push({
                     label: 'Users',
-                    value: formatNumber(usersRes.pagination?.total || 0),
+                    value: formatNumber(usersData.pagination.total),
                     icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
                     color: '#007bff',
                 });
             }
         }
 
-        // Developer-only: server uptime is surfaced in the dev health panel.
+        // Developer-only card
         if (isDeveloper) {
-            const health = await api('/api/v1/health/detailed');
-
+            const health = await apiWithCache('/api/v1/health/detailed', 1); // 1 min cache for health
             if (health) {
                 cards.push({
                     label: 'Uptime',
@@ -224,6 +255,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('');
+    }
+
+    /* ============================================================
+           User Analytics
+           ============================================================ */
+    async function loadAnalytics() {
+        const container = document.getElementById('analyticsSection');
+        if (!container) return;
+
+        const range = container.dataset.range || '30d';
+
+        // Use the same cache mechanism (so it won't double-fetch if loadPrimaryStats already got it)
+        const data = await apiWithCache(`/api/v1/users/me/stats?range=${range}`, 5);
+
+        if (!data?.ok || !data.stats) {
+            container.hidden = true;
+            return;
+        }
+
+        renderProfileCompleteness(data.stats.user.profileCompleteness);
+        renderRankBadge(data.stats.user.rank);
+        renderGrowthChart(data.stats.timeline, range);
+        renderActivityFeed(data.stats.recentActivity);
+        renderMilestones(data.stats.milestones);
+        renderInsightStats(data.stats.summary);
     }
 
     /* ============================================================
@@ -347,12 +403,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = $('#recentProjects');
         if (!container) return;
 
-        const data = await api('/api/v1/projects?mine=true&limit=6&sort=recent');
+        // Cache for 2 minutes
+        const data = await apiWithCache('/api/v1/projects?mine=true&limit=6&sort=recent', 2);
         const items = data?.projects || [];
 
         if (!items.length) {
             container.innerHTML = `<div class="home-empty">No projects yet — start by clicking "New Project".</div>`;
-
             return;
         }
 
@@ -413,11 +469,248 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    /* ============================================================
+   User Analytics — Chart, Activity, Milestones
+   ============================================================ */
+    /* ---------- Profile completeness ---------- */
+
+    function renderProfileCompleteness(pct) {
+        const bar = document.getElementById('completenessBar');
+        const label = document.getElementById('completenessLabel');
+        if (!bar || !label) return;
+
+        bar.style.width = `${pct}%`;
+        bar.dataset.level = pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
+        label.textContent = `${pct}% complete`;
+    }
+
+    /* ---------- Rank badge ---------- */
+
+    function renderRankBadge(rank) {
+        const el = document.getElementById('rankBadge');
+        if (!el) return;
+
+        el.innerHTML = `
+        <span class="rank-badge__position">#${rank.position}</span>
+        <span class="rank-badge__meta">
+            of ${rank.total} users · top ${100 - rank.percentile}%
+        </span>
+    `;
+    }
+
+    /* ---------- Growth chart (SVG) ---------- */
+
+    /**
+     * Renders a multi-series line chart for the last N days. Uses inline
+     * SVG so the dashboard has no charting dependency.
+     */
+    function renderGrowthChart(timeline, range) {
+        const svg = document.getElementById('growthChart');
+        if (!svg || !timeline.length) return;
+
+        const W = 720;
+        const H = 220;
+        const PAD = { top: 20, right: 20, bottom: 30, left: 40 };
+        const innerW = W - PAD.left - PAD.right;
+        const innerH = H - PAD.top - PAD.bottom;
+
+        const series = [
+            { key: 'projects', label: 'Projects', color: '#6ebbff' },
+            { key: 'reviewsReceived', label: 'Reviews', color: '#ec4899' },
+            { key: 'commentsReceived', label: 'Comments', color: '#a78bfa' },
+            { key: 'likesReceived', label: 'Likes', color: '#fbbf24' }
+        ];
+
+        const maxY = Math.max(
+            1,
+            ...timeline.flatMap(d => series.map(s => d[s.key]))
+        );
+
+        const xFor = (i) =>
+            PAD.left + (i / Math.max(1, timeline.length - 1)) * innerW;
+        const yFor = (v) =>
+            PAD.top + innerH - (v / maxY) * innerH;
+
+        /* ---------- Grid + Y axis labels ---------- */
+        const gridLines = [];
+        const tickCount = 4;
+        for (let i = 0; i <= tickCount; i++) {
+            const y = PAD.top + (i / tickCount) * innerH;
+            const value = Math.round(maxY - (i / tickCount) * maxY);
+            gridLines.push(`
+            <line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}"
+                  stroke="#1f1f1f" stroke-width="1"></line>
+            <text x="${PAD.left - 8}" y="${y + 4}"
+                  font-size="10" fill="#666" text-anchor="end">${value}</text>
+        `);
+        }
+
+        /* ---------- X axis labels ---------- */
+        const xLabels = [];
+        const xStep = Math.max(1, Math.floor(timeline.length / 6));
+        for (let i = 0; i < timeline.length; i += xStep) {
+            const d = new Date(timeline[i].date);
+            const label = d.toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric'
+            });
+            xLabels.push(`
+            <text x="${xFor(i)}" y="${H - PAD.bottom + 16}"
+                  font-size="10" fill="#666" text-anchor="middle">${label}</text>
+        `);
+        }
+
+        /* ---------- Series paths ---------- */
+        const seriesPaths = series.map(s => {
+            const points = timeline.map((d, i) =>
+                `${xFor(i)},${yFor(d[s.key])}`
+            ).join(' ');
+
+            const areaPoints = `${xFor(0)},${PAD.top + innerH} ` +
+                points +
+                ` ${xFor(timeline.length - 1)},${PAD.top + innerH}`;
+
+            return `
+            <polygon fill="${s.color}" fill-opacity="0.06" points="${areaPoints}"></polygon>
+            <polyline fill="none" stroke="${s.color}" stroke-width="2"
+                      stroke-linejoin="round" stroke-linecap="round"
+                      points="${points}"></polyline>
+        `;
+        }).join('');
+
+        /* ---------- Legend ---------- */
+        const legend = series.map(s => `
+        <span class="chart-legend__item">
+            <span class="chart-legend__dot" style="background:${s.color}"></span>
+            ${s.label}
+        </span>
+    `).join('');
+
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svg.innerHTML = `
+        ${gridLines.join('')}
+        ${xLabels.join('')}
+        ${seriesPaths}
+    `;
+
+        const legendEl = document.getElementById('chartLegend');
+        if (legendEl) legendEl.innerHTML = legend;
+
+        /* ---------- Range switcher ---------- */
+
+        document.querySelectorAll('[data-chart-range]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-chart-range]')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const newRange = btn.dataset.chartRange;
+                const container = document.getElementById('analyticsSection');
+                if (container) container.dataset.range = newRange;
+
+                loadAnalytics();
+            });
+        });
+    }
+
+    /* ---------- Activity feed ---------- */
+
+    function renderActivityFeed(items) {
+        const feed = document.getElementById('activityFeed');
+        if (!feed) return;
+
+        if (!items.length) {
+            feed.innerHTML = `<div class="activity-empty">No activity yet — create a project or leave a review to see it here.</div>`;
+            return;
+        }
+
+        feed.innerHTML = items.map(item => {
+            const icon = {
+                project: '📦',
+                review: '⭐',
+                comment: '💬'
+            }[item.type] || '•';
+
+            return `
+            <a class="activity-item" href="${escapeHtml(item.link)}">
+                <span class="activity-item__icon">${icon}</span>
+                <div class="activity-item__body">
+                    <span class="activity-item__title">${escapeHtml(item.title)}</span>
+                    <span class="activity-item__time">${relativeTime(item.createdAt)}</span>
+                </div>
+            </a>
+        `;
+        }).join('');
+    }
+
+    /* ---------- Milestones ---------- */
+
+    function renderMilestones(items) {
+        const list = document.getElementById('milestoneList');
+        if (!list) return;
+
+        list.innerHTML = items.map(m => `
+        <div class="milestone ${m.achieved ? 'milestone--achieved' : ''}">
+            <div class="milestone__check">
+                ${m.achieved ? '✓' : '○'}
+            </div>
+            <span class="milestone__label">${escapeHtml(m.label)}</span>
+        </div>
+    `).join('');
+    }
+
+    /* ---------- Insight stats ---------- */
+
+    function renderInsightStats(summary) {
+        const container = document.getElementById('insightStats');
+        if (!container) return;
+
+        const items = [
+            {
+                label: 'Projects',
+                value: summary.projects.published,
+                sub: `${summary.projects.total} total`,
+                color: '#6ebbff'
+            },
+            {
+                label: 'Reviews',
+                value: summary.reviews.received,
+                sub: summary.reviews.averageRating > 0
+                    ? `avg ${summary.reviews.averageRating} ★`
+                    : 'no ratings yet',
+                color: '#ec4899'
+            },
+            {
+                label: 'Comments',
+                value: summary.comments.received,
+                sub: `${summary.comments.sent} sent`,
+                color: '#a78bfa'
+            },
+            {
+                label: 'Likes',
+                value: summary.likes.receivedOnComments,
+                sub: 'on comments',
+                color: '#fbbf24'
+            }
+        ];
+
+        container.innerHTML = items.map(i => `
+        <div class="insight-card">
+            <div class="insight-card__accent" style="background:${i.color}"></div>
+            <div class="insight-card__value">${formatNumber(i.value)}</div>
+            <div class="insight-card__label">${escapeHtml(i.label)}</div>
+            <div class="insight-card__sub">${escapeHtml(i.sub)}</div>
+        </div>
+    `).join('');
+    }
+
     /* ============================================================
        Initialization
        ============================================================ */
     setGreeting();
     loadPrimaryStats();
+    loadAnalytics();
     loadAdminPanel();
     loadDevHealth();
     loadRecentProjects();
