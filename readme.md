@@ -210,9 +210,9 @@ logs/                → لاگ روزانه
 | **Comments**       | `/api/v1/projects/:id/comments` |  اختیاری  |
 | **Tags**           | `/api/v1/tags`                  |     —     |
 | **Tag Types**      | `/api/v1/tag-types`             |     —     |
-| **Users (Public)** | `/api/users`                 |     —     |
+| **Users (Public)** | `/api/v1/users`                 |     —     |
 | **Admin**          | `/api/v1/admin`                 |  admin+   |
-| **System**         | `/api/system`                | developer |
+| **System**         | `/api/v1/system`                | developer |
 | **Health**         | `/api/v1/health`                |     —     |
 
 ### نمونه
