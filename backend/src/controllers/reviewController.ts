@@ -15,23 +15,7 @@ import { ErrorCodes } from "../utils/errorCodes";
 import { validate } from "../utils/validate";
 import { Project } from "../models/Project";
 import { Review } from "../models/Review";
-
-/* ==================================================================
-   Helper — Find a project by its ID or slug
-   ================================================================== */
-async function findProject(idOrSlug: string) {
-    const isId = /^[a-f\d]{24}$/i.test(idOrSlug);
-
-    const project = await Project.findOne(
-        isId ? { _id: idOrSlug } : { slug: idOrSlug }
-    ).lean();
-
-    if (!project) {
-        throw new AppError(404, ErrorCodes.PROJECT_NOT_FOUND);
-    }
-
-    return project;
-}
+import { findProject } from "./projectController";
 
 /* ==================================================================
    LIST — Retrieve paginated reviews for a project
