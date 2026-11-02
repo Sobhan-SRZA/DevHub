@@ -16,7 +16,7 @@ import os from "os";
 import fs from "fs";
 
 /* ==================================================================
-   GET /api/system/stats — Retrieve system and application statistics
+   GET /api/v1/system/stats — Retrieve system and application statistics
    ================================================================== */
 export const getSystemStats = asyncHandler(async (_req: Request, res: Response) => {
     const mem = process.memoryUsage();
@@ -106,7 +106,7 @@ export const getSystemStats = asyncHandler(async (_req: Request, res: Response) 
 });
 
 /* ==================================================================
-   GET /api/system/logs — Retrieve application log entries
+   GET /api/v1/system/logs — Retrieve application log entries
    ================================================================== */
 export const getLogs = asyncHandler(async (req: Request, res: Response) => {
     const limit = Math.min(
@@ -154,7 +154,7 @@ export const getLogs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /* ==================================================================
-   GET /api/system/logs/download — Download an archived log file
+   GET /api/v1/system/logs/download — Download an archived log file
    ================================================================== */
 export const downloadLogs = asyncHandler(async (req: Request, res: Response) => {
     const file = req.query.file as string;
@@ -191,7 +191,7 @@ export const downloadLogs = asyncHandler(async (req: Request, res: Response) => 
 });
 
 /* ==================================================================
-   POST /api/system/logs/clear — Clear in-memory log entries
+   POST /api/v1/system/logs/clear — Clear in-memory log entries
    ================================================================== */
 export const clearLogs = asyncHandler(async (_req: Request, res: Response) => {
     logger.clear();
