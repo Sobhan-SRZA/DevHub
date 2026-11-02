@@ -441,7 +441,7 @@ styles/
 | DELETE | `/:id`         |    admin    |
 | POST   | `/:id/approve` |    admin    |
 
-#### `/api/users`
+#### `/api/v1/users`
 | Method | Path                      |
 | ------ | ------------------------- |
 | GET    | `/:idOrUsername`          |
@@ -455,7 +455,7 @@ styles/
 | POST   | `/users/:id/role` |
 | POST   | `/users/:id/ban`  |
 
-#### `/api/system` (developer)
+#### `/api/v1/system` (developer)
 | Method | Path             |
 | ------ | ---------------- |
 | GET    | `/stats`         |
