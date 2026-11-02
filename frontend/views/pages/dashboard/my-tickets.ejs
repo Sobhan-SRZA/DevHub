@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/styles/index.css">
+  <link rel="stylesheet" href="/styles/themes.css">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles/dialog.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard.css">
+  <link rel="stylesheet" href="/styles/dashboard/dashboard-nav.css">
+  <link rel="stylesheet" href="/styles/dashboard/tickets.css">
+
+  <title>My Tickets — DevHub</title>
+</head>
+
+<body>
+  <%- include("../../components/dialogError") %>
+
+  <div class="dash-layout">
+    <%- include("../../components/dashboard-nav") %>
+    <%- include("../../components/dash-breadcrumb", { pageTitle: "My Tickets" }) %>
+
+    <main class="dash-main">
+      <div class="dash-head">
+        <div>
+          <h2 class="dash-title">My Tickets</h2>
+          <p class="dash-sub" id="ticketsCount">—</p>
+        </div>
+        <a href="/contact" class="btn-primary">New Ticket</a>
+      </div>
+
+      <div class="tickets-list" id="myTicketsList">
+        <div class="dash-loading">Loading…</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/dashboard-nav.js"></script>
+  <script src="/js/dashboard/my-tickets.js" defer></script>
+</body>
+
+</html>
