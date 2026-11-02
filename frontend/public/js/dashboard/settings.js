@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     async function loadUser() {
         try {
-            const data = await api("/api/profile/me");
+            const data = await api("/api/v1/profile/me");
 
             state.user = data.user;
 
@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("avatar", file);
 
         try {
-            const data = await api("/api/profile/avatar", {
+            const data = await api("/api/v1/profile/avatar", {
                 method: "POST",
                 body: formData
             });
@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            await api("/api/profile/avatar", {
+            await api("/api/v1/profile/avatar", {
                 method: "DELETE"
             });
 
@@ -311,7 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             // Update the display name only when it has changed.
             if (name !== state.user.name) {
-                await api("/api/profile/me", {
+                await api("/api/v1/profile/me", {
                     method: "PATCH",
                     body: JSON.stringify({ name })
                 });
@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Update the username only when it has changed.
             if (username !== state.user.username) {
-                await api("/api/profile/username", {
+                await api("/api/v1/profile/username", {
                     method: "PATCH",
                     body: JSON.stringify({ username })
                 });
@@ -386,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.textContent = "Saving...";
 
         try {
-            await api("/api/profile/me", {
+            await api("/api/v1/profile/me", {
                 method: "PATCH",
                 body: JSON.stringify({ bio })
             });
@@ -563,7 +563,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.textContent = "Sending...";
 
         try {
-            const data = await api("/api/profile/email/request", {
+            const data = await api("/api/v1/profile/email/request", {
                 method: "POST",
                 body: JSON.stringify({ newEmail, password })
             });
@@ -631,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.textContent = "Verifying...";
 
         try {
-            const data = await api("/api/profile/email/verify-old", {
+            const data = await api("/api/v1/profile/email/verify-old", {
                 method: "POST",
                 body: JSON.stringify({ code })
             });
@@ -697,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const data = await api("/api/profile/email/pending", {
+            const data = await api("/api/v1/profile/email/pending", {
                 method: "DELETE"
             });
 
@@ -737,7 +737,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            await api("/api/profile/email/pending", {
+            await api("/api/v1/profile/email/pending", {
                 method: "DELETE"
             });
 
@@ -919,7 +919,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.textContent = "Sending...";
 
         try {
-            const data = await api("/api/profile/password/request", {
+            const data = await api("/api/v1/profile/password/request", {
                 method: "POST",
                 body: JSON.stringify({
                     currentPassword,
@@ -1045,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.textContent = "Updating...";
 
         try {
-            const data = await api("/api/profile/password/confirm", {
+            const data = await api("/api/v1/profile/password/confirm", {
                 method: "POST",
                 body: JSON.stringify({
                     code,
