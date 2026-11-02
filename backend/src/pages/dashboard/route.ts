@@ -1,4 +1,4 @@
-import dashboardRoutes from "../../routes/dashboardRoutes";
+import dashboardRoutes from "../../routes/pages/dashboard";
 
 export default dashboardRoutes;
 
