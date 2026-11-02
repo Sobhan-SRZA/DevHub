@@ -489,7 +489,7 @@ developer (دولوپر)
 | DELETE | `/:id`         |    admin    |
 | POST   | `/:id/approve` |    admin    |
 
-### Users (Public) — `/api/users`
+### Users (Public) — `/api/v1/users`
 | Method | Path                      | توضیح                             |
 | ------ | ------------------------- | --------------------------------- |
 | GET    | `/:idOrUsername`          | پروفایل + stats                   |
@@ -503,7 +503,7 @@ developer (دولوپر)
 | POST   | `/users/:id/role` |
 | POST   | `/users/:id/ban`  |
 
-### System — `/api/system` (developer)
+### System — `/api/v1/system` (developer)
 | Method | Path                   |
 | ------ | ---------------------- |
 | GET    | `/stats`               |
